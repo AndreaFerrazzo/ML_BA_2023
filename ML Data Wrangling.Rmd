@@ -1,0 +1,62 @@
+---
+title: "Data Wrangling"
+output: html_document
+date: "2023-04-17"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Packages to install
+
+```{r}
+
+library(tidyverse)
+library(janitor)
+
+```
+
+# Data Cleaning
+```{r}
+
+# Let's have a first look at the data we have downloaded from Kaggle
+
+epi_r %>% 
+  head(10)
+
+# Let's do a quick data cleaning of column names with the help of the janitor package
+
+epi_r <- epi_r %>% 
+  clean_names()
+
+
+# Now we want to discard the US states which are stored as variables in the data set. Those are not useful for the purpose of our research.
+
+us_states <- c("alabama", "alaska", "arizona", "arkansas", "california", "colorado", "connecticut", "delaware", "florida", "georgia", "hawaii", "idaho", "illinois", "indiana", "iowa", "kansas", "kentucky", "louisiana", "maine", "maryland", "massachusetts", "michigan", "minnesota", "mississippi", "missouri", "montana", "nebraska", "nevada", "new_hampshire", "new_jersey", "new_mexico", "new_york", "north_carolina", "north_dakota", "ohio", "oklahoma", "oregon", "pennsylvania", "rhode_island", "south_carolina", "south_dakota", "tennessee", "texas", "utah", "vermont", "virginia", "washington", "west_virginia", "wisconsin"," wyoming")
+
+epi_r <- epi_r[, !(colnames(epi_r) %in% us_states)]
+
+epi_r %>% 
+  filter(cuba == 1)
+
+us_cities <- c("aspen", "atlanta", "beverly_hills", "boston","brooklyn", "buffalo", "cambridge", "chicago", "columbus", "costa_mesa", "dallas", "denver", "healdsburg", "hollywood", "houston", "kansas_city", "lancaster", "las_vegas", "london", "los_angeles", "louisville", "miami", "minneapolis", "new_orleans", "pacific_palisades", "paris", "pasadena", "pittsburgh", "portland", "providence", "san_francisco", "santa_monica", "seattle", "st_louis", )
+
+countries <- c("australia", "bulgaria", "canada", "chile", "cuba", "dominican_republic", "egypt", "england", "france", "germany", "guam", "haiti", "ireland", "island", "israel", "italy", "jamaica", "japan", "mexico", "mezcal", "peru", "philippines", "spain", "switzerland",  )
+
+alcohol <- c("frangelico", "gin", "grand_marnier", "grappa", "kahlua", "kirsch", "liqueur", "margarita", "marsala", "martini", "midori", "pernod", "port", "punch", "rum", "sake", "sangria", "scotch", "sherry", "sparkling wine", "spirit", "spritzer", "tequila",)
+
+wtf <- c("bon_appetit", "bon_app_tit", "epi_ushg", "flaming_hot_summer", "frankenrecipe", "harpercollins", "house_garden", "hum...", "kitcken_olympics", "no_meat_no_problem", "parade", "sandwich_theory", "self", "shower", "summ...", "testes_improved" )
+
+chef <- c("dorie_greenspa", "emeril_lagasse", "nancy_silverton", "suzanne_goin",  )
+
+interesting <- c("entertaining", "epi_loves_the_microwave", "friendsgiving", "game", "gourmet", "healthy", "hors_doeuvre", "hot_drink", "kid_friendly", "kidney_friendly", "low_cal", "low_cholesterol", "microwave", "no_cook", "one_pot_meal", "oscars", "paleo", "peanut_free", "pescatarian", "poker_game_night", "potluck", "quick_easy", "sugar_conscious" )
+
+celebrations <- c("family_reunion", "fathers_day", "graduation", "halloween", "hanukkah", "kentucky_derby", "kwanzaa", "lunar_new_year", "mardi_gras", "mothers_day", "new_years_day",  "new_years_eve", "oktoberfest", "party", "passover", "persian_new_year", "purim", "ramadan", "rosh_hashanah_yom_kippur", "shavuot", "st_patricks_day", "sukkot", "super_bowl", "thanksgiving"   )
+
+tools <- c("juicer", "mandoline", "mixer", "mortar_and_pestle", "pasta_maker", "ramekin", "skewer", "slow_cooker", "smoker")
+
+cooking_techniques <- c("raw", "saute", "stir_fry", )
+
+```
+
