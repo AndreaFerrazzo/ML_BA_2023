@@ -11,24 +11,28 @@ knitr::opts_chunk$set(echo = TRUE)
 ## Packages to install
 
 ```{r}
-
 library(tidyverse)
 library(summarytools)
 library(janitor)
+library(here)
 
 ```
+```{r Import data}
+epi_r_raw <- read.csv(here("data/epi_r.csv"))
+```
+
 
 # Data Cleaning
 ```{r}
 
 # Let's have a first look at the data we have downloaded from Kaggle
 
-epi_r %>% 
+epi_r_raw %>%
   head(10)
 
 # Let's do a quick data cleaning of column names with the help of the janitor package
 
-epi_r <- epi_r %>% 
+epi_r_raw <- epi_r %>% 
   clean_names()
 
 
@@ -64,7 +68,6 @@ tools <- c("coffee_grinder", "double_boiler", "food_processor", "ice_cream_machi
 cooking_techniques <- c("raw", "saute", "fry", "stir_fry", "boil")
 
 nutritional_values <- c("calories", "protein", "fat", "sodium")
-
 ```
 
 
