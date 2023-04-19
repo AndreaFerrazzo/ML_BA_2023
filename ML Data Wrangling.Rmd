@@ -13,6 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r}
 
 library(tidyverse)
+library(summarytools)
 library(janitor)
 
 ```
@@ -37,26 +38,148 @@ us_states <- c("alabama", "alaska", "arizona", "arkansas", "california", "colora
 
 epi_r <- epi_r[, !(colnames(epi_r) %in% us_states)]
 
+
+# The same applies for the US cities which don't value to our analysis. In fact, we haven't figured out how to exploit such variables since no explanation has been given on Kaggle. Moreover, the recipes associated with such cities often don't belong to the specific location.
+
+us_cities <- c("aspen", "atlanta", "beverly_hills", "boston","brooklyn", "buffalo", "cambridge", "chicago", "columbus", "costa_mesa", "dallas", "denver", "healdsburg", "hollywood", "houston", "kansas_city", "lancaster", "las_vegas", "london", "los_angeles", "louisville", "miami", "minneapolis", "new_orleans", "pacific_palisades", "paris", "pasadena", "pittsburgh", "portland", "providence", "san_francisco", "santa_monica", "seattle", "st_louis", "washington_dc", "westwood", "yonkers")
+
+epi_r <- epi_r[, !(colnames(epi_r) %in% us_cities)]
+
+
+# We also gathered information about different variables which could be grouped in different categories. Anyhow, we don't want to discard those variables since further investigations still have to be done.
+countries <- c("australia", "bulgaria", "canada", "chile", "cuba", "dominican_republic", "egypt", "england", "france", "germany", "guam", "haiti", "ireland", "island", "israel", "italy", "jamaica", "japan", "mexico", "mezcal", "peru", "philippines", "spain", "switzerland")
+
+alcohol <- c("alcoholic", "amaretto", "beer", "bitters", "bourbon", "brandy", "calvados", "chambord", "champagne", "chartreuse", "cocktail", "cognac_armagnac", "digestif", "eau_de_vie", "fortified_wine", "frangelico", "gin", "grand_marnier", "grappa", "kahlua", "kirsch", "liqueur", "margarita", "marsala", "martini", "midori", "pernod", "port", "punch", "rum", "sake", "sangria", "scotch", "sherry", "sparkling wine", "spirit", "spritzer", "tequila", "triple_sec", "vermout", "vodka", "whiskey", "wine")
+
+wtf <- c("bon_appetit", "bon_app_tit", "condiment_spread", "cr_me_de_cacao", "epi_ushg", "flaming_hot_summer", "frankenrecipe", "harpercollins", "house_garden", "hum...", "kitcken_olympics", "no_meat_no_problem", "parade", "sandwich_theory", "self", "shower", "summ...", "testes_improved", "windsor")
+
+chef <- c("anthony_bourdain", "dorie_greenspa", "emeril_lagasse", "nancy_silverton", "suzanne_goin")
+
+interesting <- c("dairy_free", "entertaining", "epi_loves_the_microwave", "fall", "friendsgiving", "game", "gourmet", "healthy", "high_fiber", "hors_doeuvre", "hot_drink", "kid_friendly", "kidney_friendly", "low_cal", "low_cholesterol", "microwave", "no_cook", "one_pot_meal", "oscars", "paleo", "peanut_free", "pescatarian", "poker_game_night", "potluck", "quick_easy", "sugar_conscious", "vegetable", "wheat_gluten_free", "winter", "cookbooks", "leftovers")
+
+celebrations <- c("anniversary", "back_to_school", "bastille_day", "birthday", "christmas", "christmas_eve", "cinco_de_mayo", "date", "easter", "engagement_party", "family_reunion", "fathers_day", "graduation", "halloween", "hanukkah", "kentucky_derby", "kwanzaa", "labor_day", "lunar_new_year", "mardi_gras", "mothers_day", "new_years_day",  "new_years_eve", "oktoberfest", "party", "passover", "persian_new_year", "purim", "ramadan", "rosh_hashanah_yom_kippur", "shavuot", "st_patricks_day", "sukkot", "super_bowl", "thanksgiving", "valentines_day", "wedding")
+
+tools <- c("coffee_grinder", "double_boiler", "food_processor", "ice_cream_machine", "juicer", "mandoline", "mixer", "mortar_and_pestle", "pasta_maker", "ramekin", "skewer", "slow_cooker", "smoker", "wok")
+
+cooking_techniques <- c("raw", "saute", "fry", "stir_fry", "boil")
+
+nutritional_values <- c("calories", "protein", "fat", "sodium")
+
+```
+
+
+### Exploratory Data Analysis
+
+# Structure and summary
+```{r}
+
+# Now let's see the structure of our data
+str(epi_r)
+
+# We have only numerical variables, but in reality just 4 variables could be considered as such. More in particular, "rating", "calories", "protein", "fat" and "sodium" could be considered as such. The other variables should be considered as a categorical variable since they allow only for 0 or 1 values.
+
+
+# Let's have a different look at the data with the summary function.
 epi_r %>% 
-  filter(cuba == 1)
+  select(rating, calories, protein, fat, sodium) %>% 
+  dfSummary(style = "grid")
 
-us_cities <- c("aspen", "atlanta", "beverly_hills", "boston","brooklyn", "buffalo", "cambridge", "chicago", "columbus", "costa_mesa", "dallas", "denver", "healdsburg", "hollywood", "houston", "kansas_city", "lancaster", "las_vegas", "london", "los_angeles", "louisville", "miami", "minneapolis", "new_orleans", "pacific_palisades", "paris", "pasadena", "pittsburgh", "portland", "providence", "san_francisco", "santa_monica", "seattle", "st_louis", )
+# We can already see for instance that the majority of the values of the variable "rating" are 4.38 (40% of the total). Moreover, we observe that the variables "calories", "protein", "fat" and "sodium" have roughly 20% of missing values.
 
-countries <- c("australia", "bulgaria", "canada", "chile", "cuba", "dominican_republic", "egypt", "england", "france", "germany", "guam", "haiti", "ireland", "island", "israel", "italy", "jamaica", "japan", "mexico", "mezcal", "peru", "philippines", "spain", "switzerland",  )
+```
 
-alcohol <- c("frangelico", "gin", "grand_marnier", "grappa", "kahlua", "kirsch", "liqueur", "margarita", "marsala", "martini", "midori", "pernod", "port", "punch", "rum", "sake", "sangria", "scotch", "sherry", "sparkling wine", "spirit", "spritzer", "tequila",)
+## Visual exploration - Univariate Analysis
 
-wtf <- c("bon_appetit", "bon_app_tit", "epi_ushg", "flaming_hot_summer", "frankenrecipe", "harpercollins", "house_garden", "hum...", "kitcken_olympics", "no_meat_no_problem", "parade", "sandwich_theory", "self", "shower", "summ...", "testes_improved" )
+# Rating Barplot
+```{r}
 
-chef <- c("dorie_greenspa", "emeril_lagasse", "nancy_silverton", "suzanne_goin",  )
+epi_r %>% 
+  ggplot(aes(x=as.factor(rating), fill=as.factor(rating) )) +  
+  geom_bar( ) +
+  scale_fill_manual(values = c("red4", "red3", "orangered", "orange", "gold", "greenyellow", "green3", "green4") ) +
+  theme_classic() +
+  theme(legend.position="none") +
+  labs(x = "Rating", y = "Count", 
+       title = "Overview of recipes' ratings")
 
-interesting <- c("entertaining", "epi_loves_the_microwave", "friendsgiving", "game", "gourmet", "healthy", "hors_doeuvre", "hot_drink", "kid_friendly", "kidney_friendly", "low_cal", "low_cholesterol", "microwave", "no_cook", "one_pot_meal", "oscars", "paleo", "peanut_free", "pescatarian", "poker_game_night", "potluck", "quick_easy", "sugar_conscious" )
+# As we can see, most of the ratings have value above 3.75
+# A zero rating indicates that the recipe has not been evaluated yet.
 
-celebrations <- c("family_reunion", "fathers_day", "graduation", "halloween", "hanukkah", "kentucky_derby", "kwanzaa", "lunar_new_year", "mardi_gras", "mothers_day", "new_years_day",  "new_years_eve", "oktoberfest", "party", "passover", "persian_new_year", "purim", "ramadan", "rosh_hashanah_yom_kippur", "shavuot", "st_patricks_day", "sukkot", "super_bowl", "thanksgiving"   )
+```
 
-tools <- c("juicer", "mandoline", "mixer", "mortar_and_pestle", "pasta_maker", "ramekin", "skewer", "slow_cooker", "smoker")
+# Calories - Protein - Fat - Sodium  Boxplots
+```{r}
 
-cooking_techniques <- c("raw", "saute", "stir_fry", )
+epi_r_boxplot <-
+  epi_r %>% 
+  pivot_longer(cols = c(calories, protein, fat, sodium),
+               names_to = "nutrition",
+               values_to = "n_value")
+
+epi_r_boxplot %>%
+  ggplot( aes(x=nutrition, y=n_value, fill=nutrition)) +
+    geom_boxplot() +
+    scale_fill_viridis(discrete = TRUE, alpha=0.6, option="A") +
+    theme_light() +
+    theme(legend.position="none",
+          plot.title = element_text(size=11)) +
+  ggtitle("Basic boxplot") +
+  xlab("") +
+  ylab("Value")
+  
+
+# We notice that there are values above 10'000'000 which are clearly outliers. We must then discard those values in order to continue with a meaningful analysis. At this stage, from a visual point of view we cannot extract any relevant information.
+
+epi_r_boxplot <- epi_r_boxplot %>% 
+  filter(n_value <= 2500)
+
+epi_r_boxplot %>%
+  ggplot( aes(x=nutrition, y=n_value, fill=nutrition)) +
+    geom_boxplot() +
+    scale_fill_viridis(discrete = TRUE, alpha=0.6, option="A") +
+    theme_light() +
+    theme(legend.position="none",
+          plot.title = element_text(size=11)) +
+  ggtitle("Basic boxplot") +
+  xlab("") +
+  ylab("Value")
+
+```
+
+
+# Calories - Protein - Fat - Sodium  Histograms
+```{r}
+
+# Calories histogram
+
+epi_r %>% 
+  filter(calories != "NA") %>% 
+  ggplot(aes(x=calories)) +
+  geom_histogram(binwidth=3, fill="red3", color="red3", alpha=0.9) +
+  ggtitle("Calories Distribution") +
+  theme(plot.title = element_text(size=15))
+
+epi_r_plot <- epi_r %>% 
+  filter(calories <= 10000)
+
+epi_r_plot %>% 
+  ggplot(aes(x=calories)) +
+  geom_histogram(binwidth=50, fill="red3", color="red3", alpha=0.9) +
+  ggtitle("Calories Distribution") +
+  theme(plot.title = element_text(size=15)) +
+  scale_x_continuous(breaks=seq(0,10000,1000))
+
+# Most of the recipes have an amount of calories which is below 1500.
+
+```
+
+
+
+# Visual exploration - multivariate analysis
+```{r}
+
+
+
 
 ```
 
