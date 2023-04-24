@@ -5,19 +5,13 @@ date: "2023-04-17"
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+source(here("scripts/setup.R"))
 ```
 
-## Packages to install
 
-```{r}
-library(tidyverse)
-library(summarytools)
-library(janitor)
-library(here)
 
-```
 ```{r Import data}
+#loading the data
 epi_r_raw <- read.csv(here("data/epi_r.csv"))
 ```
 
