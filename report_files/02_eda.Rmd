@@ -1,0 +1,29 @@
+---
+title: "EDA"
+output: html_document
+date: "2023-04-20"
+---
+
+```{r echo=FALSE, message=FALSE}
+source(here::here("scripts/setup.R"))
+```
+
+#Nutritional EDA
+
+Weird thing to check, my ingredient vector is 292 in length, and the ingredients DF is also 292 despite having ID as additional column --> means one ingredient in my vector is not a column name right? But I don't get an error so nut sure what's happening
+
+```{r Feature Engineering}
+#Creating a new dataframe with only the recipe and the ingredients
+ingredients_df <- recipes %>% 
+  select(ID, title, all_of(all_ingredients))
+
+ingredients_df <- ingredients_df %>% 
+  mutate(total_ingredients = rowSums(.[,-(1:2)]), total_meat = rowSums(select(., all_of(meat))), total_vegetables = rowSums(select(., all_of(vegetables)))) %>% 
+  select(ID, title, total_ingredients, total_meat, total_vegetables, everything())
+
+#checking some stuff about the new ingredients table
+ingredients_df %>% 
+  select(ID, title, total_ingredients) %>% 
+  ggplot(aes(x=total_ingredients)) + 
+  geom_histogram(binwidth=1) + geom_vline(aes(xintercept=mean(total_ingredients)),color="blue", linetype="dashed", size=1)
+```

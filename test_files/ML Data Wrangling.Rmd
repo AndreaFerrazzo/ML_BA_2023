@@ -4,15 +4,15 @@ output: html_document
 date: "2023-04-17"
 ---
 
-```{r, include=FALSE}
-source(here("scripts/setup.R"))
+```{r echo=FALSE, message=FALSE}
+source(here::here("scripts/setup.R"))
 ```
 
 
 
 ```{r Import data}
 #loading the data
-epi_r_raw <- read.csv(here("data/epi_r.csv"))
+recipes_raw <- read.csv(here("data/recipes.csv"))
 ```
 
 
@@ -21,12 +21,12 @@ epi_r_raw <- read.csv(here("data/epi_r.csv"))
 
 # Let's have a first look at the data we have downloaded from Kaggle
 
-epi_r_raw %>%
+recipes_raw %>%
   head(10)
 
 # Let's do a quick data cleaning of column names with the help of the janitor package
 
-epi_r <- epi_r_raw %>% 
+recipes <- recipes_raw %>% 
   clean_names()
 
 
@@ -34,14 +34,14 @@ epi_r <- epi_r_raw %>%
 
 us_states <- c("alabama", "alaska", "arizona", "arkansas", "california", "colorado", "connecticut", "delaware", "florida", "georgia", "hawaii", "idaho", "illinois", "indiana", "iowa", "kansas", "kentucky", "louisiana", "maine", "maryland", "massachusetts", "michigan", "minnesota", "mississippi", "missouri", "montana", "nebraska", "nevada", "new_hampshire", "new_jersey", "new_mexico", "new_york", "north_carolina", "north_dakota", "ohio", "oklahoma", "oregon", "pennsylvania", "rhode_island", "south_carolina", "south_dakota", "tennessee", "texas", "utah", "vermont", "virginia", "washington", "west_virginia", "wisconsin"," wyoming")
 
-epi_r <- epi_r[, !(colnames(epi_r) %in% us_states)]
+recipes <- recipes[, !(colnames(recipes) %in% us_states)]
 
 
 # The same applies for the US cities which don't value to our analysis. In fact, we haven't figured out how to exploit such variables since no explanation has been given on Kaggle. Moreover, the recipes associated with such cities often don't belong to the specific location.
 
 us_cities <- c("aspen", "atlanta", "beverly_hills", "boston","brooklyn", "buffalo", "cambridge", "chicago", "columbus", "costa_mesa", "dallas", "denver", "healdsburg", "hollywood", "houston", "kansas_city", "lancaster", "las_vegas", "london", "los_angeles", "louisville", "miami", "minneapolis", "new_orleans", "pacific_palisades", "paris", "pasadena", "pittsburgh", "portland", "providence", "san_francisco", "santa_monica", "seattle", "st_louis", "washington_dc", "westwood", "yonkers")
 
-epi_r <- epi_r[, !(colnames(epi_r) %in% us_cities)]
+recipes <- recipes[, !(colnames(recipes) %in% us_cities)]
 
 
 # We also gathered information about different variables which could be grouped in different categories. Anyhow, we don't want to discard those variables since further investigations still have to be done.
@@ -71,13 +71,13 @@ nutritional_values <- c("calories", "protein", "fat", "sodium")
 ```{r}
 
 # Now let's see the structure of our data
-str(epi_r)
+str(recipes)
 
 # We have only numerical variables, but in reality just 4 variables could be considered as such. More in particular, "rating", "calories", "protein", "fat" and "sodium" could be considered as such. The other variables should be considered as a categorical variable since they allow only for 0 or 1 values.
 
 
 # Let's have a different look at the data with the summary function.
-epi_r %>% 
+recipes %>% 
   select(rating, calories, protein, fat, sodium) %>% 
   dfSummary(style = "grid")
 
@@ -90,7 +90,7 @@ epi_r %>%
 # Rating Barplot
 ```{r}
 
-epi_r %>% 
+recipes %>% 
   ggplot(aes(x=as.factor(rating), fill=as.factor(rating) )) +  
   geom_bar( ) +
   scale_fill_manual(values = c("red4", "red3", "orangered", "orange", "gold", "greenyellow", "green3", "green4") ) +
@@ -107,13 +107,13 @@ epi_r %>%
 # Calories - Protein - Fat - Sodium  Boxplots
 ```{r}
 
-epi_r_boxplot <-
-  epi_r %>% 
+recipes_boxplot <-
+  recipes %>% 
   pivot_longer(cols = c(calories, protein, fat, sodium),
                names_to = "nutrition",
                values_to = "n_value")
 
-epi_r_boxplot %>%
+recipes_boxplot %>%
   ggplot( aes(x=nutrition, y=n_value, fill=nutrition)) +
     geom_boxplot() +
     scale_fill_viridis(discrete = TRUE, alpha=0.6, option="A") +
@@ -127,10 +127,10 @@ epi_r_boxplot %>%
 
 # We notice that there are values above 10'000'000 which are clearly outliers. We must then discard those values in order to continue with a meaningful analysis. At this stage, from a visual point of view we cannot extract any relevant information.
 
-epi_r_boxplot <- epi_r_boxplot %>% 
+recipes_boxplot <- recipes_boxplot %>% 
   filter(n_value <= 2500)
 
-epi_r_boxplot %>%
+recipes_boxplot %>%
   ggplot( aes(x=nutrition, y=n_value, fill=nutrition)) +
     geom_boxplot() +
     scale_fill_viridis(discrete = TRUE, alpha=0.6, option="A") +
@@ -143,23 +143,22 @@ epi_r_boxplot %>%
 
 ```
 
-
 # Calories - Protein - Fat - Sodium  Histograms
 ```{r}
 
 # Calories histogram
 
-epi_r %>% 
+recipes %>% 
   filter(calories != "NA") %>% 
   ggplot(aes(x=calories)) +
   geom_histogram(binwidth=3, fill="red3", color="red3", alpha=0.9) +
   ggtitle("Calories Distribution") +
   theme(plot.title = element_text(size=15))
 
-epi_r_plot <- epi_r %>% 
+recipes_plot <- recipes %>% 
   filter(calories <= 10000)
 
-epi_r_plot %>% 
+recipes_plot %>% 
   ggplot(aes(x=calories)) +
   geom_histogram(binwidth=50, fill="red3", color="red3", alpha=0.9) +
   ggtitle("Calories Distribution") +

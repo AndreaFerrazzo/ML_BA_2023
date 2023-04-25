@@ -1,6 +1,6 @@
 # load the required packages
 packages <- c(
-  "here", "tidyverse", "summarytools", "janitor"
+  "here", "tidyverse", "summarytools", "janitor", "viridis"
 )
 purrr::walk(packages, library, character.only = TRUE)
 
