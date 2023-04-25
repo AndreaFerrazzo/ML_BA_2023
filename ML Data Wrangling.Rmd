@@ -4,7 +4,7 @@ output: html_document
 date: "2023-04-17"
 ---
 
-```{r setup, include=FALSE}
+```{r, include=FALSE}
 source(here("scripts/setup.R"))
 ```
 
@@ -26,7 +26,7 @@ epi_r_raw %>%
 
 # Let's do a quick data cleaning of column names with the help of the janitor package
 
-epi_r_raw <- epi_r %>% 
+epi_r <- epi_r_raw %>% 
   clean_names()
 
 
