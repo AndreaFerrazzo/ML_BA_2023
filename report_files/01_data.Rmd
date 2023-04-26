@@ -21,7 +21,7 @@ recipes <- recipes_raw%>%
 #Categories from all the variables
 
 TO DO:
-- Merge "father_s_day" and "fathers_day" same for mother's day and for new year's and st patrick and valentines day, vermout and vermouth
+- Merge "father_s_day" and "fathers_day" same for mother's day and for new year's and st patrick and valentines day, vermout and vermouth - DONE
 - Merge cranberry and cranberry_sauce
 - Check what leafy_green is and how many obs there is of it
 - Same for "legume"
@@ -90,11 +90,11 @@ cereal <- c("barley", "bran", "bulgur", "grains", "granola", "oat", "quinoa", "r
 
 carbs <- c("brown_rice", "chickpea", "cornmeal", "couscous", "hominy_cornmeal_masa", "orzo", "pasta", "potato", "rice", "semolina", "sweet_potato_yam", "wild_rice")
 
-fruits <- c("apple", "apricot", "asian_pear", "avocado", "banana", "berry", "blackberry", "blueberry", "cantaloupe", "cherry", "citrus", "coconut", "cranberry", "cranberry_sauce", "currant", "dried_fruit", "fig", "fruit", "grape", "grapefruit", "guava", "honeydew", "kiwi", "kumquat", "lemon", "lime", "lingonberry", "lychee", "mango", "melon", "nectarine", "olive", "orange", "papaya", "passion_fruit", "peach", "pear", "persimmon", "pineapple", "plantain", "plum", "pomegranate", "prune", "quince", "raisin", "raspberry", "rhubarb", "strawberry", "tamarind", "tangerine", "tropical_fruit", "watermelon")
+fruits <- c("apple", "apricot", "asian_pear", "avocado", "banana", "berry", "blackberry", "blueberry", "cantaloupe", "cherry", "citrus", "coconut", "cranberry", "currant", "dried_fruit", "fig", "fruit", "grape", "grapefruit", "guava", "honeydew", "kiwi", "kumquat", "lemon", "lime", "lingonberry", "lychee", "mango", "melon", "nectarine", "olive", "orange", "papaya", "passion_fruit", "peach", "pear", "persimmon", "pineapple", "plantain", "plum", "pomegranate", "prune", "quince", "raisin", "raspberry", "rhubarb", "strawberry", "tamarind", "tangerine", "tropical_fruit", "watermelon")
 
 drink_no_alcohol <- c("apple_juice", "fruit_juice", "iced_tea", "lemon_juice", "lime_juice", "orange_juice", "pomegranate_juice", "tea")
 
-dessert <- c("biscuit", "brownie", "butterscotch_caramel", "cake", "candy", "chocolate", "cobbler_crumble", "cookie", "cookies", "crepe", "cupcake", "honey", "jam_or_jelly", "maple_syrup", "marshmallow", "muffin","pancake", "pastry", "pie", "smoothie", "sorbet", "souffle_meringue", "waffle")
+dessert <- c("biscuit", "brownie", "butterscotch_caramel", "cake", "candy", "chocolate", "cobbler_crumble", "cookie", "cookies", "cranberry_sauce", "crepe", "cupcake", "honey", "jam_or_jelly", "maple_syrup", "marshmallow", "muffin","pancake", "pastry", "pie", "smoothie", "sorbet", "souffle_meringue", "waffle")
 
 cheese <- c("blue_cheese", "brie", "cheddar", "cheese", "cottage_cheese", "cream_cheese", "feta", "fontina", "goat_cheese", "gouda", "monterey_jack", "mozzarella", "parmesan", "ricotta", "swiss_cheese")
 
@@ -103,9 +103,8 @@ dairy <- c("butter", "buttermilk", "custard", "dairy", "egg_nog", "ice_cream", "
 spices <- c("caraway", "cardamom", "chili", "cinnamon", "clove", "cumin", "curry", "hot_pepper", "jalapeno", "marinade", "nutmeg", "paprika", "pepper", "poppy", "saffron", "sesame", "sesame_oil", "soy_sauce", "spice", "vanilla", "wasabi")
 
 #top level categories
-meats <- c(beef_meat, pork_meat, lamb_meat, meat_with_wings, meat_various)
-# fish <- list(stuff_in_the_water)
-# vegetables_list <- list(vegetables)
+meats_all <- c(beef_meat, pork_meat, lamb_meat, meat_with_wings, meat_various)
+
 all_ingredients <- c(vegetables, pork_meat, lamb_meat, beef_meat, meat_with_wings, meat_various, stuff_in_the_water, herbs, nuts, cereal, carbs, fruits, drink_no_alcohol, dessert, cheese, dairy, spices)
 
 #stuff which isn't ingredients and that we need to sort
@@ -114,7 +113,7 @@ to_sort <- c("bread", "breadcrumbs", "brine", "burrito", "casserole_gratin", "co
 
 
 #TEMPORARY TO MAKE VARIABLE SELECTION EASIER
-REMOVED x_wasteless, x22_minute_meals and x3_ingredient_recipes because few rows --> 1, 17 and 27 respectively
+put that in wtf: x_wasteless, x22_minute_meals and x3_ingredient_recipes because few rows --> 1, 17 and 27 respectively
 
 ```{r}
 #whole list of stuff to remove for now to be able to sort 
@@ -126,9 +125,9 @@ recipes_to_filter <- recipes[, !(colnames(recipes) %in% to_remove_temp)]
 #creates a tibble with one column with all the colnames to be able to sort ingredients
 names <- recipes_to_filter %>% colnames() %>% as_tibble()
 
-recipes %>% 
-  select(x_cakeweek) %>% 
-  filter(x_cakeweek==1)
+# recipes %>% 
+#   select(iceland)
+  # filter(x_cakeweek==1)
 
 #checked if some values in our categories weren't columns in recipes --> 19 of them weren't so I deleted them from the vectors
 checking <- tibble(to_remove_temp[!to_remove_temp %in% colnames(recipes)])

@@ -1,0 +1,57 @@
+---
+title: "Jordan Test"
+output: html_document
+date: "2023-04-20"
+---
+
+```{r echo=FALSE, message=FALSE}
+source(here::here("scripts/setup.R"))
+```
+
+#EDA
+
+```{r Feature Engineering}
+#Creating a new dataframe with only the recipe and the ingredients
+ingredients_df <- recipes %>% 
+  select(ID, title, all_of(all_ingredients))
+
+ingredients_df <- ingredients_df %>% 
+  mutate(total_ingredients = rowSums(.[,-(1:2)]), total_meat = rowSums(select(., all_of(meats_all))), total_vegetables = rowSums(select(., all_of(vegetables)))) %>% 
+  select(ID, title, total_ingredients, total_meat, total_vegetables, everything())
+
+#checking some stuff about the new ingredients table
+ingredients_df %>% 
+  select(ID, title, total_ingredients) %>% 
+  ggplot(aes(x=total_ingredients)) + 
+  geom_histogram(binwidth=1) + geom_vline(aes(xintercept=mean(total_ingredients)),color="blue", linetype="dashed", size=1)
+```
+
+```{r}
+#checking the meaning of those "general" categories and how they are used
+meat_check <- recipes %>% 
+  select(meat, all_of(meats_all))
+
+#there is a total of 5232 recipes which contain some type of meat
+any_meat <- meat_check %>% 
+  filter_if(is.numeric, any_vars(. == 1))
+
+#out of those, 285 recipes where the "meat" category is used
+meat_1 <- meat_check%>% 
+  filter(meat == 1) %>% 
+  select(-meat)
+
+
+#this allows us to see that in 19 recipes, there is no detailed meat that is specified, the only info we have is that it contains meat
+recipes %>%
+  select(meat, all_of(meats_all)) %>%
+  filter(meat == 1) %>% 
+  mutate(sum_meats = rowSums(.)) %>% 
+  filter(sum_meats == 1)
+#same code to do what I did above
+meat_1 %>%
+  filter_if(is.numeric, all_vars(. == 0))
+
+
+
+```
+
