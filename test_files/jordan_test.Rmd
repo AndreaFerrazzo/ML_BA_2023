@@ -139,3 +139,14 @@ ingredients_df %>%
   ggplot(aes(x=total_ingredients)) + 
   geom_histogram(binwidth=1) + geom_vline(aes(xintercept=mean(total_ingredients)),color="blue", linetype="dashed", size=1)
 ```
+
+```{r}
+recipes %>%
+  select(meat, all_of(meats)) %>% 
+  filter(dri == 0 & meat == 1)
+
+recipes %>%
+  select(meat, all_of(meats)) %>% 
+  filter(dri == 0 & meat == 1)
+```
+
