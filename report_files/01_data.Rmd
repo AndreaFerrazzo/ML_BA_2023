@@ -22,7 +22,7 @@ recipes <- recipes_raw%>%
 
 TO DO:
 - Merge "father_s_day" and "fathers_day" same for mother's day and for new year's and st patrick and valentines day, vermout and vermouth - DONE
-- Merge cranberry and cranberry_sauce
+- Merge cranberry and cranberry_sauce - DONE
 - Check what leafy_green is and how many obs there is of it
 - Same for "legume"
 - Decide if we group beans together or leave them in vegetables - DONE
@@ -35,6 +35,19 @@ TO DO:
 - check if dorie_greenspa column exist or if it was just a typo without the N
 - check how many observations with phyllo_puff_pastry_dough
 - do we separate fish and seafood?
+
+
+to CHECK:
+- meat DONE
+- legume - DONE
+- drink and drinks
+- fish or seafood - DONE
+- herb - DONE
+- nut - DONE
+- fruit - DONE
+- cheese - DONE
+- dairy - DONE
+- spice - DONE
 
 ```{r Creating Variable Categories}
 us_states <- c("alabama", "alaska", "arizona", "california", "colorado", "connecticut", "florida", "georgia", "hawaii", "idaho", "illinois", "indiana", "iowa", "kansas", "kentucky", "louisiana", "maine", "maryland", "massachusetts", "michigan", "minnesota", "mississippi", "missouri", "nebraska", "new_hampshire", "new_jersey", "new_mexico", "new_york", "north_carolina", "ohio", "oklahoma", "oregon", "pennsylvania", "rhode_island", "south_carolina", "tennessee", "texas", "utah", "vermont", "virginia", "washington", "west_virginia", "wisconsin")
@@ -68,7 +81,7 @@ diet_preferences <- c("fat_free", "kosher","kosher_for_passover", "low_carb", "l
 #ingredients
 #low level categories
 
-vegetables <- c("artichoke", "arugula", "asparagus", "butternut_squash", "bean", "beet", "bell_pepper", "bok_choy", "broccoli", "broccoli_rabe", "brussel_sprout", "cabbage", "capers", "carrot", "cauliflower", "celery", "chard", "chile_pepper", "collard_greens", "corn", "cucumber", "eggplant", "endive", "escarole", "fennel", "garlic", "ginger", "green_bean", "green_onion_scallion", "horseradish", "jerusalem_artichoke", "jicama", "kale", "leafy_green", "leek", "legume", "lentil", "lettuce", "lima_bean", "mushroom", "mustard_greens", "okra", "onion", "parsnip", "pea", "pickles", "poblano", "pumpkin", "radicchio", "radish", "root_vegetable", "rutabaga", "salad", "shallot", "soy", "spinach", "squash", "sugar_snap_pea", "tapioca", "tomatillo", "tomato", "turnip", "watercress", "yellow_squash", "yuca", "zucchini")
+vegetables <- c("artichoke", "arugula", "asparagus", "butternut_squash", "bean", "beet", "bell_pepper", "bok_choy", "broccoli", "broccoli_rabe", "brussel_sprout", "cabbage", "capers", "carrot", "cauliflower", "celery", "chard", "chile_pepper", "collard_greens", "corn", "cucumber", "eggplant", "endive", "escarole", "fennel", "garlic", "ginger", "green_bean", "green_onion_scallion", "horseradish", "jerusalem_artichoke", "jicama", "kale", "leafy_green", "leek", "lentil", "lettuce", "lima_bean", "mushroom", "mustard_greens", "okra", "onion", "parsnip", "pea", "pickles", "poblano", "pumpkin", "radicchio", "radish", "root_vegetable", "rutabaga", "salad", "shallot", "soy", "spinach", "squash", "sugar_snap_pea", "tapioca", "tomatillo", "tomato", "turnip", "watercress", "yellow_squash", "yuca", "zucchini")
 
 pork_meat <- c("bacon", "ham", "pork", "pork_chop", "pork_rib", "pork_tenderloin", "prosciutto")
 
@@ -80,32 +93,32 @@ meat_with_wings <- c("chicken", "duck", "goose", "poultry", "poultry_sausage", "
 
 meat_various <- c("meatball", "meatloaf", "rabbit", "sausage", "steak", "venison")
   
-stuff_in_the_water <- c("anchovy", "bass", "caviar", "clam", "cod", "crab", "fish", "halibut", "lobster", "mussel", "octopus", "oyster", "salmon", "sardine", "scallop", "seafood", "shellfish", "shrimp", "snapper", "squid", "swordfish", "tilapia", "trout", "tuna")
+stuff_in_the_water <- c("anchovy", "bass", "caviar", "clam", "cod", "crab", "halibut", "lobster", "mussel", "octopus", "oyster", "salmon", "sardine", "scallop", "shellfish", "shrimp", "snapper", "squid", "swordfish", "tilapia", "trout", "tuna")
 
-herbs <- c("anise", "arugula", "basil", "chive", "cilantro", "coriander", "dill", "herb", "lemongrass", "mint", "oregano", "parsley", "rosemary", "sage", "tarragon", "thyme")
+herbs <- c("anise", "arugula", "basil", "chive", "cilantro", "coriander", "dill", "lemongrass", "mint", "oregano", "parsley", "rosemary", "sage", "tarragon", "thyme")
 
-nuts <- c("almond", "cashew", "chestnut", "hazelnut", "macadamia_nut", "nut", "peanut", "pecan", "pine_nut", "pistachio", "tree_nut", "walnut")
+nuts <- c("almond", "cashew", "chestnut", "hazelnut", "macadamia_nut", "peanut", "pecan", "pine_nut", "pistachio", "tree_nut", "walnut")
 
-cereal <- c("barley", "bran", "bulgur", "grains", "granola", "oat", "quinoa", "rye", "whole_wheat")
+cereals <- c("barley", "bran", "bulgur", "grains", "granola", "oat", "quinoa", "rye", "whole_wheat")
 
 carbs <- c("brown_rice", "chickpea", "cornmeal", "couscous", "hominy_cornmeal_masa", "orzo", "pasta", "potato", "rice", "semolina", "sweet_potato_yam", "wild_rice")
 
-fruits <- c("apple", "apricot", "asian_pear", "avocado", "banana", "berry", "blackberry", "blueberry", "cantaloupe", "cherry", "citrus", "coconut", "cranberry", "currant", "dried_fruit", "fig", "fruit", "grape", "grapefruit", "guava", "honeydew", "kiwi", "kumquat", "lemon", "lime", "lingonberry", "lychee", "mango", "melon", "nectarine", "olive", "orange", "papaya", "passion_fruit", "peach", "pear", "persimmon", "pineapple", "plantain", "plum", "pomegranate", "prune", "quince", "raisin", "raspberry", "rhubarb", "strawberry", "tamarind", "tangerine", "tropical_fruit", "watermelon")
+fruits <- c("apple", "apricot", "asian_pear", "avocado", "banana", "berry", "blackberry", "blueberry", "cantaloupe", "cherry", "citrus", "coconut", "cranberry", "currant", "dried_fruit", "fig", "grape", "grapefruit", "guava", "honeydew", "kiwi", "kumquat", "lemon", "lime", "lingonberry", "lychee", "mango", "melon", "nectarine", "olive", "orange", "papaya", "passion_fruit", "peach", "pear", "persimmon", "pineapple", "plantain", "plum", "pomegranate", "prune", "quince", "raisin", "raspberry", "rhubarb", "strawberry", "tamarind", "tangerine", "tropical_fruit", "watermelon")
 
 drink_no_alcohol <- c("apple_juice", "fruit_juice", "iced_tea", "lemon_juice", "lime_juice", "orange_juice", "pomegranate_juice", "tea")
 
 dessert <- c("biscuit", "brownie", "butterscotch_caramel", "cake", "candy", "chocolate", "cobbler_crumble", "cookie", "cookies", "cranberry_sauce", "crepe", "cupcake", "honey", "jam_or_jelly", "maple_syrup", "marshmallow", "muffin","pancake", "pastry", "pie", "smoothie", "sorbet", "souffle_meringue", "waffle")
 
-cheese <- c("blue_cheese", "brie", "cheddar", "cheese", "cottage_cheese", "cream_cheese", "feta", "fontina", "goat_cheese", "gouda", "monterey_jack", "mozzarella", "parmesan", "ricotta", "swiss_cheese")
+cheeses <- c("blue_cheese", "brie", "cheddar", "cottage_cheese", "cream_cheese", "feta", "fontina", "goat_cheese", "gouda", "monterey_jack", "mozzarella", "parmesan", "ricotta", "swiss_cheese")
 
-dairy <- c("butter", "buttermilk", "custard", "dairy", "egg_nog", "ice_cream", "marscarpone", "milk_cream", "sour_cream", "yogurt")
+dairies <- c("butter", "buttermilk", "custard", "egg_nog", "ice_cream", "marscarpone", "milk_cream", "sour_cream", "yogurt")
 
-spices <- c("caraway", "cardamom", "chili", "cinnamon", "clove", "cumin", "curry", "hot_pepper", "jalapeno", "marinade", "nutmeg", "paprika", "pepper", "poppy", "saffron", "sesame", "sesame_oil", "soy_sauce", "spice", "vanilla", "wasabi")
+spices <- c("caraway", "cardamom", "chili", "cinnamon", "clove", "cumin", "curry", "hot_pepper", "jalapeno", "marinade", "nutmeg", "paprika", "pepper", "poppy", "saffron", "sesame", "sesame_oil", "soy_sauce", "vanilla", "wasabi")
 
 #top level categories
 meats_all <- c(beef_meat, pork_meat, lamb_meat, meat_with_wings, meat_various)
 
-all_ingredients <- c(vegetables, pork_meat, lamb_meat, beef_meat, meat_with_wings, meat_various, stuff_in_the_water, herbs, nuts, cereal, carbs, fruits, drink_no_alcohol, dessert, cheese, dairy, spices)
+all_ingredients <- c(vegetables, pork_meat, lamb_meat, beef_meat, meat_with_wings, meat_various, stuff_in_the_water, herbs, nuts, cereals, carbs, fruits, drink_no_alcohol, dessert, cheeses, dairies, spices)
 
 #stuff which isn't ingredients and that we need to sort
 to_sort <- c("bread", "breadcrumbs", "brine", "burrito", "casserole_gratin", "coffee", "egg", "flat_bread", "hummus", "iced_coffee", "lasagna", "macaroni_and_cheese", "mayonnaise", "mustard", "noodle", "oatmeal", "omelet",  "peanut_butter", "pizza", "pot_pie", "potato_salad", "quiche", "rose", "salad_dressing", "salsa", "sandwich", "sauce", "seed", "soup_stew", "stew", "stock", "stuffing_dressing", "taco", "tart", "tofu", "tortillas", "vinegar", "frittata", "molasses", "sourdough", "fritter", "phyllo_puff_pastry_dough", "dip")
