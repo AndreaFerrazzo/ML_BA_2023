@@ -1,0 +1,223 @@
+---
+title: "Jordan Test"
+output: html_document
+date: "2023-04-20"
+---
+
+```{r echo=FALSE, message=FALSE}
+source(here::here("scripts/setup.R"))
+```
+
+#EDA
+
+```{r Feature Engineering}
+#Creating a new dataframe with only the recipe and the ingredients
+ingredients_df <- recipes %>% 
+  select(ID, title, all_of(all_ingredients))
+
+ingredients_df <- ingredients_df %>% 
+  mutate(total_ingredients = rowSums(.[,-(1:2)]), total_meat = rowSums(select(., all_of(meats_all))), total_vegetables = rowSums(select(., all_of(vegetables)))) %>% 
+  select(ID, title, total_ingredients, total_meat, total_vegetables, everything())
+
+#checking some stuff about the new ingredients table
+ingredients_df %>% 
+  select(ID, title, total_ingredients) %>% 
+  ggplot(aes(x=total_ingredients)) + 
+  geom_histogram(binwidth=1) + geom_vline(aes(xintercept=mean(total_ingredients)),color="blue", linetype="dashed", size=1)
+```
+#checking for "general" ingredient columns
+```{r Meat check}
+#checking the meaning of those "general" categories and how they are used
+meat_check <- recipes %>% 
+  select(meat, all_of(meats_all))
+
+#there is a total of 5232 recipes which contain some type of meat
+any_meat <- meat_check %>% 
+  filter_if(is.numeric, any_vars(. == 1))
+
+#out of those, 285 recipes where the "meat" category is used
+meat_1 <- meat_check%>% 
+  filter(meat == 1) %>% 
+  select(-meat)
+
+
+#this allows us to see that in 19 recipes, there is no detailed meat that is specified, the only info we have is that it contains meat
+recipes %>%
+  select(meat, all_of(meats_all)) %>%
+  filter(meat == 1) %>% 
+  mutate(sum_meats = rowSums(.)) %>% 
+  filter(sum_meats == 1)
+#same code to do what I did above
+meat_1 %>%
+  filter_if(is.numeric, all_vars(. == 0))
+
+#So by not taking into account "meat" we would only lose 19 observations, which aren't specific anyway
+```
+```{r Veggie Check}
+veggie_check <- recipes %>% 
+  select(legume, all_of(vegetables))
+
+#10962 obs with some vegetables in them
+veggie_check %>% 
+  filter_if(is.numeric, any_vars(. == 1))
+
+#there are 69 obs with legume = 1
+legume_1 <- veggie_check %>% 
+  filter(legume == 1) %>% 
+  select(-legume)
+
+legume_1 %>%
+  filter_if(is.numeric, all_vars(. == 0))
+# only 4 observations for which legume = 1 and not a single vegetable is specified
+```
+
+```{r Fish check}
+variable_check <- function(to_check, vec){
+  #10962 obs with some vegetables in them
+  check <- recipes %>% 
+    select(to_check, all_of(vec)) %>% 
+    filter_if(is.numeric, any_vars(. == 1))
+  
+  #there are 69 obs with legume = 1
+  is_1 <- check %>% 
+    filter(to_check == 1) %>% 
+    select(-to_check)
+  
+  # only 4 observations for which legume = 1 and not a single vegetable is specified
+  is_1 %>%
+    filter_if(is.numeric, all_vars(. == 0))
+}
+
+variable_check("fish", stuff_in_the_water)
+
+#2437 obs with some fish in them
+check <- recipes %>% 
+  select(fish, seafood, all_of(stuff_in_the_water)) %>% 
+  filter_if(is.numeric, any_vars(. == 1))
+
+#there are 936 obs with fish = 1
+is_1 <- check %>% 
+  filter(fish == 1 | seafood == 1) %>% 
+  select(-fish, -seafood)
+
+# 455 observations for which fish or seafood = 1 and no specific ingredient is there
+is_1 %>%
+  filter_if(is.numeric, all_vars(. == 0))
+```
+```{r Herb check}
+#5009 obs with some herb in them
+check <- recipes %>% 
+  select(herb, all_of(herbs)) %>% 
+  filter_if(is.numeric, any_vars(. == 1))
+
+#there are 1681 obs with herb = 1
+is_1 <- check %>% 
+  filter(herb == 1) %>% 
+  select(-herb)
+
+# 1107 observations for which herb = 1 and no specific ingredient is there
+is_1 %>%
+  filter_if(is.numeric, all_vars(. == 0))
+```
+```{r Nut check}
+#2299 obs with some nut in them
+check <- recipes %>% 
+  select(nut, all_of(nuts)) %>% 
+  filter_if(is.numeric, any_vars(. == 1))
+
+#there are 905 obs with nut = 1
+is_1 <- check %>% 
+  filter(nut == 1) %>% 
+  select(-nut)
+
+# 181 observations for which nut = 1 and no specific ingredient is there
+is_1 %>%
+  filter_if(is.numeric, all_vars(. == 0))
+```
+```{r Fruit Check}
+#7296 obs with some fruit in them
+check <- recipes %>% 
+  select(fruit, all_of(fruits)) %>% 
+  filter_if(is.numeric, any_vars(. == 1))
+
+#there are 1958 obs with fruit = 1
+is_1 <- check %>% 
+  filter(fruit == 1) %>% 
+  select(-fruit)
+
+# 97 observations for which fruit = 1 and no specific ingredient is there
+is_1 %>%
+  filter_if(is.numeric, all_vars(. == 0))
+```
+```{r Cheese check}
+#3051 obs with some cheese in them
+check <- recipes %>%
+  select(cheese, all_of(cheeses)) %>% 
+  filter_if(is.numeric, any_vars(. == 1))
+
+#there are 1351 obs with cheese = 1
+is_1 <- check %>% 
+  filter(cheese == 1) %>% 
+  select(-cheese)
+
+# 685 observations for which fruit = 1 and no specific ingredient is there
+is_1 %>%
+  filter_if(is.numeric, all_vars(. == 0))
+```
+```{r Dairy check}
+#4050 obs with some dairy in them
+check <- recipes %>%
+  select(dairy, all_of(dairies)) %>% 
+  filter_if(is.numeric, any_vars(. == 1))
+
+#there are 1496 obs with dairy = 1
+is_1 <- check %>% 
+  filter(dairy == 1) %>% 
+  select(-dairy)
+
+# 997 observations for which dairy = 1 and no specific ingredient is there
+is_1 %>%
+  filter_if(is.numeric, all_vars(. == 0))
+```
+```{r Spice check}
+#3530 obs with some spice in them
+check <- recipes %>%
+  select(spice, all_of(spices)) %>% 
+  filter_if(is.numeric, any_vars(. == 1))
+
+#there are 680 obs with spice = 1
+is_1 <- check %>%
+  filter(spice == 1) %>% 
+  select(-spice)
+
+# 455 observations for which spice = 1 and no specific ingredient is there
+is_1 %>%
+  filter_if(is.numeric, all_vars(. == 0))
+```
+
+```{r Drink and Drinks check}
+#first checking if we can merge drink and drinks --> 1094 entries with either of those as 1
+recipes %>% filter(drink == 1 | drinks == 1)
+
+recipes %>% filter(drink == 1) #1087
+recipes %>% filter(drinks == 1) #11
+
+recipes %>% filter(drink == 1 & drinks == 1) #4
+
+#from this we can see that it would make sense to merge the two columns
+recipes <- recipes %>% 
+  mutate(drink = ifelse(drink == 1 | drinks == 1, 1, 0)) %>% 
+  select(-drinks)
+
+#based on the fact that drinks are both alcoholic and alcohol free, it doesn't really make sense to compare it like for the other variables --> we'll just keep "drink"
+```
+
+#Checking which ingredients are present most often
+```{r}
+#it would be very useful to create a column in recipe in which we have the categories binary to be able to filter more easily
+categories <- recipes %>%
+  select(ID, dairy, all_of(dairies)) %>% 
+  filter_if(is.numeric, any_vars(. == 1)) %>% 
+  mutate(DAIRIES = 1)
+```
+
