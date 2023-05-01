@@ -1,43 +1,24 @@
 ---
-title: "Data Wrangling"
+title: "Data"
 output: html_document
-date: "2023-04-17"
+date: "2023-04-20"
 ---
 
 ```{r echo=FALSE, message=FALSE}
-# source(here::here("scripts/setup.R"))
+source(here::here("scripts/setup.R"))
 ```
 
 ```{r Loading and early cleaning}
-
 #loading the data
-# recipes_raw <- read.csv(here("data/epi_r.csv"))
+recipes_raw <- read.csv(here("data/epi_r.csv"))
 
-recipes_raw <- read_csv("data/epi_r.csv")
-
-recipes <- recipes_raw %>% 
+recipes <- recipes_raw%>% 
   clean_names() %>% 
   mutate(ID = 1:nrow(.)) %>%
   select(ID, everything())
-
-cat_counts <- recipes_raw %>% 
-  select(-rating, -calories, -protein, -fat, -sodium) %>% 
-  summarise_all(~ sum(. == 1, na.rm = TRUE))
-
-cat_counts <- cat_counts %>%
-  pivot_longer(everything(), names_to = "variable", values_to = "count") %>%
-  arrange(desc(count)) %>%
-  print()
-
-
-discard_var <- cat_counts %>% 
-  filter(count <= 10)
-  
-discard_vec <- discard_var[["variable"]]
-
 ```
 
-#Categories of columns
+#Categories from all the variables
 
 TO DO:
 - Merge "father_s_day" and "fathers_day" same for mother's day and for new year's and st patrick and valentines day, vermout and vermouth
@@ -56,38 +37,38 @@ TO DO:
 - do we separate fish and seafood?
 
 ```{r Creating Variable Categories}
-
 us_states <- c("alabama", "alaska", "arizona", "arkansas", "california", "colorado", "connecticut", "delaware", "florida", "georgia", "hawaii", "idaho", "illinois", "indiana", "iowa", "kansas", "kentucky", "louisiana", "maine", "maryland", "massachusetts", "michigan", "minnesota", "mississippi", "missouri", "montana", "nebraska", "nevada", "new_hampshire", "new_jersey", "new_mexico", "new_york", "north_carolina", "north_dakota", "ohio", "oklahoma", "oregon", "pennsylvania", "rhode_island", "south_carolina", "south_dakota", "tennessee", "texas", "utah", "vermont", "virginia", "washington", "west_virginia", "wisconsin"," wyoming")
 
 us_cities <- c("aspen", "atlanta", "beverly_hills", "boston","brooklyn", "buffalo", "cambridge", "chicago", "columbus", "costa_mesa", "dallas", "denver", "healdsburg", "hollywood", "houston", "kansas_city", "lancaster", "las_vegas", "london", "los_angeles", "louisville", "miami", "minneapolis", "new_orleans", "pacific_palisades", "paris", "pasadena", "pittsburgh", "portland", "providence", "san_francisco", "santa_monica", "seattle", "st_louis", "washington_dc", "washington_d_c", "westwood", "yonkers")
 
 countries <- c("australia", "bulgaria", "canada", "chile", "cuba", "dominican_republic", "egypt", "england", "france", "germany", "guam", "haiti", "ireland", "island", "israel", "italy", "jamaica", "japan", "mexico", "mezcal", "peru", "philippines", "spain", "switzerland")
 
-alcohol <- c("alcoholic", "amaretto", "beer", "bitters", "bourbon", "brandy", "calvados", "campari", "chambord", "champagne", "chartreuse", "cocktail", "cognac_armagnac", "creme_de_cacao", "digestif", "eau_de_vie", "fortified_wine", "frangelico", "gin", "grand_marnier", "grappa", "kahlua", "kirsch", "liqueur", "margarita", "marsala", "martini", "midori", "pernod", "port", "punch", "red_wine", "rum", "sake", "sangria", "scotch", "sherry", "sparkling_wine", "spirit", "spritzer", "tequila", "triple_sec", "vermout", "vermouth", "vodka", "whiskey", "white_wine", "wine")
+alcohol <- c("alcoholic", "amaretto", "beer", "bitters", "bourbon", "brandy", "calvados", "campari", "chambord", "champagne", "chartreuse", "cocktail", "cognac_armagnac", "creme_de_cacao", "digestif", "eau_de_vie", "fortified_wine", "frangelico", "gin", "grand_marnier", "grappa", "kahlua", "kirsch", "liqueur", "long_beach", "margarita", "marsala", "martini", "midori", "pernod", "port", "punch", "red_wine", "rum", "sake", "sangria", "scotch", "sherry", "sparkling_wine", "spirit", "spritzer", "tequila", "triple_sec", "vermout", "vermouth", "vodka", "whiskey", "white_wine", "wine")
 
 wtf <- c("bon_appetit", "bon_app_tit", "condiment_spread", "cr_me_de_cacao", "epi_ushg", "flaming_hot_summer", "frankenrecipe", "harpercollins", "house_garden", "hum...", "kitcken_olympics", "no_meat_no_problem", "parade", "sandwich_theory", "self", "shower", "summ...", "testes_improved", "windsor", "weelicious")
 
 chef <- c("anthony_bourdain", "dorie_greenspa", "dorie_greenspan", "emeril_lagasse", "nancy_silverton", "suzanne_goin")
 
-interesting <- c("dairy_free", "entertaining", "epi_loves_the_microwave", "fall", "friendsgiving", "game", "gourmet", "healthy", "high_fiber", "hors_doeuvre", "hot_drink", "kid_friendly", "kidney_friendly", "low_cal", "low_cholesterol", "microwave", "no_cook", "one_pot_meal", "oscars", "paleo", "peanut_free", "pescatarian", "poker_game_night", "potluck", "quick_easy", "sugar_conscious", "vegetable", "wheat_gluten_free", "winter", "cookbooks", "leftovers")
+interesting <- c("dairy_free", "entertaining", "epi_loves_the_microwave", "friendsgiving", "game", "gourmet", "healthy", "high_fiber", "hors_doeuvre", "hot_drink", "kid_friendly", "kidney_friendly", "low_cal", "low_cholesterol", "microwave", "no_cook", "one_pot_meal", "oscars", "paleo", "peanut_free", "pescatarian", "poker_game_night", "potluck", "quick_easy", "sugar_conscious", "vegetable", "wheat_gluten_free", "winter", "cookbooks", "leftovers")
+
+season <- c("winter", "spring", "summer", "fall")
 
 celebrations <- c("anniversary", "back_to_school", "bastille_day", "birthday", "christmas", "christmas_eve", "cinco_de_mayo", "date", "diwali", "easter", "engagement_party", "family_reunion", "fathers_day", "father_s_day", "fourth_of_july", "graduation", "halloween", "hanukkah", "kentucky_derby", "kwanzaa", "labor_day", "lunar_new_year", "mardi_gras", "mothers_day", "mother_s_day", "new_years_day", "new_year_s_day", "new_year_s_eve", "new_years_eve", "oktoberfest", "party", "passover", "persian_new_year", "purim", "ramadan", "rosh_hashanah_yom_kippur", "shavuot", "st_patricks_day", "st_patrick_s_day", "sukkot", "super_bowl", "thanksgiving", "valentines_day", "valentine_s_day", "wedding")
 
 tools <- c("coffee_grinder", "double_boiler", "food_processor", "ice_cream_machine", "juicer", "mandoline", "mixer", "mortar_and_pestle", "pasta_maker", "ramekin", "skewer", "slow_cooker", "smoker", "wok", "blender", "candy_thermometer", "pressure_cooker")
 
-cooking_techniques <- c("raw", "saute", "fry", "stir_fry", "boil", "broil", "bake", "braise", "chill", "deep_fry")
+cooking_techniques <- c("raw", "saute", "freeze_chill", "fry", "stir_fry", "simmer", "boil", "broil", "bake", "braise", "chill", "deep_fry")
 
 nutritional_values <- c("calories", "protein", "fat", "sodium")
 
-repice_type <- c("aperitif", "appetizer", "backyard_bbq", "breakfast", "brunch", "dessert", "dinner", "side", "snack")
+repice_type <- c("aperitif", "appetizer", "backyard_bbq", "breakfast", "brunch", "dessert", "dinner", "lunch", "side", "snack")
 
-diet_preferences <- c("kosher","kosher_for_passover", "low_carb", "low_fat", "low_sodium", "low_sugar", "low_no_sugar", "non_alcoholic", "no_sugar_added", "organic", "soy_free", "tree_nut_free", "vegan", "vegetarian", "fat_free")
+diet_preferences <- c("fat_free", "kosher","kosher_for_passover", "low_carb", "low_fat", "low_sodium", "low_sugar", "low_no_sugar", "non_alcoholic", "no_sugar_added", "organic", "soy_free", "tree_nut_free", "vegan", "vegetarian")
 
-
-
+#ingredients
 #low level categories
 
-vegetables <- c("artichoke", "arugula", "asparagus", "butternut_squash", "bean", "beet", "bell_pepper", "bok_choy", "broccoli", "broccoli_rabe", "brussel_sprout", "cabbage", "capers", "carrot", "cauliflower", "celery", "chard", "chile_pepper", "collard_greens", "corn", "cucumber", "eggplant", "endive", "escarole", "fennel", "garlic", "ginger", "green_bean", "green_onion_scallion", "horseradish", "jerusalem_artichoke", "jicama", "kale", "leafy_green", "leek", "legume", "lentil", "lettuce", "lima_bean", "mushroom", "mustard_greens", "okra", "onion", "parsnip", "pea", "pickles", "poblano", "pumpkin", "radicchio", "radish", "root_vegetable", "rutabaga", "salad", "shallot", "soy", "spinach", "squash", "sugar_snap_pea", "tomatillo", "tomato", "turnip", "watercress", "yellow_squash", "zucchini")
+vegetables <- c("artichoke", "arugula", "asparagus", "butternut_squash", "bean", "beet", "bell_pepper", "bok_choy", "broccoli", "broccoli_rabe", "brussel_sprout", "cabbage", "capers", "carrot", "cauliflower", "celery", "chard", "chile_pepper", "collard_greens", "corn", "cucumber", "eggplant", "endive", "escarole", "fennel", "garlic", "ginger", "green_bean", "green_onion_scallion", "horseradish", "jerusalem_artichoke", "jicama", "kale", "leafy_green", "leek", "legume", "lentil", "lettuce", "lima_bean", "mushroom", "mustard_greens", "okra", "onion", "parsnip", "pea", "pickles", "poblano", "pumpkin", "radicchio", "radish", "root_vegetable", "rutabaga", "salad", "shallot", "soy", "spinach", "squash", "sugar_snap_pea", "tapioca", "tomatillo", "tomato", "turnip", "watercress", "yellow_squash", "yuca", "zucchini")
 
 pork_meat <- c("bacon", "ham", "pork", "pork_chop", "pork_rib", "pork_tenderloin", "prosciutto")
 
@@ -96,6 +77,8 @@ lamb_meat <- c("ground_lamb", "lamb", "lamb_chop", "lamb_shank", "rack_of_lamb")
 beef_meat <- c("beef", "beef_rib", "beef_shank", "beef_tenderloin", "brisket", "ground_beef", "hamburger", "veal")
 
 meat_with_wings <- c("chicken", "duck", "goose", "poultry", "poultry_sausage", "quail", "turkey")
+
+meat_various <- c("meatball", "meatloaf", "rabbit", "sausage", "steak", "venison")
   
 stuff_in_the_water <- c("anchovy", "bass", "caviar", "clam", "cod", "crab", "fish", "halibut", "lobster", "mussel", "octopus", "oyster", "salmon", "sardine", "scallop", "seafood", "shellfish", "shrimp", "snapper", "squid", "swordfish", "tilapia", "trout", "tuna")
 
@@ -111,67 +94,35 @@ fruits <- c("apple", "apricot", "asian_pear", "avocado", "banana", "berry", "bla
 
 drink_no_alcohol <- c("apple_juice", "fruit_juice", "iced_tea", "lemon_juice", "lime_juice", "orange_juice", "pomegranate_juice", "tea")
 
-dessert_vec <- c("biscuit", "brownie", "butterscotch_caramel", "cake", "candy", "chocolate", "cobbler_crumble", "cookie", "cookies", "crepe", "cupcake", "honey", "jam_or_jelly", "maple_syrup", "marshmallow", "muffin","pancake", "pastry", "pie", "smoothie", "sorbet", "souffle_meringue", "waffle")
+dessert <- c("biscuit", "brownie", "butterscotch_caramel", "cake", "candy", "chocolate", "cobbler_crumble", "cookie", "cookies", "crepe", "cupcake", "honey", "jam_or_jelly", "maple_syrup", "marshmallow", "muffin","pancake", "pastry", "pie", "smoothie", "sorbet", "souffle_meringue", "waffle")
 
-cheese_vec <- c("blue_cheese", "brie", "cheddar", "cheese", "cottage_cheese", "cream_cheese", "feta", "fontina", "goat_cheese", "gouda", "monterey_jack", "mozzarella", "parmesan", "ricotta", "swiss_cheese")
+cheese <- c("blue_cheese", "brie", "cheddar", "cheese", "cottage_cheese", "cream_cheese", "feta", "fontina", "goat_cheese", "gouda", "monterey_jack", "mozzarella", "parmesan", "ricotta", "swiss_cheese")
 
-dairy_vec <- c("butter", "buttermilk", "custard", "dairy", "egg_nog", "ice_cream", "marscarpone", "milk_cream", "sour_cream", "yogurt")
+dairy <- c("butter", "buttermilk", "custard", "dairy", "egg_nog", "ice_cream", "marscarpone", "milk_cream", "sour_cream", "yogurt")
 
-spices <- c("caraway", "cardamom", "chili", "cinnamon", "clove", "cumin", "curry", "hot_pepper", "jalapeno", "marinade", "nutmeg", "paprika", "pepper", "poppy", "saffron", "sesame_oil", "soy_sauce", "spice", "vanilla", "wasabi")
-
-
-#ingredients
-ingredients <- c(vegetables, pork_meat, lamb_meat, beef_meat, meat_with_wings, stuff_in_the_water, herbs, nuts, cereal, carbs, fruits, drink_no_alcohol, dessert, cheese, dairy, spices)
+spices <- c("caraway", "cardamom", "chili", "cinnamon", "clove", "cumin", "curry", "hot_pepper", "jalapeno", "marinade", "nutmeg", "paprika", "pepper", "poppy", "saffron", "sesame", "sesame_oil", "soy_sauce", "spice", "vanilla", "wasabi")
 
 #top level categories
-meat_vec <- c(beef_meat, pork_meat, lamb_meat, meat_with_wings)
-fish_vec <- list(stuff_in_the_water)
-vegetables_list <- list(vegetables)
-
+meats <- c(beef_meat, pork_meat, lamb_meat, meat_with_wings)
+# fish <- list(stuff_in_the_water)
+# vegetables_list <- list(vegetables)
+all_ingredients <- c(vegetables, pork_meat, lamb_meat, beef_meat, meat_with_wings, meat_various, stuff_in_the_water, herbs, nuts, cereal, carbs, fruits, drink_no_alcohol, dessert, cheese, dairy, spices)
 
 #stuff which isn't ingredients and that we need to sort
-to_sort <- c("bread", "breadcrumbs", "brine", "burrito", "casserole_gratin", "coffee", "egg", "flat_bread", "hummus", "iced_coffee", "lasagna", "macaroni_and_cheese", "mayonnaise", "mustard", "noodle", "oatmeal", "omelet",  "peanut_butter", "pizza", "pot_pie", "potato_salad", "quiche", "rose", "salad_dressing", "salsa", "sandwich", "sauce", "soup_stew", "taco", "tart", "tofu", "tortillas", "vinegar", "frittata", "molasses", "sourdough")
-
-
+to_sort <- c("bread", "breadcrumbs", "brine", "burrito", "casserole_gratin", "coffee", "egg", "flat_bread", "hummus", "iced_coffee", "lasagna", "macaroni_and_cheese", "mayonnaise", "mustard", "noodle", "oatmeal", "omelet",  "peanut_butter", "pizza", "pot_pie", "potato_salad", "quiche", "rose", "salad_dressing", "salsa", "sandwich", "sauce", "seed", "soup_stew", "stew", "stock", "stuffing_dressing", "taco", "tart", "tofu", "tortillas", "vinegar", "frittata", "molasses", "sourdough", "fritter", "phyllo_puff_pastry_dough", "dip")
 ```
 
 
-```{r}
+#TEMPORARY TO MAKE VARIABLE SELECTION EASIER
 
+
+```{r}
 #whole list of stuff to remove for now to be able to sort 
-to_remove_temp <- c(us_states, us_cities, countries, alcohol, wtf, chef, interesting, celebrations, tools, cooking_techniques, nutritional_values, repice_type, diet_preferences, vegetables, pork_meat, lamb_meat, beef_meat, meat_with_wings, stuff_in_the_water, herbs, nuts, cereal, carbs, fruits, drink_no_alcohol, to_sort, dessert, cheese, dairy, spices)
+to_remove_temp <- c(us_states, us_cities, countries, alcohol, wtf, chef, interesting, season, celebrations, tools, cooking_techniques, nutritional_values, repice_type, diet_preferences, vegetables, pork_meat, lamb_meat, beef_meat, meat_with_wings, meat_various, stuff_in_the_water, herbs, nuts, cereal, carbs, fruits, drink_no_alcohol, to_sort, dessert, cheese, dairy, spices)
 
 #tried this with select but didn't work because some columns in the vector don't exist in the dataset
 recipes_to_filter <- recipes[, !(colnames(recipes) %in% to_remove_temp)]
 
 #creates a tibble with one column with all the colnames to be able to sort ingredients
 names <- recipes_to_filter %>% colnames() %>% as_tibble()
-
-
-
 ```
-
-#EDA
-
-Weird thing to check, my ingredient vector is 292 in length, and the ingredients DF is also 292 despite having ID as additional column --> means one ingredient in my vector is not a column name right? But I don't get an error so nut sure what's happening
-
-```{r Feature Engineering}
-
-
-#Creating a new dataframe with only the recipe and the ingredients
-ingredients_df <- recipes %>% 
-  select(ID, title, all_of(ingredients))
-
-ingredients_df <- ingredients_df %>%
-  mutate(total_ingredients = rowSums(.[,-(1:2)]), total_meat = rowSums(select(., all_of(meat))), total_vegetables = rowSums(select(., all_of(vegetables)))) %>% 
-  select(ID, title, total_ingredients, total_meat, total_vegetables, everything())
-
-#checking some stuff about the new ingredients table
-ingredients_df %>% 
-  select(ID, title, total_ingredients) %>% 
-  ggplot(aes(x=total_ingredients)) + 
-  geom_histogram(binwidth=1) + geom_vline(aes(xintercept=mean(total_ingredients)),color="red", linetype="dashed", size=1)
-
-
-```
-

@@ -14,7 +14,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r}
 
 # Now let's see the structure of our data
-recipes_raw %>% 
+recipes %>% 
   head(20) %>% 
   str() 
 
@@ -22,7 +22,7 @@ recipes_raw %>%
 
 
 # Let's have a different look at the data with the summary function.
-recipes_raw %>% 
+recipes %>% 
   select(rating, calories, protein, fat, sodium) %>% 
   dfSummary(style = "grid")
 
@@ -35,7 +35,7 @@ recipes_raw %>%
 # Rating Barplot
 ```{r}
 
-recipes_raw %>% 
+recipes %>% 
   ggplot(aes(x=as.factor(rating), fill=as.factor(rating) )) +  
   geom_bar( ) +
   scale_fill_manual(values = c("red4", "red3", "orangered", "orange", "gold", "greenyellow", "green3", "green4") ) +
@@ -53,16 +53,16 @@ recipes_raw %>%
 # Calories - Boxplot and Histogram
 ```{r}
 
-recipes_raw_boxplot <-
-  recipes_raw %>% 
+recipes_boxplot <-
+  recipes %>% 
   pivot_longer(cols = c(calories, protein, fat, sodium),
                names_to = "nutrition",
                values_to = "n_value")
 
-recipes_raw_calories <- recipes_raw_boxplot %>% 
+recipes_calories <- recipes_boxplot %>% 
   filter(nutrition == "calories")
 
-recipes_raw_calories %>%
+recipes_calories %>%
   ggplot(aes(x=nutrition, y=n_value, fill=nutrition)) +
     geom_boxplot() +
     scale_fill_viridis(discrete = TRUE, alpha=0.6, option="A") +
@@ -76,17 +76,17 @@ recipes_raw_calories %>%
 
 # We notice that there are recipes with more than 30'000'000 calories which are clearly outliers. We must then discard those values in order to continue with a meaningful analysis. Otherwise from a visual point of view we could not extract any relevant information. If we take out these recipes, we still have roughly 30 recipes which have more than 7000 calories. For the purpose of this precise visualisation, we want to exclude them to have a better overview of the boxplot, but we don't consider those as outliers.
 
-recipes_raw_calories %>% 
+recipes_calories %>% 
   select(title, nutrition, n_value) %>% 
   arrange(desc(n_value)) 
 
-recipes_raw_calories <- recipes_raw_calories %>% 
+recipes_calories <- recipes_calories %>% 
   filter(n_value <= 7000)
 
 
 # Calories boxplot
 
-recipes_raw_calories %>%
+recipes_calories %>%
   ggplot(aes(x=nutrition, y=n_value, fill=nutrition)) +
     geom_boxplot() +
     scale_fill_viridis(discrete = TRUE, alpha=0.6, option="A") +
@@ -101,7 +101,7 @@ recipes_raw_calories %>%
 
 # Calories histogram
 
-recipes_raw_calories %>% 
+recipes_calories %>% 
   ggplot(aes(x=n_value)) +
   geom_histogram(binwidth=50, fill="red3", color="red3", alpha=0.9) +
   theme(plot.title = element_text(size=15)) +
@@ -118,10 +118,10 @@ recipes_raw_calories %>%
 # Protein - Boxplot and Histogram
 ```{r}
 
-recipes_raw_protein <- recipes_raw_boxplot %>% 
+recipes_protein <- recipes_boxplot %>% 
   filter(nutrition == "protein")
 
-recipes_raw_protein %>%
+recipes_protein %>%
   ggplot(aes(x=nutrition, y=n_value, fill=nutrition)) +
     geom_boxplot() +
     scale_fill_viridis(discrete = TRUE, alpha=0.6, option="A") +
@@ -135,17 +135,17 @@ recipes_raw_protein %>%
 
 # We notice that there are recipes with more than 50'000 grams of protein which are clearly outliers. We must then discard those values in order to continue with a meaningful analysis. Otherwise from a visual point of view we could not extract any relevant information. By checking on the epicurious website recipes  with protein values above 1000, we also verified that the amount of proteins was not justified. We came to that conclusion by evaluating the average values of protein per 100grams of each ingredient in the specific recipe.
 
-recipes_raw_protein %>% 
+recipes_protein %>% 
   select(title, nutrition, n_value) %>% 
   arrange(desc(n_value)) 
 
-recipes_raw_protein <- recipes_raw_protein %>% 
+recipes_protein <- recipes_protein %>% 
   filter(n_value <= 1000)
 
 
 # Proteins boxplot
 
-recipes_raw_protein %>%
+recipes_protein %>%
   ggplot( aes(x=nutrition, y=n_value, fill=nutrition)) +
     geom_boxplot() +
     scale_fill_viridis(discrete = TRUE, alpha=0.6, option="A") +
@@ -160,7 +160,7 @@ recipes_raw_protein %>%
 
 # Proteins histogram
 
-recipes_raw_protein %>% 
+recipes_protein %>% 
   ggplot(aes(x=n_value)) +
   geom_histogram(binwidth=7, fill="red3", color="red3", alpha=0.9) +
   theme(plot.title = element_text(size=15)) +
@@ -177,10 +177,10 @@ recipes_raw_protein %>%
 # Sodium - Boxplot and Histogram
 ```{r}
 
-recipes_raw_sodium <- recipes_raw_boxplot %>% 
+recipes_sodium <- recipes_boxplot %>% 
   filter(nutrition == "sodium")
 
-recipes_raw_sodium %>%
+recipes_sodium %>%
   ggplot(aes(x=nutrition, y=n_value, fill=nutrition)) +
     geom_boxplot() +
     scale_fill_viridis(discrete = TRUE, alpha=0.6, option="A") +
@@ -194,17 +194,17 @@ recipes_raw_sodium %>%
 
 # We notice that there are recipes with more than 100'000 milligrams of sodium which are clearly outliers. We must then discard those values in order to continue with a meaningful analysis. By conducting further research, we realize that sodium values above 30'000 are highly suspicious.
 
-recipes_raw_sodium %>% 
+recipes_sodium %>% 
   select(title, nutrition, n_value) %>% 
   arrange(desc(n_value)) 
 
-recipes_raw_sodium <- recipes_raw_sodium %>% 
+recipes_sodium <- recipes_sodium %>% 
   filter(n_value <= 30000)
 
 
 # Sodium boxplot
 
-recipes_raw_sodium %>%
+recipes_sodium %>%
   ggplot(aes(x=nutrition, y=n_value, fill=nutrition)) +
     geom_boxplot() +
     scale_fill_viridis(discrete = TRUE, alpha=0.6, option="A") +
@@ -219,7 +219,7 @@ recipes_raw_sodium %>%
 
 # Sodium histogram
 
-recipes_raw_sodium %>% 
+recipes_sodium %>% 
   ggplot(aes(x=n_value)) +
   geom_histogram(binwidth=50, fill="red3", color="red3", alpha=0.9) +
   theme(plot.title = element_text(size=15)) +
@@ -236,10 +236,10 @@ recipes_raw_sodium %>%
 # Fat - Boxplot and Histogram
 ```{r}
 
-recipes_raw_fat <- recipes_raw_boxplot %>% 
+recipes_fat <- recipes_boxplot %>% 
   filter(nutrition == "fat")
 
-recipes_raw_fat %>%
+recipes_fat %>%
   ggplot(aes(x=nutrition, y=n_value, fill=nutrition)) +
     geom_boxplot() +
     scale_fill_viridis(discrete = TRUE, alpha=0.6, option="A") +
@@ -253,17 +253,17 @@ recipes_raw_fat %>%
 
 # We notice that there are recipes with more than 44'000 grams of fat which are clearly outliers. We must then discard those values in order to continue with a meaningful analysis. By checking on the epicurious website recipes  with fat values above 1000, we also verified that the amount of proteins was not justified. We came to that conclusion by evaluating the average values of protein per 100grams of each ingredient in the specific recipe.
 
-recipes_raw_fat %>% 
+recipes_fat %>% 
   select(title, nutrition, n_value) %>% 
   arrange(desc(n_value)) 
 
-recipes_raw_fat <- recipes_raw_fat %>% 
+recipes_fat <- recipes_fat %>% 
   filter(n_value <= 40000)
 
 
 # Fat boxplot
 
-recipes_raw_fat %>%
+recipes_fat %>%
   ggplot( aes(x=nutrition, y=n_value, fill=nutrition)) +
     geom_boxplot() +
     scale_fill_viridis(discrete = TRUE, alpha=0.6, option="A") +
@@ -277,7 +277,7 @@ recipes_raw_fat %>%
 
 # Fat histogram
 
-recipes_raw_fat %>% 
+recipes_fat %>% 
   ggplot(aes(x=n_value)) +
   geom_histogram(binwidth=7, fill="red3", color="red3", alpha=0.9) +
   theme(plot.title = element_text(size=15)) +
@@ -289,4 +289,17 @@ recipes_raw_fat %>%
 
 ```
 # It is hard to interpret the boxplot. There are certain recipes which could have potentially more than 1000 or even 2000 grams of fat because of the high quantity of servings and the use of ingredients such as lamb, duck and bacon. We must then analyse the histogram to have a better overview and we notice that most recipes have fat values below 100 grams.
+
+
+## Visual exploration - Multivariate Analysis
+```{r}
+
+recipes %>% 
+  ggplot(aes = x()) %>% 
+  
+  
+
+
+
+```
 
