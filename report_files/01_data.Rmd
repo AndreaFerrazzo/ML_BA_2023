@@ -8,7 +8,7 @@ date: "2023-04-20"
 source(here::here("scripts/setup.R"))
 ```
 
-```{r Loading and early cleaning}
+```{r Loading and early cleaning, cache=TRUE}
 #loading the data
 recipes_raw <- read.csv(here("data/epi_r.csv"))
 
@@ -50,7 +50,7 @@ to CHECK:
 - spice - DONE
 
 NOTES:
-final all_ingredients is 303 obs long
+final all_ingredients is 304 obs long
 
 ```{r Creating Variable Categories}
 us_states <- c("alabama", "alaska", "arizona", "california", "colorado", "connecticut", "florida", "georgia", "hawaii", "idaho", "illinois", "indiana", "iowa", "kansas", "kentucky", "louisiana", "maine", "maryland", "massachusetts", "michigan", "minnesota", "mississippi", "missouri", "nebraska", "new_hampshire", "new_jersey", "new_mexico", "new_york", "north_carolina", "ohio", "oklahoma", "oregon", "pennsylvania", "rhode_island", "south_carolina", "tennessee", "texas", "utah", "vermont", "virginia", "washington", "west_virginia", "wisconsin")
@@ -124,21 +124,20 @@ dairy_vec <- c("butter", "buttermilk", "custard", "egg_nog", "ice_cream", "marsc
 spices_vec <- c("caraway", "cardamom", "chili", "cinnamon", "clove", "cumin", "curry", "hot_pepper", "jalapeno", "marinade", "nutmeg", "paprika", "pepper", "poppy", "saffron", "sesame", "sesame_oil", "soy_sauce", "vanilla", "wasabi")
 
 #top level categories
-general_names <- c("vegetable", "meat", "fish", "seafood", "herb", "nut", "fruit", "drink", "cheese", "dairy", "spice")#using this to select the columns in ingredients_df and we could also use it later of for the for loop
+general_categories <- c("vegetable", "meat", "fish", "seafood", "herb", "nut", "fruit", "drink", "cheese", "dairy", "spice")#using this to select the columns in ingredients_df and we could also use it later of for the for loop
   
 all_meats <- c(beef_meat_vec, pork_meat_vec, lamb_meat_vec, meat_with_wings_vec, meat_various_vec)
 
 all_fish_seafood <- c(fish_vec, seafood_vec)
 
-all_ingredients <- c(general_names, vegetables_vec, all_meats, all_fish_seafood, herbs_vec, nuts_vec, cereals_vec, carbs_vec, fruits_vec, drink_no_alcohol_vec, dessert_vec, cheeses_vec, dairy_vec, spices_vec)
+all_ingredients <- c(vegetables_vec, all_meats, all_fish_seafood, herbs_vec, nuts_vec, cereals_vec, carbs_vec, fruits_vec, drink_no_alcohol_vec, dessert_vec, cheeses_vec, dairy_vec, spices_vec, "egg")
 
 #stuff which isn't ingredients and that we need to sort
-to_sort <- c("bread", "breadcrumbs", "brine", "burrito", "casserole_gratin", "coffee", "egg", "flat_bread", "hummus", "iced_coffee", "lasagna", "macaroni_and_cheese", "mayonnaise", "mustard", "noodle", "oatmeal", "omelet",  "peanut_butter", "pizza", "pot_pie", "potato_salad", "quiche", "rose", "salad_dressing", "salsa", "sandwich", "sauce", "seed", "soup_stew", "stew", "stock", "stuffing_dressing", "taco", "tart", "tofu", "tortillas", "vinegar", "frittata", "molasses", "sourdough", "fritter", "phyllo_puff_pastry_dough", "dip")
+to_sort <- c("bread", "breadcrumbs", "brine", "burrito", "casserole_gratin", "coffee", "flat_bread", "hummus", "iced_coffee", "lasagna", "macaroni_and_cheese", "mayonnaise", "mustard", "noodle", "oatmeal", "omelet",  "peanut_butter", "pizza", "pot_pie", "potato_salad", "quiche", "rose", "salad_dressing", "salsa", "sandwich", "sauce", "seed", "soup_stew", "stew", "stock", "stuffing_dressing", "taco", "tart", "tofu", "tortillas", "vinegar", "frittata", "molasses", "sourdough", "fritter", "phyllo_puff_pastry_dough", "dip")
 ```
 
 
 # TEMPORARY TO MAKE VARIABLE SELECTION EASIER
-put that in wtf: x_wasteless, x22_minute_meals and x3_ingredient_recipes because few rows --> 1, 17 and 27 respectively
 
 ```{r}
 #whole list of stuff to remove for now to be able to sort 

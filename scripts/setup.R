@@ -1,12 +1,11 @@
-# load the required packages
+####### Load the required packages
 packages <- c(
   "knitr", "here", "tidyverse", "summarytools", "janitor", "viridis", "corrplot"
 )
 purrr::walk(packages, library, character.only = TRUE)
 
 
-#Report Options
-
+####### Report Options
 
 # general options
 options(

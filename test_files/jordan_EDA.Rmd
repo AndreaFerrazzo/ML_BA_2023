@@ -204,28 +204,17 @@ recipes %>% filter(drink == 1 & drinks == 1) #4
 
 # Feature engineering 
 
-```{r Feature Engineering}
-# through the analysis above, we saw that "drinks" on it's own had only 11 observations, 4 of which also had the value "drink" = 1 --> we decided to merge the two columns to simplify working with a single category called "drink" for all drinks
-recipes <- recipes %>% 
-  mutate(drink = ifelse(drink == 1 | drinks == 1, 1, 0)) %>% 
-  select(-drinks)
+```{r Creating ingredients_df}
+#Creating a new dataframe with only the ID, title and the ingredients
 
-#Creating a new dataframe with only the recipe and the ingredients
+#through the analysis above, we saw that "drinks" on it's own had only 11 observations, 4 of which also had the value "drink" = 1 --> we decided to merge the two columns to simplify working with a single category called "drink" for all drinks
 ingredients_df <- recipes %>% 
-  select(ID, title, all_of(all_ingredients))
+  mutate(drink = ifelse(drink == 1 | drinks == 1, 1, 0)) %>% #merging drinks and drink
+  select(ID, title, all_of(general_categories), all_of(all_ingredients))
 
-ingredients_df <- ingredients_df %>% 
-  mutate(total_ingredients = rowSums(.[,-(1:2)]), total_meat = rowSums(select(., all_of(meats_all))), total_vegetables_vec = rowSums(select(., all_of(vegetables_vec)))) %>% 
-  select(ID, title, total_ingredients, total_meat, total_vegetables_vec, everything())
-
-#checking some stuff about the new ingredients table
-ingredients_df %>% 
-  select(ID, title, total_ingredients) %>% 
-  ggplot(aes(x=total_ingredients)) + 
-  geom_histogram(binwidth=1) + geom_vline(aes(xintercept=mean(total_ingredients)),color="blue", linetype="dashed", size=1)
 ```
 
-# Checking which ingredients are present most often
+## Adding binary columns 
 
 ```{r Testing stuff, eval=FALSE}
 #it would be very useful to create a column in recipe in which we have the categories binary to be able to filter more easily
@@ -256,7 +245,7 @@ for(ingredient in vec){
 print(paste("dairy_vec", "bin", sep = "_"))
 ```
 
-```{r Manual Working version}
+```{r Adding binary columns for each category - Manual Working version}
 #doing it manually for, could implement a for loop but not sure I'd gain much time
 
 ingredients_df <- ingredients_df %>%
@@ -275,7 +264,8 @@ ingredients_df <- ingredients_df %>%
          #now for the other categories which don't have a general variable
          cereals_bin = as.numeric(if_any(all_of(cereals_vec), ~.x == 1, na.rm = TRUE)),
          cereals_bin = as.numeric(if_any(all_of(carbs_vec), ~.x == 1, na.rm = TRUE)),
-         dessert_bin = as.numeric(if_any(all_of(dessert_vec), ~.x == 1, na.rm = TRUE))
+         dessert_bin = as.numeric(if_any(all_of(dessert_vec), ~.x == 1, na.rm = TRUE)),
+         egg_bin = egg
          )
 ```
 
@@ -289,9 +279,138 @@ for (i in ingredients_all) {
 }
 ```
 
+## Adding total columns
+
+```{r Adding total columns for each category}
+ingredients_df_test <- ingredients_df %>% 
+  mutate(total_ingredients = rowSums(.[,-(1:2)]),
+         total_meat = rowSums(select(., c(meat, all_of(all_meats)))),
+         total_vegetables = rowSums(select(., c(vegetable, all_of(vegetables_vec))))
+         ) %>% 
+  select(ID, title, total_ingredients, total_meat, total_vegetables, everything())
+```
+
 ## Analysis part
 
-```{r}
+### Frequency of ingredients
 
+```{r}
+#creating a vector with colnames of all the binary columns to be able to select them more easily afterwards
+binary_columns <- ingredients_df %>% 
+  select(contains("bin")) %>% 
+  colnames()
+
+
+total_categories <- ingredients_df %>% 
+  select(ID, all_of(binary_columns)) %>% 
+  pivot_longer(-ID, names_to = "category", values_to = "binary_value") %>% 
+  group_by(category) %>% 
+  summarise(total = sum(binary_value))
+
+total_categories %>%
+  ggplot(aes(x=reorder(category,total), y=total, fill=total)) +
+  geom_bar(stat = "identity") +
+  scale_x_discrete(guide = guide_axis(n.dodge=2))+
+  scale_fill_viridis() +
+  labs(x = "Category", y = "Amount of recipes", title = "Total amount of recipes containing at least one ingredient in defined categories")
+```
+
+```{r}
+#Analysis which single ingredient comes is present in most recipes
+df <- ingredients_df %>% 
+  select(-title, -all_of(binary_columns)) %>% 
+  pivot_longer(-ID, names_to = "ingredient", values_to = "value")
+
+
+ing_top10 <- df %>% 
+  group_by(ingredient) %>% 
+  summarise(total = sum(value)) %>% 
+  ungroup() %>% 
+  arrange(desc(total)) %>% 
+  slice(1:10)
+
+ing_top10 %>% 
+  # mutate(ingredient = fct_rev(ingredient)) %>% 
+  ggplot(aes(x=reorder(ingredient, total), y=total, fill=ingredient)) +
+  geom_bar(stat = "identity") +
+  scale_fill_viridis(discrete = TRUE) +
+  scale_x_discrete(guide = guide_axis(n.dodge=2))+
+  labs(x = "Ingredient", y = "Value", title = "Total amount of recipes containing each ingredient\nTop 10")
+```
+
+Here we can see that we have ingredients which in truth are general categories like vegetable, fruit, herb and diary. We don't want this so we will remove those general categories
+
+```{r}
+#same as before but removing the general categories first
+ing_top10 <- df %>%
+  filter(!ingredient %in% general_categories) %>% 
+  group_by(ingredient) %>% 
+  summarise(total = sum(value)) %>% 
+  ungroup() %>% 
+  arrange(desc(total)) %>% 
+  slice(1:10)
+
+ing_top10 %>% 
+  ggplot(aes(x=reorder(ingredient, total), y=total, fill=ingredient)) +
+  geom_bar(stat = "identity") +
+  scale_fill_viridis(discrete = TRUE) +
+  scale_x_discrete(guide = guide_axis(n.dodge=2))+
+  labs(x = "Ingredient", y = "Value", title = "Total amount of recipes containing each ingredient\nTop 10 - without general categories")
+```
+
+### Amount of ingredients per recipe
+
+```{r Plotting ingredients totals}
+#checking some stuff about the new ingredients table
+ingredients_df_test %>% 
+  select(ID, title, total_ingredients) %>% 
+  ggplot(aes(x=total_ingredients)) + 
+  geom_bar() + geom_vline(aes(xintercept=mean(total_ingredients)),color="red", linetype="dashed", size=1)
+
+#we notice that 188 recipes have 0 ingredients, let's investigate why and how that's possible
+ingredients_df_test %>% 
+  filter(total_ingredients==0)
+
+#let's pick recipe ID number 1183 which should have poppy and sesame seeds according to the title
+recipes %>% 
+  filter(ID == 1183) %>% 
+  select_if(~ any(. == 1))
+#we can see that only 3 variables are equal to 1 here
+recipes %>% 
+  filter(ID == 365) %>% 
+  select_if(~ any(. == 1))
+
+recipes %>% 
+  filter(ID == 1089) %>% 
+  select_if(~ any(. == 1))
+
+#####
+#QUESTION: do we want to keep those recipes?
+#####
+```
+
+```{r Plotting meat totals}
+ingredients_df_test %>% 
+  select(ID, title, total_meat) %>% 
+  ggplot(aes(x=total_meat)) + 
+  geom_bar() + geom_vline(aes(xintercept=mean(total_meat)),color="blue", linetype="dashed", size=1)
+
+#let's try to filter by recipes which contain meat to see if my functions work
+ingredients_df_test %>% 
+  filter(meats_bin == 1) %>% 
+  select(ID, title, total_meat) %>% 
+  ggplot(aes(x=total_meat)) + 
+  geom_bar() + geom_vline(aes(xintercept=mean(total_meat)),color="blue", linetype="dashed", size=1)
+
+#why do we still have value in 0 meats --> it was because when creating the total meat column I did not include the general meat category
+```
+
+```{r Plotting Vegetables}
+ingredients_df_test %>%
+  filter(vegetables_bin == 1) %>% 
+  select(ID, title, total_vegetables) %>% 
+  ggplot(aes(x=total_vegetables)) + 
+  scale_x_continuous(breaks = seq(1, 9, by = 1)) +
+  geom_bar() + geom_vline(aes(xintercept=mean(total_vegetables)),color="blue", linetype="dashed", size=1)
 ```
 

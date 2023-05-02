@@ -46,7 +46,7 @@ na_obs <- which(rowSums(is.na(recipes_nutrition)) > 0)
 df_na <- recipes_nutrition[na_obs, ]
 
 # print the result
-df_na
+#df_na
 
 
 # count the number of NAs for each row
@@ -459,7 +459,7 @@ recipes_plot %>%
 
 # Ingredients EDA
 
-```{r Feature Engineering}
+```{r Feature Engineering, eval=FALSE}
 
 #Creating a new dataframe with only the recipe and the ingredients
 ingredients_df <- recipes %>% 
