@@ -31,6 +31,7 @@ recipes %>%
 
 ```
 
+
 ## Analysis of NAs
 
 ```{r}
@@ -75,7 +76,10 @@ recipes <- recipes[!apply(is.na(recipes) | recipes == "", 1, any), ]
 
 
 ```
-# Eliminate recipes with rating equal to zero
+
+
+## Eliminate recipes with rating equal to zero
+
 ```{r}
 
 rating_count <- table(recipes$rating)
@@ -112,6 +116,7 @@ recipes %>%
 
 ```
 
+
 ## Calories - Boxplot and Histogram
 
 ```{r}
@@ -132,7 +137,7 @@ recipes_calories %>%
     theme_light() +
     theme(legend.position="none",
           plot.title = element_text(size=11)) +
-  ggtitle("Basic boxplot") +
+  ggtitle("Boxplot of calories nutritional value") +
   xlab("") +
   ylab("Value")
   
@@ -157,7 +162,7 @@ recipes_calories %>%
     theme(legend.position="none",
           plot.title = element_text(size=11)) +
   scale_y_continuous(breaks=seq(0,7000,500)) +
-  ggtitle("Basic boxplot") +
+  ggtitle("Boxplot of calories nutritional value") +
   xlab("") +
   ylab("Calories") 
 
@@ -170,13 +175,14 @@ recipes_calories %>%
   theme(plot.title = element_text(size=15)) +
   scale_x_continuous(breaks=seq(0,10000,1000)) +
   scale_y_continuous(breaks=seq(0,1750,250)) +
-  ggtitle("Calories Distribution of all recipes") +
+  ggtitle("Distribution of calories across all recipes") +
   xlab("Calories") +
   ylab("Count") 
 
 ```
 
 ### We can observe that most of the recipes have between 200 and 600 calories. By checking with the histogram the distribution of calories, we observe that indeed most of the recipes have less than 1000 calories.
+
 
 ## Protein - Boxplot and Histogram
 
@@ -192,7 +198,7 @@ recipes_protein %>%
     theme_light() +
     theme(legend.position="none",
           plot.title = element_text(size=11)) +
-  ggtitle("Basic boxplot") +
+  ggtitle("Boxplot of protein nutritional value") +
   xlab("") +
   ylab("Value")
   
@@ -217,7 +223,7 @@ recipes_protein %>%
     theme(legend.position="none",
           plot.title = element_text(size=11)) +
   scale_y_continuous(breaks=seq(0,7000,25)) +
-  ggtitle("Basic boxplot") +
+  ggtitle("Boxplot of protein nutritional value") +
   xlab("") +
   ylab("Proteins") 
 
@@ -230,13 +236,14 @@ recipes_protein %>%
   theme(plot.title = element_text(size=15)) +
   scale_x_continuous(breaks=seq(0,1000,25)) +
   scale_y_continuous(breaks=seq(0,7000,250)) +
-  ggtitle("Proteins Distribution of all recipes") +
+  ggtitle("Distribution of proteins across all recipes") +
   xlab("Proteins") +
   ylab("Count") 
 
 ```
 
 ### From the boxplot, we observe that most recipes have less than 30 grams of proteins. By plotting the histogram, we verify that this information is correct. We could even extend the range to 100 proteins per recipe. We assume that recipes with values above this threshold contain ingredients like meat, tuna, salmon or shrimps.
+
 
 ## Sodium - Boxplot and Histogram
 
@@ -252,7 +259,7 @@ recipes_sodium %>%
     theme_light() +
     theme(legend.position="none",
           plot.title = element_text(size=11)) +
-  ggtitle("Basic boxplot") +
+  ggtitle("Boxplot of sodium nutritional value") +
   xlab("") +
   ylab("Value")
   
@@ -277,7 +284,7 @@ recipes_sodium %>%
     theme(legend.position="none",
           plot.title = element_text(size=11)) +
   scale_y_continuous(breaks=seq(0,30000,500)) +
-  ggtitle("Basic boxplot") +
+  ggtitle("Boxplot of sodium nutritional value") +
   xlab("") +
   ylab("Sodium") 
 
@@ -290,13 +297,14 @@ recipes_sodium %>%
   theme(plot.title = element_text(size=15)) +
   scale_x_continuous(breaks=seq(0,30000,1000)) +
   scale_y_continuous(breaks=seq(0,1750,250)) +
-  ggtitle("Calories Distribution of all recipes") +
+  ggtitle("Distribution of sodium across all recipes") +
   xlab("Sodium") +
   ylab("Count") 
 
 ```
 
 ### From the boxplot we observe that most recipes have sodium values below 750 milligrams. The histogram informs us that most of recipes have indeed less than 750 milligrams of sodium, even though we cannot exclude the presence of a good amount of recipes with sodium between 750 and 2000 milligrams.
+
 
 ## Fat - Boxplot and Histogram
 
@@ -312,7 +320,7 @@ recipes_fat %>%
     theme_light() +
     theme(legend.position="none",
           plot.title = element_text(size=11)) +
-  ggtitle("Basic boxplot") +
+  ggtitle("Boxplot of fat nutritional value") +
   xlab("") +
   ylab("Value")
   
@@ -337,7 +345,7 @@ recipes_fat %>%
     theme(legend.position="none",
           plot.title = element_text(size=11)) +
   scale_y_continuous(breaks=seq(0,3000,100)) +
-  ggtitle("Basic boxplot") +
+  ggtitle("Boxplot of fat nutritional value") +
   xlab("") +
   ylab("Fat") 
 
@@ -348,7 +356,7 @@ recipes_fat %>%
   ggplot(aes(x=n_value)) +
   geom_histogram(binwidth=7, fill="red3", color="red3", alpha=0.9) +
   theme(plot.title = element_text(size=15)) +
-  ggtitle("Proteins Distribution of all recipes") +
+  ggtitle("Distribution of fat across all recipes") +
   scale_x_continuous(breaks=seq(0,3000,100)) +
   scale_y_continuous(breaks=seq(0,7000,250)) +
   xlab("Fat") +
@@ -367,9 +375,81 @@ recipes_fat %>%
 recipes <- recipes %>% 
   filter(calories <= 7000, protein <= 1000, sodium <= 30000, fat <= 40000)
 
+
+# Scatterplot of Rating-Calories
 recipes %>% 
   ggplot(aes(x=calories, y=rating)) +
-  geom_point()
+  geom_point() +
+  ggtitle("Scatterplot of rating against calories") +
+  xlab("Calories") +
+  ylab("Rating") 
+
+# We can observe that the recipes with more than 2000 calories tend to have a higher rating. For instance, few recipes with less than a 3 star rating have more than 2000 calories.
+
+
+# Scatterplot of Rating-Protein
+recipes %>% 
+  ggplot(aes(x=protein, y=rating)) +
+  geom_point() +
+  ggtitle("Scatterplot of rating against proteins") +
+  xlab("Proteins") +
+  ylab("Rating") 
+
+# We can observe that the recipes with more than 125 grams of proteins tend to have a higher rating. For instance, few recipes with less than a 3 star rating have more than 125 grams of proteins.
+
+
+# Scatterplot of Rating-Fat
+recipes %>% 
+  ggplot(aes(x=fat, y=rating)) +
+  geom_point() +
+  ggtitle("Scatterplot of rating against fat") +
+  xlab("Fat") +
+  ylab("Rating") 
+
+# We can observe that the recipes with more than 100 grams of fat tend to have a higher rating. For instance, few recipes with less than a 3 star rating have more than 100 grams of fat.
+
+
+# Scatterplot of Rating-Sodium
+recipes %>% 
+  ggplot(aes(x=sodium, y=rating)) +
+  geom_point() +
+  ggtitle("Scatterplot of rating against sodium") +
+  xlab("Sodium") +
+  ylab("Rating") 
+
+# We can observe that the recipes with more than 5000 milligrams of sodium tend to have a higher rating. For instance, few recipes with less than a 3 star rating have more than 5000 mg of sodium.
+
+```
+
+
+# Correlogram
+```{r}
+
+library(corrplot)
+
+corr_nutritional_values = recipes %>% 
+  select(rating, calories, protein, fat, sodium) %>% 
+  cor()
+
+corrplot(corr_nutritional_values)
+
+```
+### The previous scatterplots illuded us that there was somehow a correlation between rating and the nutritional values. This hypothesis has been refuted because the correlation against the rating is almost at zero for all the nutritional values. On the other hand we notice a strong positive correlation between calories and fat as well as between calories and proteins.
+
+
+# Grouped Scatter
+```{r}
+
+recipes_plot <- recipes %>% 
+  filter(fat <= 400, protein <= 350)
+
+recipes_plot %>% 
+  ggplot(aes(x=protein, y=fat, color=rating, alpha=rating, size=rating)) +
+  geom_point() + 
+  scale_color_gradientn(colours = rainbow(5))
+
+
+# We tried various representations of protein and fat according to rating without being able to clearly show a pattern.
 
 
 
@@ -377,10 +457,10 @@ recipes %>%
 
 
 
-
 # Ingredients EDA
 
 ```{r Feature Engineering}
+
 #Creating a new dataframe with only the recipe and the ingredients
 ingredients_df <- recipes %>% 
   select(ID, title, all_of(all_ingredients))
@@ -394,4 +474,5 @@ ingredients_df %>%
   select(ID, title, total_ingredients) %>% 
   ggplot(aes(x=total_ingredients)) + 
   geom_histogram(binwidth=1) + geom_vline(aes(xintercept=mean(total_ingredients)),color="blue", linetype="dashed", size=1)
+
 ```
