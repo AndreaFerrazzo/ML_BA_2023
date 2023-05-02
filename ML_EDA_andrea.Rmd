@@ -8,9 +8,9 @@ date: "2023-04-26"
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-### Exploratory Data Analysis - Nutritional Values
+# Exploratory Data Analysis - Nutritional Values
 
-# Structure and summary
+## Structure and summary
 
 ```{r}
 
@@ -31,7 +31,7 @@ recipes %>%
 
 ```
 
-# Analysis of NAs
+## Analysis of NAs
 
 ```{r}
 
@@ -73,7 +73,6 @@ freq_na %>%
 
 recipes <- recipes[!apply(is.na(recipes) | recipes == "", 1, any), ]
 
-recipes
 
 ```
 # Eliminate recipes with rating equal to zero
@@ -85,13 +84,17 @@ rating_count <- as.data.frame(rating_count) %>%
   rename(rating = Var1,
     frequency = Freq)
 
-# There are 1293 recipes which have rating equal to zero. Some of them might be unpopular, some of them might be too recent to have a rating. For the purpose of our analysis, we decide to eliminate these recipes.
+# There are 1293 recipes which have rating equal to zero. Some of those might be unpopular, others might be too recent to have a rating. For the purpose of our analysis, we decide to eliminate these specific recipes.
+
+recipes <- recipes %>% 
+  filter(rating != 0)
 
 ```
 
-## Visual exploration - Univariate Analysis
 
-# Rating Barplot
+# Visual exploration - Univariate Analysis
+
+## Rating Barplot
 
 ```{r}
 
@@ -109,7 +112,7 @@ recipes %>%
 
 ```
 
-# Calories - Boxplot and Histogram
+## Calories - Boxplot and Histogram
 
 ```{r}
 
@@ -173,9 +176,9 @@ recipes_calories %>%
 
 ```
 
-# We can observe that most of the recipes have between 200 and 600 calories. By checking with the histogram the distribution of calories, we observe that indeed most of the recipes have less than 1000 calories.
+### We can observe that most of the recipes have between 200 and 600 calories. By checking with the histogram the distribution of calories, we observe that indeed most of the recipes have less than 1000 calories.
 
-# Protein - Boxplot and Histogram
+## Protein - Boxplot and Histogram
 
 ```{r}
 
@@ -233,9 +236,9 @@ recipes_protein %>%
 
 ```
 
-# From the boxplot, we observe that most recipes have less than 30 grams of proteins. By plotting the histogram, we verify that this information is correct. We could even extend the range to 100 proteins per recipe. We assume that recipes with values above this threshold contain ingredients like meat, tuna, salmon or shrimps.
+### From the boxplot, we observe that most recipes have less than 30 grams of proteins. By plotting the histogram, we verify that this information is correct. We could even extend the range to 100 proteins per recipe. We assume that recipes with values above this threshold contain ingredients like meat, tuna, salmon or shrimps.
 
-# Sodium - Boxplot and Histogram
+## Sodium - Boxplot and Histogram
 
 ```{r}
 
@@ -273,7 +276,7 @@ recipes_sodium %>%
     theme_light() +
     theme(legend.position="none",
           plot.title = element_text(size=11)) +
-  scale_y_continuous(breaks=seq(0,7000,500)) +
+  scale_y_continuous(breaks=seq(0,30000,500)) +
   ggtitle("Basic boxplot") +
   xlab("") +
   ylab("Sodium") 
@@ -285,7 +288,7 @@ recipes_sodium %>%
   ggplot(aes(x=n_value)) +
   geom_histogram(binwidth=50, fill="red3", color="red3", alpha=0.9) +
   theme(plot.title = element_text(size=15)) +
-  scale_x_continuous(breaks=seq(0,10000,1000)) +
+  scale_x_continuous(breaks=seq(0,30000,1000)) +
   scale_y_continuous(breaks=seq(0,1750,250)) +
   ggtitle("Calories Distribution of all recipes") +
   xlab("Sodium") +
@@ -293,9 +296,9 @@ recipes_sodium %>%
 
 ```
 
-# From the boxplot we observe that most recipes have sodium values below 750 milligrams. The histogram informs us that most of recipes have indeed less than 750 milligrams of sodium, even though we cannot exclude the presence of a good amount of recipes with sodium between 750 and 2000 milligrams.
+### From the boxplot we observe that most recipes have sodium values below 750 milligrams. The histogram informs us that most of recipes have indeed less than 750 milligrams of sodium, even though we cannot exclude the presence of a good amount of recipes with sodium between 750 and 2000 milligrams.
 
-# Fat - Boxplot and Histogram
+## Fat - Boxplot and Histogram
 
 ```{r}
 
