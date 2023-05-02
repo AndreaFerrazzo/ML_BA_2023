@@ -11,6 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ### Exploratory Data Analysis - Nutritional Values
 
 # Structure and summary
+
 ```{r}
 
 # Now let's see the structure of our data
@@ -30,9 +31,68 @@ recipes %>%
 
 ```
 
+# Analysis of NAs
+
+```{r}
+
+recipes_nutrition <- recipes %>% 
+  select(title, calories, protein, fat, sodium)
+
+
+na_obs <- which(rowSums(is.na(recipes_nutrition)) > 0)
+
+# subset the original dataframe to only include rows with NA values
+df_na <- recipes_nutrition[na_obs, ]
+
+# print the result
+df_na
+
+
+# count the number of NAs for each row
+na_count <- rowSums(is.na(df_na))
+
+# count the frequency of NA counts
+freq_table_na <- table(na_count)
+
+freq_na <- as.data.frame(freq_table_na) %>% 
+  mutate(na_count = as.character(na_count))
+
+
+freq_na %>% 
+  ggplot(aes(x=na_count, y=Freq)) +
+  geom_bar(stat="identity") +
+  xlab("Number of NAs") +
+  ylab("Frequency") +
+  ggtitle("Number of NAs in nutritional values per recipe") +
+  coord_flip()
+  
+# Among the recipes which have NAs, we notice that many of them have 4 NAs for all the 4 nutritional values, more precisely 4117  out of 4188 recipes. Without any other information available, making an imputation to retrieve such values would not make any sense.
+
+# We could try to make an imputation of the 29 recipes that have only 1 NA. The same operation on the 42 recipes with 2 NAs would not deliver accurate and satisfying results. However, we believe that is not worth to make imputation of such NA values. We should not forget that the nutritional values per recipe are estimated, then making an imputation would result in a sort of estimation of an estimation. To what extent could it be reliable? We decide to eliminate recipes with NA values. Finally, we would still have 15864 recipes without NAs to analyse.
+
+
+recipes <- recipes[!apply(is.na(recipes) | recipes == "", 1, any), ]
+
+recipes
+
+```
+# Eliminate recipes with rating equal to zero
+```{r}
+
+rating_count <- table(recipes$rating)
+
+rating_count <- as.data.frame(rating_count) %>% 
+  rename(rating = Var1,
+    frequency = Freq)
+
+# There are 1293 recipes which have rating equal to zero. Some of them might be unpopular, some of them might be too recent to have a rating. For the purpose of our analysis, we decide to eliminate these recipes.
+
+```
+
 ## Visual exploration - Univariate Analysis
 
 # Rating Barplot
+
 ```{r}
 
 recipes %>% 
@@ -44,13 +104,13 @@ recipes %>%
   labs(x = "Rating", y = "Count", 
        title = "Overview of recipes' ratings")
 
-# As we can see, most of the ratings have value above 3.75
+# As we can see, most of the ratings have value above 3.75, more in particular we notice that most of the recipes are rates with 4.375.
 # A zero rating indicates that the recipe has not been evaluated yet.
 
 ```
 
-
 # Calories - Boxplot and Histogram
+
 ```{r}
 
 recipes_boxplot <-
@@ -112,10 +172,11 @@ recipes_calories %>%
   ylab("Count") 
 
 ```
+
 # We can observe that most of the recipes have between 200 and 600 calories. By checking with the histogram the distribution of calories, we observe that indeed most of the recipes have less than 1000 calories.
 
-
 # Protein - Boxplot and Histogram
+
 ```{r}
 
 recipes_protein <- recipes_boxplot %>% 
@@ -171,10 +232,11 @@ recipes_protein %>%
   ylab("Count") 
 
 ```
+
 # From the boxplot, we observe that most recipes have less than 30 grams of proteins. By plotting the histogram, we verify that this information is correct. We could even extend the range to 100 proteins per recipe. We assume that recipes with values above this threshold contain ingredients like meat, tuna, salmon or shrimps.
 
-
 # Sodium - Boxplot and Histogram
+
 ```{r}
 
 recipes_sodium <- recipes_boxplot %>% 
@@ -230,10 +292,11 @@ recipes_sodium %>%
   ylab("Count") 
 
 ```
+
 # From the boxplot we observe that most recipes have sodium values below 750 milligrams. The histogram informs us that most of recipes have indeed less than 750 milligrams of sodium, even though we cannot exclude the presence of a good amount of recipes with sodium between 750 and 2000 milligrams.
 
-
 # Fat - Boxplot and Histogram
+
 ```{r}
 
 recipes_fat <- recipes_boxplot %>% 
@@ -270,6 +333,7 @@ recipes_fat %>%
     theme_light() +
     theme(legend.position="none",
           plot.title = element_text(size=11)) +
+  scale_y_continuous(breaks=seq(0,3000,100)) +
   ggtitle("Basic boxplot") +
   xlab("") +
   ylab("Fat") 
@@ -288,18 +352,22 @@ recipes_fat %>%
   ylab("Count") 
 
 ```
+
 # It is hard to interpret the boxplot. There are certain recipes which could have potentially more than 1000 or even 2000 grams of fat because of the high quantity of servings and the use of ingredients such as lamb, duck and bacon. We must then analyse the histogram to have a better overview and we notice that most recipes have fat values below 100 grams.
 
 
-## Visual exploration - Multivariate Analysis
+
+# Visual exploration - Multivariate Analysis
+## Scatterplots of Rating
 ```{r}
+  
+recipes <- recipes %>% 
+  filter(calories <= 7000, protein <= 1000, sodium <= 30000, fat <= 40000)
 
 recipes %>% 
-  ggplot(aes = x()) %>% 
-  
-  
+  ggplot(aes(x=calories, y=rating)) +
+  geom_point()
 
 
 
 ```
-
