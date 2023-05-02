@@ -25,7 +25,8 @@ ingredients_df %>%
   ggplot(aes(x=total_ingredients)) + 
   geom_histogram(binwidth=1) + geom_vline(aes(xintercept=mean(total_ingredients)),color="blue", linetype="dashed", size=1)
 ```
-#checking for "general" ingredient columns
+
+# Checking for "general" ingredient columns
 ```{r Meat check}
 #checking the meaning of those "general" categories and how they are used
 meat_check <- recipes %>% 
@@ -53,6 +54,7 @@ meat_1 %>%
 
 #So by not taking into account "meat" we would only lose 19 observations, which aren't specific anyway
 ```
+
 ```{r Veggie Check}
 veggie_check <- recipes %>% 
   select(legume, all_of(vegetables))
@@ -104,6 +106,7 @@ is_1 <- check %>%
 is_1 %>%
   filter_if(is.numeric, all_vars(. == 0))
 ```
+
 ```{r Herb check}
 #5009 obs with some herb in them
 check <- recipes %>% 
@@ -119,6 +122,7 @@ is_1 <- check %>%
 is_1 %>%
   filter_if(is.numeric, all_vars(. == 0))
 ```
+
 ```{r Nut check}
 #2299 obs with some nut in them
 check <- recipes %>% 
@@ -134,6 +138,7 @@ is_1 <- check %>%
 is_1 %>%
   filter_if(is.numeric, all_vars(. == 0))
 ```
+
 ```{r Fruit Check}
 #7296 obs with some fruit in them
 check <- recipes %>% 
@@ -149,6 +154,7 @@ is_1 <- check %>%
 is_1 %>%
   filter_if(is.numeric, all_vars(. == 0))
 ```
+
 ```{r Cheese check}
 #3051 obs with some cheese in them
 check <- recipes %>%
@@ -164,6 +170,7 @@ is_1 <- check %>%
 is_1 %>%
   filter_if(is.numeric, all_vars(. == 0))
 ```
+
 ```{r Dairy check}
 #4050 obs with some dairy in them
 check <- recipes %>%
@@ -179,6 +186,7 @@ is_1 <- check %>%
 is_1 %>%
   filter_if(is.numeric, all_vars(. == 0))
 ```
+
 ```{r Spice check}
 #3530 obs with some spice in them
 check <- recipes %>%
@@ -219,5 +227,8 @@ categories <- recipes %>%
   select(ID, dairy, all_of(dairies)) %>% 
   filter_if(is.numeric, any_vars(. == 1)) %>% 
   mutate(DAIRIES = 1)
+
+
+
 ```
 
