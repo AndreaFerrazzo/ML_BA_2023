@@ -154,8 +154,6 @@ recipes_plot %>%
 
 # Ingredients EDA
 
-Weird thing to check, my ingredient vector is 292 in length, and the ingredients DF is also 292 despite having ID as additional column --> means one ingredient in my vector is not a column name right? But I don't get an error so nut sure what's happening
-
 ```{r Feature Engineering}
 #Creating a new dataframe with only the recipe and the ingredients
 ingredients_df <- recipes %>% 
