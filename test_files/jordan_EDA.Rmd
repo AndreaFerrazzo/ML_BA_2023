@@ -8,25 +8,9 @@ date: "2023-04-20"
 source(here::here("scripts/setup.R"))
 ```
 
-#EDA
+# EDA
 
-```{r Feature Engineering}
-#Creating a new dataframe with only the recipe and the ingredients
-ingredients_df <- recipes %>% 
-  select(ID, title, all_of(all_ingredients))
-
-ingredients_df <- ingredients_df %>% 
-  mutate(total_ingredients = rowSums(.[,-(1:2)]), total_meat = rowSums(select(., all_of(meats_all))), total_vegetables = rowSums(select(., all_of(vegetables)))) %>% 
-  select(ID, title, total_ingredients, total_meat, total_vegetables, everything())
-
-#checking some stuff about the new ingredients table
-ingredients_df %>% 
-  select(ID, title, total_ingredients) %>% 
-  ggplot(aes(x=total_ingredients)) + 
-  geom_histogram(binwidth=1) + geom_vline(aes(xintercept=mean(total_ingredients)),color="blue", linetype="dashed", size=1)
-```
-
-# Checking for "general" ingredient columns
+## Checking for "general" ingredient columns
 ```{r Meat check}
 #checking the meaning of those "general" categories and how they are used
 meat_check <- recipes %>% 
@@ -57,44 +41,44 @@ meat_1 %>%
 
 ```{r Veggie Check}
 veggie_check <- recipes %>% 
-  select(legume, all_of(vegetables))
+  select(vegetable, all_of(vegetables_vec))
 
-#10962 obs with some vegetables in them
+#11222obs with some vegetables_vec in them
 veggie_check %>% 
   filter_if(is.numeric, any_vars(. == 1))
 
-#there are 69 obs with legume = 1
+#there are 2087 obs with vegetable = 1
 legume_1 <- veggie_check %>% 
-  filter(legume == 1) %>% 
-  select(-legume)
+  filter(vegetable == 1) %>% 
+  select(-vegetable)
 
 legume_1 %>%
   filter_if(is.numeric, all_vars(. == 0))
-# only 4 observations for which legume = 1 and not a single vegetable is specified
+# 290 observations for which vegetable = 1 and not a single vegetable is specified
 ```
 
 ```{r Fish check}
-variable_check <- function(to_check, vec){
-  #10962 obs with some vegetables in them
-  check <- recipes %>% 
-    select(to_check, all_of(vec)) %>% 
-    filter_if(is.numeric, any_vars(. == 1))
-  
-  #there are 69 obs with legume = 1
-  is_1 <- check %>% 
-    filter(to_check == 1) %>% 
-    select(-to_check)
-  
-  # only 4 observations for which legume = 1 and not a single vegetable is specified
-  is_1 %>%
-    filter_if(is.numeric, all_vars(. == 0))
-}
+# variable_check <- function(to_check, vec){
+#   #10962 obs with some vegetables_vec in them
+#   check <- recipes %>% 
+#     select(to_check, all_of(vec)) %>% 
+#     filter_if(is.numeric, any_vars(. == 1))
+#   
+#   #there are 69 obs with legume = 1
+#   is_1 <- check %>% 
+#     filter(to_check == 1) %>% 
+#     select(-to_check)
+#   
+#   # only 4 observations for which legume = 1 and not a single vegetable is specified
+#   is_1 %>%
+#     filter_if(is.numeric, all_vars(. == 0))
+# }
 
-variable_check("fish", stuff_in_the_water)
+#variable_check("fish", stuff_in_the_water)
 
 #2437 obs with some fish in them
 check <- recipes %>% 
-  select(fish, seafood, all_of(stuff_in_the_water)) %>% 
+  select(fish, seafood, all_of(all_fish_seafood)) %>% 
   filter_if(is.numeric, any_vars(. == 1))
 
 #there are 936 obs with fish = 1
@@ -110,7 +94,7 @@ is_1 %>%
 ```{r Herb check}
 #5009 obs with some herb in them
 check <- recipes %>% 
-  select(herb, all_of(herbs)) %>% 
+  select(herb, all_of(herbs_vec)) %>% 
   filter_if(is.numeric, any_vars(. == 1))
 
 #there are 1681 obs with herb = 1
@@ -126,7 +110,7 @@ is_1 %>%
 ```{r Nut check}
 #2299 obs with some nut in them
 check <- recipes %>% 
-  select(nut, all_of(nuts)) %>% 
+  select(nut, all_of(nuts_vec)) %>% 
   filter_if(is.numeric, any_vars(. == 1))
 
 #there are 905 obs with nut = 1
@@ -142,7 +126,7 @@ is_1 %>%
 ```{r Fruit Check}
 #7296 obs with some fruit in them
 check <- recipes %>% 
-  select(fruit, all_of(fruits)) %>% 
+  select(fruit, all_of(fruits_vec)) %>% 
   filter_if(is.numeric, any_vars(. == 1))
 
 #there are 1958 obs with fruit = 1
@@ -158,7 +142,7 @@ is_1 %>%
 ```{r Cheese check}
 #3051 obs with some cheese in them
 check <- recipes %>%
-  select(cheese, all_of(cheeses)) %>% 
+  select(cheese, all_of(cheeses_vec)) %>% 
   filter_if(is.numeric, any_vars(. == 1))
 
 #there are 1351 obs with cheese = 1
@@ -174,7 +158,7 @@ is_1 %>%
 ```{r Dairy check}
 #4050 obs with some dairy in them
 check <- recipes %>%
-  select(dairy, all_of(dairies)) %>% 
+  select(dairy, all_of(dairy_vec)) %>% 
   filter_if(is.numeric, any_vars(. == 1))
 
 #there are 1496 obs with dairy = 1
@@ -190,7 +174,7 @@ is_1 %>%
 ```{r Spice check}
 #3530 obs with some spice in them
 check <- recipes %>%
-  select(spice, all_of(spices)) %>% 
+  select(spice, all_of(spices_vec)) %>% 
   filter_if(is.numeric, any_vars(. == 1))
 
 #there are 680 obs with spice = 1
@@ -212,23 +196,102 @@ recipes %>% filter(drinks == 1) #11
 
 recipes %>% filter(drink == 1 & drinks == 1) #4
 
-#from this we can see that it would make sense to merge the two columns
+#from this we can see that it would make sense to merge the two columns --> done in chunk below
+
+
+#based on the fact that drinks are both alcoholic and alcohol free, it doesn't really make sense to compare it the the vectors like for the other variables --> we'll just keep "drink"
+```
+
+# Feature engineering 
+
+```{r Feature Engineering}
+# through the analysis above, we saw that "drinks" on it's own had only 11 observations, 4 of which also had the value "drink" = 1 --> we decided to merge the two columns to simplify working with a single category called "drink" for all drinks
 recipes <- recipes %>% 
   mutate(drink = ifelse(drink == 1 | drinks == 1, 1, 0)) %>% 
   select(-drinks)
 
-#based on the fact that drinks are both alcoholic and alcohol free, it doesn't really make sense to compare it like for the other variables --> we'll just keep "drink"
+#Creating a new dataframe with only the recipe and the ingredients
+ingredients_df <- recipes %>% 
+  select(ID, title, all_of(all_ingredients))
+
+ingredients_df <- ingredients_df %>% 
+  mutate(total_ingredients = rowSums(.[,-(1:2)]), total_meat = rowSums(select(., all_of(meats_all))), total_vegetables_vec = rowSums(select(., all_of(vegetables_vec)))) %>% 
+  select(ID, title, total_ingredients, total_meat, total_vegetables_vec, everything())
+
+#checking some stuff about the new ingredients table
+ingredients_df %>% 
+  select(ID, title, total_ingredients) %>% 
+  ggplot(aes(x=total_ingredients)) + 
+  geom_histogram(binwidth=1) + geom_vline(aes(xintercept=mean(total_ingredients)),color="blue", linetype="dashed", size=1)
 ```
 
-#Checking which ingredients are present most often
-```{r}
+# Checking which ingredients are present most often
+
+```{r Testing stuff, eval=FALSE}
 #it would be very useful to create a column in recipe in which we have the categories binary to be able to filter more easily
-categories <- recipes %>%
-  select(ID, dairy, all_of(dairies)) %>% 
-  filter_if(is.numeric, any_vars(. == 1)) %>% 
-  mutate(DAIRIES = 1)
 
+# categories <- recipes %>%
+#   select(ID, dairy, all_of(dairy_vec)) %>% 
+#   filter_if(is.numeric, any_vars(. == 1)) %>% 
+#   mutate(dairy_vec = 1)
 
+test <- ingredients_df %>% 
+  mutate(veggies_bin = as.numeric(if_any(all_of(vegetables_vec), ~.x == 1, na.rm = TRUE))) %>% 
+  select(all_of(vegetables_vec), veggies_bin)
+
+### testing with paste
+name <- (paste("dairy_vec", "bin", sep = "_"))
+
+test <- ingredients_df %>% 
+  mutate(name := as.numeric(if_any(c(dairy, all_of(dairy_vec)), ~.x == 1, na.rm = TRUE))) %>% 
+  select(all_of(dairy_vec), dairy_vec_bin)
+
+vec <- c("dairy_vec", "vegetables_vec")
+
+for(ingredient in vec){
+  new_test <- ingredients_df %>% 
+  mutate(dairy_vec_bin = as.numeric(if_any(c(dairy, all_of(dairy_vec)), ~.x == 1, na.rm = TRUE))) %>% 
+  select(all_of(dairy_vec), dairy_vec_bin)
+}
+print(paste("dairy_vec", "bin", sep = "_"))
+```
+
+```{r Manual Working version}
+#doing it manually for, could implement a for loop but not sure I'd gain much time
+
+ingredients_df <- ingredients_df %>%
+  #first for categories with a general variable
+  mutate(vegetables_bin = as.numeric(if_any(c(vegetable, all_of(vegetables_vec)), ~.x == 1, na.rm = TRUE)),
+         meats_bin = as.numeric(if_any(c(meat, all_of(all_meats)), ~.x == 1, na.rm = TRUE)),
+         fish_bin = as.numeric(if_any(c(fish, all_of(fish_vec)), ~.x == 1, na.rm = TRUE)),
+         seafood_bin = as.numeric(if_any(c(seafood, all_of(seafood_vec)), ~.x == 1, na.rm = TRUE)),
+         herbs_bin = as.numeric(if_any(c(herb, all_of(herbs_vec)), ~.x == 1, na.rm = TRUE)),
+         nuts_bin = as.numeric(if_any(c(nut, all_of(nuts_vec)), ~.x == 1, na.rm = TRUE)),
+         fruits_bin = as.numeric(if_any(c(fruit, all_of(fruits_vec)), ~.x == 1, na.rm = TRUE)),
+         drinks_bin = as.numeric(if_any(c(drink, all_of(drink_no_alcohol_vec)), ~.x == 1, na.rm = TRUE)),
+         cheese_bin = as.numeric(if_any(c(cheese, all_of(cheeses_vec)), ~.x == 1, na.rm = TRUE)),
+         dairy_bin = as.numeric(if_any(c(dairy, all_of(dairy_vec)), ~.x == 1, na.rm = TRUE)),
+         spices_bin = as.numeric(if_any(c(spice, all_of(spices_vec)), ~.x == 1, na.rm = TRUE)),
+         #now for the other categories which don't have a general variable
+         cereals_bin = as.numeric(if_any(all_of(cereals_vec), ~.x == 1, na.rm = TRUE)),
+         cereals_bin = as.numeric(if_any(all_of(carbs_vec), ~.x == 1, na.rm = TRUE)),
+         dessert_bin = as.numeric(if_any(all_of(dessert_vec), ~.x == 1, na.rm = TRUE))
+         )
+```
+
+```{r For loop template to do the same as above, eval = FALSE}
+ingredients_all <- c("dairy", "vegetables_vec", "fruits", "meat", "grains")
+
+for (i in ingredients_all) {
+  col_name <- paste0(i, "_bin")
+  ingredients_df <- ingredients_df %>%
+    mutate(!!col_name := as.numeric(if_any(c(i, all_of(i)), ~.x == 1, na.rm = TRUE)))
+}
+```
+
+## Analysis part
+
+```{r}
 
 ```
 

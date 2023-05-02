@@ -1,0 +1,22 @@
+---
+title: "Recipe Rating Analysis: Nutritional Values and Ingredients"
+author: "Andrea Ferrazzo, Jordan Vazquez"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    number_sections: yes
+    code_folding: hide
+    toc: true
+    toc_depth: 3
+    toc_float:
+      collapsed: true
+---
+
+```{css, echo = FALSE}
+.main-container {
+        max-width: 1000px;
+    }
+```
+
+```{r child = c('01_data.Rmd', '02_eda.Rmd', '03_analysis.Rmd')}
+``` 

@@ -1,6 +1,6 @@
 # load the required packages
 packages <- c(
-  "here", "tidyverse", "summarytools", "janitor", "viridis"
+  "knitr", "here", "tidyverse", "summarytools", "janitor", "viridis"
 )
 purrr::walk(packages, library, character.only = TRUE)
 
@@ -28,5 +28,5 @@ opts_chunk$set(
   warning = FALSE,
   fig.align = "center",
   echo = TRUE,
-  cache = TRUE
+  cache = FALSE
 )

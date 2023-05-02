@@ -8,6 +8,6 @@ date: "2023-04-20"
 source(here::here("scripts/setup.R"))
 ```
 
-#Supervised Learning
+# Supervised Learning
 
-#Unsupervised Learning
+# Unsupervised Learning
