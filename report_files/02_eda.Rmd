@@ -93,6 +93,8 @@ rating_count <- as.data.frame(rating_count) %>%
 recipes <- recipes %>% 
   filter(rating != 0)
 
+#we are left with 14568 observations after removing NAs and obs with a 0 rating value
+
 ```
 
 

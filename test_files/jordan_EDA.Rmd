@@ -292,7 +292,7 @@ ingredients_df_test <- ingredients_df %>%
 
 ## Analysis part
 
-### Frequency of ingredients
+### Frequency of ingredients - binary columns categories
 
 ```{r}
 #creating a vector with colnames of all the binary columns to be able to select them more easily afterwards
@@ -314,9 +314,22 @@ total_categories %>%
   scale_fill_viridis() +
   labs(x = "Category", y = "Amount of recipes", title = "Total amount of recipes containing at least one ingredient in defined categories")
 ```
+### Individual Ingredients
+Here we are facing a challenge regarding the general categories. Indeed, when doing computations on the binary columns, there is no issue since, whether the recipe contains specific ingredients in a category, or only a 1 in the general category, then that information is captured in the corresponding binary column.
+
+However, if we want to compute the total number of ingredients in each category that is present in recipes, then we are facing problems. To illustrate, let's assume that we have a recipe which contains 3 vegetables (specific columns in the vegetables_vec). In addition, for that recipe, the general column is also a 1 --> then by summing up, we get 4 ingredients when it should be 3.
+
+Another problem is for recipes for which the only column in a category (e.g., vegetables) that has a 1 is the general category (i.e., vegetable), and there isn't any specific ingredient listed within the vegetable category (in vegetables_vec) --> this can lead to issues when counting the number of specific ingredients per category.
+
+In order to decide whether we want to analyse with or without general categories, let's see how many observations we would be left with if we remove all the obs for which we have a general category at 1, and no specific ingredient for that category set to 1.
 
 ```{r}
-#Analysis which single ingredient comes is present in most recipes
+# ingredients_df %>% 
+#   filter(if_any(c(dairy, all_of(dairy_vec)), ~.x == 1))
+```
+
+```{r}
+#Analysis which single ingredient is present in most recipes
 df <- ingredients_df %>% 
   select(-title, -all_of(binary_columns)) %>% 
   pivot_longer(-ID, names_to = "ingredient", values_to = "value")
@@ -367,7 +380,7 @@ ingredients_df_test %>%
   ggplot(aes(x=total_ingredients)) + 
   geom_bar() + geom_vline(aes(xintercept=mean(total_ingredients)),color="red", linetype="dashed", size=1)
 
-#we notice that 188 recipes have 0 ingredients, let's investigate why and how that's possible
+#we notice that 188 (no NAs and RAT0) recipes have 0 ingredients, let's investigate why and how that's possible
 ingredients_df_test %>% 
   filter(total_ingredients==0)
 
