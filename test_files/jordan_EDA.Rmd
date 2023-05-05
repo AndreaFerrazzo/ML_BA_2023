@@ -39,7 +39,7 @@ meat_1 %>%
 #So by not taking into account "meat" we would only lose 19 observations, which aren't specific anyway
 ```
 
-```{r Veggie Check}
+```{r Vegetables Check}
 veggie_check <- recipes %>% 
   select(vegetable, all_of(vegetables_vec))
 
@@ -249,8 +249,7 @@ print(paste("dairy_vec", "bin", sep = "_"))
 #doing it manually for, could implement a for loop but not sure I'd gain much time
 
 ingredients_df <- ingredients_df %>%
-  #first for categories with a general variable
-  mutate(vegetables_bin = as.numeric(if_any(c(vegetable, all_of(vegetables_vec)), ~.x == 1, na.rm = TRUE)),
+  mutate(vegetables_bin = as.numeric(if_any(c(vegetable, all_of(vegetables_vec)), ~.x == 1, na.rm = TRUE)),#first for categories with a general variable
          meats_bin = as.numeric(if_any(c(meat, all_of(all_meats)), ~.x == 1, na.rm = TRUE)),
          fish_bin = as.numeric(if_any(c(fish, all_of(fish_vec)), ~.x == 1, na.rm = TRUE)),
          seafood_bin = as.numeric(if_any(c(seafood, all_of(seafood_vec)), ~.x == 1, na.rm = TRUE)),
@@ -261,28 +260,88 @@ ingredients_df <- ingredients_df %>%
          cheese_bin = as.numeric(if_any(c(cheese, all_of(cheeses_vec)), ~.x == 1, na.rm = TRUE)),
          dairy_bin = as.numeric(if_any(c(dairy, all_of(dairy_vec)), ~.x == 1, na.rm = TRUE)),
          spices_bin = as.numeric(if_any(c(spice, all_of(spices_vec)), ~.x == 1, na.rm = TRUE)),
-         #now for the other categories which don't have a general variable
-         cereals_bin = as.numeric(if_any(all_of(cereals_vec), ~.x == 1, na.rm = TRUE)),
-         cereals_bin = as.numeric(if_any(all_of(carbs_vec), ~.x == 1, na.rm = TRUE)),
+         cereals_bin = as.numeric(if_any(all_of(cereals_vec), ~.x == 1, na.rm = TRUE)),#now for the other categories which don't have a general variable
+         carbs_bin = as.numeric(if_any(all_of(carbs_vec), ~.x == 1, na.rm = TRUE)),
          dessert_bin = as.numeric(if_any(all_of(dessert_vec), ~.x == 1, na.rm = TRUE)),
          egg_bin = egg
          )
 ```
 
 ```{r For loop template to do the same as above, eval = FALSE}
-ingredients_all <- c("dairy", "vegetables_vec", "fruits", "meat", "grains")
-
-for (i in ingredients_all) {
-  col_name <- paste0(i, "_bin")
-  ingredients_df <- ingredients_df %>%
-    mutate(!!col_name := as.numeric(if_any(c(i, all_of(i)), ~.x == 1, na.rm = TRUE)))
-}
+# ingredients_all <- c("dairy", "vegetables_vec", "fruits", "meat", "grains")
+# 
+# for (i in ingredients_all) {
+#   col_name <- paste0(i, "_bin")
+#   ingredients_df <- ingredients_df %>%
+#     mutate(!!col_name := as.numeric(if_any(c(i, all_of(i)), ~.x == 1, na.rm = TRUE)))
+# }
 ```
 
 ## Adding total columns
 
+Here we are facing a challenge regarding the general categories. Indeed, when doing computations on the binary columns, there is no issue since, whether the recipe contains specific ingredients in a category, or only a 1 in the general category, then that information is captured in the corresponding binary column.
+
+However, if we want to compute the total number of ingredients in each category that is present in recipes, then we are facing problems. To illustrate, let's assume that we have a recipe which contains 3 vegetables (specific columns in the vegetables_vec). In addition, for that recipe, the general column is also a 1 --> then by summing up, we get 4 ingredients when it should be 3.
+
+Another problem is for recipes for which the only column in a category (e.g., vegetables) that has a 1 is the general category (i.e., vegetable), and there isn't any specific ingredient listed within the vegetable category (in vegetables_vec) --> this can lead to issues when counting the number of specific ingredients per category.
+
+In order to decide whether we want to analyse with or without general categories, let's see how many observations we would be left with if we remove all the obs for which we have a general category at 1, and no specific ingredient for that category set to 1.
+
+```{r Removing recipes without ingredients specified}
+#we are left with 11382 obs after removing all recipes which have no specific ingredient in at least one category, while that category general variable is at 1
+ingredients_df_specific <- ingredients_df %>% 
+  filter(!(if_all(all_of(vegetables_vec), ~.x == 0) & vegetable == 1)) %>% 
+  filter(!(if_all(all_of(all_meats), ~.x == 0) & meat == 1)) %>% 
+  filter(!(if_all(all_of(fish_vec), ~.x == 0) & fish == 1)) %>% 
+  filter(!(if_all(all_of(seafood_vec), ~.x == 0) & seafood == 1)) %>% 
+  filter(!(if_all(all_of(herbs_vec), ~.x == 0) & herb == 1)) %>% 
+  filter(!(if_all(all_of(nuts_vec), ~.x == 0) & nut == 1)) %>% 
+  filter(!(if_all(all_of(fruits_vec), ~.x == 0) & fruit == 1)) %>% 
+  filter(!(if_all(all_of(drink_no_alcohol_vec), ~.x == 0) & drink == 1)) %>% 
+  filter(!(if_all(all_of(cheeses_vec), ~.x == 0) & cheese == 1)) %>% 
+  filter(!(if_all(all_of(dairy_vec), ~.x == 0) & dairy == 1)) %>% 
+  filter(!(if_all(all_of(spices_vec), ~.x == 0) & spice == 1))
+```
+
+
+```{r testing code above, can remove eventually, eval=FALSE}
+#checking if it works correctly with vegetables
+
+#######
+
+#6586 obs with some vegetable in them
+check <- ingredients_df_specific %>% 
+  select(vegetable, all_of(vegetables_vec)) %>% 
+  filter_if(is.numeric, any_vars(. == 1))
+
+#there are 1061 obs with vegetable = 1
+is_1 <- check %>% 
+  filter(vegetable == 1) %>% 
+  select(-vegetable)
+
+# 0 observations for which vegetable = 1 and no specific ingredient is there --> which is what we wanted
+is_1 %>%
+  filter_if(is.numeric, all_vars(. == 0))
+
+### trying the same in one go for vegetables and meat
+ingredients_df_specific %>% 
+  select(vegetable, all_of(vegetables_vec)) %>% 
+  filter_if(is.numeric, any_vars(. == 1)) %>% 
+  filter(vegetable == 1) %>% 
+  select(-vegetable) %>% 
+  filter_if(is.numeric, all_vars(. == 0))
+
+
+ingredients_df_specific %>% 
+  select(herb, all_of(herbs_vec)) %>% 
+  filter_if(is.numeric, any_vars(. == 1)) %>% 
+  filter(herb == 1) %>% 
+  select(-herb) %>% 
+  filter_if(is.numeric, all_vars(. == 0))
+```
+
 ```{r Adding total columns for each category}
-ingredients_df_test <- ingredients_df %>% 
+ingredients_df_specific <- ingredients_df_specific %>% 
   mutate(total_ingredients = rowSums(.[,-(1:2)]),
          total_meat = rowSums(select(., c(meat, all_of(all_meats)))),
          total_vegetables = rowSums(select(., c(vegetable, all_of(vegetables_vec))))
@@ -300,13 +359,14 @@ binary_columns <- ingredients_df %>%
   select(contains("bin")) %>% 
   colnames()
 
-
+#adding binary columns to ingredients_df
 total_categories <- ingredients_df %>% 
   select(ID, all_of(binary_columns)) %>% 
   pivot_longer(-ID, names_to = "category", values_to = "binary_value") %>% 
   group_by(category) %>% 
   summarise(total = sum(binary_value))
 
+#plotting the frequency of binary columns
 total_categories %>%
   ggplot(aes(x=reorder(category,total), y=total, fill=total)) +
   geom_bar(stat = "identity") +
@@ -315,18 +375,7 @@ total_categories %>%
   labs(x = "Category", y = "Amount of recipes", title = "Total amount of recipes containing at least one ingredient in defined categories")
 ```
 ### Individual Ingredients
-Here we are facing a challenge regarding the general categories. Indeed, when doing computations on the binary columns, there is no issue since, whether the recipe contains specific ingredients in a category, or only a 1 in the general category, then that information is captured in the corresponding binary column.
 
-However, if we want to compute the total number of ingredients in each category that is present in recipes, then we are facing problems. To illustrate, let's assume that we have a recipe which contains 3 vegetables (specific columns in the vegetables_vec). In addition, for that recipe, the general column is also a 1 --> then by summing up, we get 4 ingredients when it should be 3.
-
-Another problem is for recipes for which the only column in a category (e.g., vegetables) that has a 1 is the general category (i.e., vegetable), and there isn't any specific ingredient listed within the vegetable category (in vegetables_vec) --> this can lead to issues when counting the number of specific ingredients per category.
-
-In order to decide whether we want to analyse with or without general categories, let's see how many observations we would be left with if we remove all the obs for which we have a general category at 1, and no specific ingredient for that category set to 1.
-
-```{r}
-# ingredients_df %>% 
-#   filter(if_any(c(dairy, all_of(dairy_vec)), ~.x == 1))
-```
 
 ```{r}
 #Analysis which single ingredient is present in most recipes
@@ -415,7 +464,7 @@ ingredients_df_test %>%
   ggplot(aes(x=total_meat)) + 
   geom_bar() + geom_vline(aes(xintercept=mean(total_meat)),color="blue", linetype="dashed", size=1)
 
-#why do we still have value in 0 meats --> it was because when creating the total meat column I did not include the general meat category
+#why do we still have value in 0 meats --> it was because when creating the total meat column in ingredients_df_test I did not include the general meat category
 ```
 
 ```{r Plotting Vegetables}
