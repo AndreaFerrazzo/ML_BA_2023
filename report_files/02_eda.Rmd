@@ -97,6 +97,31 @@ recipes <- recipes %>%
 
 ```
 
+## Removing recipes without specific ingredients listed
+Here we are facing a challenge regarding the general ingredient categories. Indeed, when doing computations on the binary columns, there is no issue since, whether the recipe contains specific ingredients in a category, or only a 1 in the general category, then that information is captured in the corresponding binary column.
+
+However, if we want to compute the total number of ingredients in each category that is present in recipes, then we are facing problems. To illustrate, let's assume that we have a recipe which contains 3 vegetables (specific columns in the vegetables_vec). In addition, for that recipe, the general column is also a 1 --> then by summing up, we get 4 ingredients when it should be 3.
+
+Another problem is for recipes for which the only column in a category (e.g., vegetables) that has a 1 is the general category (i.e., vegetable), and there isn't any specific ingredient listed within the vegetable category (in vegetables_vec) --> this can lead to issues when counting the number of specific ingredients per category.
+
+In order to decide whether we want to analyse with or without general categories, let's see how many observations would be left with if we remove all the obs for which we have a general category at 1, and all specific ingredients in that category is set to 0.
+
+```{r Removing recipes without ingredients specified}
+#this filters out the observations which have 1 for general category and 0s for every ingredient in that category
+recipes <- recipes %>%
+  filter(!(if_all(all_of(vegetables_vec), ~.x == 0) & vegetable == 1)) %>% 
+  filter(!(if_all(all_of(all_meats), ~.x == 0) & meat == 1)) %>% 
+  filter(!(if_all(all_of(fish_vec), ~.x == 0) & fish == 1)) %>% 
+  filter(!(if_all(all_of(seafood_vec), ~.x == 0) & seafood == 1)) %>% 
+  filter(!(if_all(all_of(herbs_vec), ~.x == 0) & herb == 1)) %>% 
+  filter(!(if_all(all_of(nuts_vec), ~.x == 0) & nut == 1)) %>% 
+  filter(!(if_all(all_of(fruits_vec), ~.x == 0) & fruit == 1)) %>% 
+  filter(!(if_all(all_of(drink_no_alcohol_vec), ~.x == 0) & drink == 1)) %>% 
+  filter(!(if_all(all_of(cheeses_vec), ~.x == 0) & cheese == 1)) %>% 
+  filter(!(if_all(all_of(dairy_vec), ~.x == 0) & dairy == 1)) %>% 
+  filter(!(if_all(all_of(spices_vec), ~.x == 0) & spice == 1))
+#we are left with 11382 obs after removing all recipes which have no specific ingredient in at least one category, while that category general variable is at 1
+```
 
 # Visual exploration - Univariate Analysis
 
@@ -461,20 +486,3 @@ recipes_plot %>%
 
 # Ingredients EDA
 
-```{r Feature Engineering, eval=FALSE}
-
-#Creating a new dataframe with only the recipe and the ingredients
-ingredients_df <- recipes %>% 
-  select(ID, title, all_of(all_ingredients))
-
-ingredients_df <- ingredients_df %>% 
-  mutate(total_ingredients = rowSums(.[,-(1:2)]), total_meat = rowSums(select(., all_of(meat))), total_vegetables = rowSums(select(., all_of(vegetables)))) %>% 
-  select(ID, title, total_ingredients, total_meat, total_vegetables, everything())
-
-#checking some stuff about the new ingredients table
-ingredients_df %>% 
-  select(ID, title, total_ingredients) %>% 
-  ggplot(aes(x=total_ingredients)) + 
-  geom_histogram(binwidth=1) + geom_vline(aes(xintercept=mean(total_ingredients)),color="blue", linetype="dashed", size=1)
-
-```

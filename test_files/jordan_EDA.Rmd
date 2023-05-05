@@ -288,7 +288,7 @@ Another problem is for recipes for which the only column in a category (e.g., ve
 In order to decide whether we want to analyse with or without general categories, let's see how many observations we would be left with if we remove all the obs for which we have a general category at 1, and no specific ingredient for that category set to 1.
 
 ```{r Removing recipes without ingredients specified}
-#we are left with 11382 obs after removing all recipes which have no specific ingredient in at least one category, while that category general variable is at 1
+#this filters out the observations which have 1 for general category and 0s for every ingredient in that category
 ingredients_df_specific <- ingredients_df %>% 
   filter(!(if_all(all_of(vegetables_vec), ~.x == 0) & vegetable == 1)) %>% 
   filter(!(if_all(all_of(all_meats), ~.x == 0) & meat == 1)) %>% 
@@ -301,6 +301,7 @@ ingredients_df_specific <- ingredients_df %>%
   filter(!(if_all(all_of(cheeses_vec), ~.x == 0) & cheese == 1)) %>% 
   filter(!(if_all(all_of(dairy_vec), ~.x == 0) & dairy == 1)) %>% 
   filter(!(if_all(all_of(spices_vec), ~.x == 0) & spice == 1))
+#we are left with 11382 obs after removing all recipes which have no specific ingredient in at least one category, while that category general variable is at 1
 ```
 
 

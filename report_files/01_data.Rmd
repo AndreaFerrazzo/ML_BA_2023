@@ -52,7 +52,7 @@ to CHECK:
 NOTES:
 final all_ingredients is 304 obs long, if you include the general categories in it, otherwise it's 293 (292 in vectors plus "egg")
 
-ALWAYS CHECK THAT it's 321 after the binary columns and general categories are added
+ALWAYS CHECK THAT ingredients_df is 321 after the binary columns and general categories are added. 322 now with rating as well
 
 ```{r Creating Variable Categories}
 us_states <- c("alabama", "alaska", "arizona", "california", "colorado", "connecticut", "florida", "georgia", "hawaii", "idaho", "illinois", "indiana", "iowa", "kansas", "kentucky", "louisiana", "maine", "maryland", "massachusetts", "michigan", "minnesota", "mississippi", "missouri", "nebraska", "new_hampshire", "new_jersey", "new_mexico", "new_york", "north_carolina", "ohio", "oklahoma", "oregon", "pennsylvania", "rhode_island", "south_carolina", "tennessee", "texas", "utah", "vermont", "virginia", "washington", "west_virginia", "wisconsin")
