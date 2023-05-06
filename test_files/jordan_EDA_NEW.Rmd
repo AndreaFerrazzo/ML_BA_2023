@@ -167,6 +167,8 @@ ingredients_df_total %>%
 
 ```{r Plotting ingredients totals}
 #checking some stuff about the new ingredients table
+ingredients_df_test <- ingredients_df_total
+
 ingredients_df_test %>% 
   select(ID, title, total_ingredients) %>% 
   ggplot(aes(x=total_ingredients)) + 

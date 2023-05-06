@@ -19,7 +19,7 @@ recipes %>%
   head(20) %>% 
   str() 
 
-# We have only numerical variables, but in reality just 4 variables could be considered as such. More in particular, "rating", "calories", "protein", "fat" and "sodium" could be considered as such. The other variables should be considered as a categorical variable since they allow only for 0 or 1 values.
+# We have only numerical variables, but in reality just 4 variables could be considered as such. More in particular, "rating", "calories", "protein", "fat" and "sodium" could be considered numerical. The other variables should be considered categorical since they allow only for 0 or 1 values.
 
 
 # Let's have a different look at the data with the summary function.
@@ -69,14 +69,10 @@ freq_na %>%
   
 # Among the recipes which have NAs, we notice that many of them have 4 NAs for all the 4 nutritional values, more precisely 4117  out of 4188 recipes. Without any other information available, making an imputation to retrieve such values would not make any sense.
 
-# We could try to make an imputation of the 29 recipes that have only 1 NA. The same operation on the 42 recipes with 2 NAs would not deliver accurate and satisfying results. However, we believe that is not worth to make imputation of such NA values. We should not forget that the nutritional values per recipe are estimated, then making an imputation would result in a sort of estimation of an estimation. To what extent could it be reliable? We decide to eliminate recipes with NA values. Finally, we would still have 15864 recipes without NAs to analyse.
+# We could try to make an imputation of the 29 recipes that have only 1 NA. The same operation on the 42 recipes with 2 NAs would not deliver accurate and satisfying results. However, we believe that is not worth to make imputation of such NA values. We should not forget that the nutritional values per recipe are estimated, then making an imputation would result in a sort of estimation of an estimation. To what extent could it be reliable? We decide to eliminate recipes with NA values. Finally, we would still have 15864 recipes without NAs for our analysis.
 
-#this is way faster than the code below
 recipes <- recipes %>% 
   drop_na()
-
-#recipes <- recipes[!apply(is.na(recipes) | recipes == "", 1, any), ]
-
 
 ```
 
@@ -96,18 +92,39 @@ rating_count <- as.data.frame(rating_count) %>%
 recipes <- recipes %>% 
   filter(rating != 0)
 
-#we are left with 14568 observations after removing NAs and obs with a 0 rating value
+# We are left with 14568 observations after removing NAs and obs with a 0 rating value
 
 ```
+
+## Discard copies of recipes
+```{r}
+
+# We want to eliminate recipes that have multiple copies. Sometimes the recipes have the same title, but nutritional values are different. This indicates that there are various ways to prepare a specific recipe. We want to keep those recipes that have the same title, but have different nutritional values.
+
+# Let's check for instance Almond Butter Crisps, a recipe which can be found twice in the data set, with ID=1026 and ID=8908.
+recipes %>% 
+  filter(ID == 1026)
+
+unique_recipes <- distinct(recipes, title, rating, protein, sodium, fat, calories, .keep_all = TRUE)
+
+unique_recipes %>% 
+  filter(ID == 8908)
+
+# Now the data set is free from useless copies. We discarded 1288 copies in total.
+
+recipes <- unique_recipes
+
+```
+
 
 ## Removing recipes without specific ingredients listed
 Here we are facing a challenge regarding the general ingredient categories. Indeed, when doing computations on the binary columns, there is no issue since, whether the recipe contains specific ingredients in a category, or only a 1 in the general category, then that information is captured in the corresponding binary column.
 
 However, if we want to compute the total number of ingredients in each category that is present in recipes, then we are facing problems. To illustrate, let's assume that we have a recipe which contains 3 vegetables (specific columns in the vegetables_vec). In addition, for that recipe, the general column is also a 1 --> then by summing up, we get 4 ingredients when it should be 3.
 
-Another problem is for recipes for which the only column in a category (e.g., vegetables) that has a 1 is the general category (i.e., vegetable), and there isn't any specific ingredient listed within the vegetable category (in vegetables_vec) --> this can lead to issues when counting the number of specific ingredients per category.
+Another problem is related to recipes for which the only column in a category (e.g., vegetables) that has a 1 is the general category (i.e., vegetable), and there isn't any specific ingredient listed within the vegetable category (in vegetables_vec) --> this can lead to issues when counting the number of specific ingredients per category.
 
-In order to decide whether we want to analyse with or without general categories, let's see how many observations would be left with if we remove all the obs for which we have a general category at 1, and all specific ingredients in that category is set to 0.
+In order to decide whether we want to analyse with or without general categories, let's see how many observations would remain if we remove all the obs for which we have a general category at 1, and all specific ingredients in that category is set to 0.
 
 ```{r Removing recipes without ingredients specified}
 #this filters out the observations which have 1 for general category and 0s for every ingredient in that category
@@ -470,22 +487,256 @@ corrplot(corr_nutritional_values)
 # Grouped Scatter
 ```{r}
 
-recipes_plot <- recipes %>% 
+# We decide to plot together the variables which highlight a great level of correlation.
+
+# Grouped scatter of calories and fat
+recipes_plot1 <- recipes %>% 
+  filter(fat <= 400, calories <= 6000)
+
+recipes_plot1 %>% 
+  ggplot(aes(x=calories, y=fat, color=rating)) +
+  geom_point() + 
+  scale_color_gradientn(colours = rainbow(5))
+
+# Grouped scatter of calories and protein
+recipes_plot2 <- recipes %>% 
+  filter(protein <= 500, calories <= 6000)
+
+recipes_plot2 %>% 
+  ggplot(aes(x=calories, y=protein, color=rating)) +
+  geom_point() + 
+  scale_color_gradientn(colours = rainbow(5))
+
+# Grouped scatter of protein and fat
+recipes_plot3 <- recipes %>% 
   filter(fat <= 400, protein <= 350)
 
-recipes_plot %>% 
-  ggplot(aes(x=protein, y=fat, color=rating, alpha=rating, size=rating)) +
+recipes_plot3 %>% 
+  ggplot(aes(x=protein, y=fat, color=rating)) +
   geom_point() + 
   scale_color_gradientn(colours = rainbow(5))
 
 
-# We tried various representations of protein and fat according to rating without being able to clearly show a pattern.
+# Grouped scatter of protein and sodium
+recipes_plot4 <- recipes %>% 
+  filter(sodium <= 400, protein <= 350)
 
-
+recipes_plot4 %>% 
+  ggplot(aes(x=protein, y=sodium, color=rating)) +
+  geom_point() + 
+  scale_color_gradientn(colours = rainbow(5))
 
 ```
 
 
 
 # Ingredients EDA
+
+# Feature engineering 
+
+```{r Creating ingredients_df}
+#Creating a new dataframe with only the ID, title and the ingredients
+
+#through the analysis above, we saw that "drinks" on it's own had only 11 observations, 4 of which also had the value "drink" = 1 --> we decided to merge the two columns to simplify working with a single category called "drink" for all drinks
+ingredients_df <- recipes %>% 
+  mutate(drink = ifelse(drink == 1 | drinks == 1, 1, 0)) %>% #merging drinks and drink
+  select(ID, title, all_of(all_ingredients), rating)
+
+```
+
+
+## Adding binary columns
+
+```{r Adding binary columns for each category - Manual Working version}
+#doing it manually, could implement a for loop but not sure I'd gain much time
+ingredients_df_bin <- ingredients_df %>%
+  mutate(vegetables_bin = as.numeric(if_any(all_of(vegetables_vec), ~.x == 1, na.rm = TRUE)),#first for categories with a general variable
+         meats_bin = as.numeric(if_any(all_of(all_meats), ~.x == 1, na.rm = TRUE)),
+         fish_bin = as.numeric(if_any(all_of(fish_vec), ~.x == 1, na.rm = TRUE)),
+         seafood_bin = as.numeric(if_any(all_of(seafood_vec), ~.x == 1, na.rm = TRUE)),
+         herbs_bin = as.numeric(if_any(all_of(herbs_vec), ~.x == 1, na.rm = TRUE)),
+         nuts_bin = as.numeric(if_any(all_of(nuts_vec), ~.x == 1, na.rm = TRUE)),
+         fruits_bin = as.numeric(if_any(all_of(fruits_vec), ~.x == 1, na.rm = TRUE)),
+         drinks_bin = as.numeric(if_any(all_of(drink_no_alcohol_vec), ~.x == 1, na.rm = TRUE)),
+         cheese_bin = as.numeric(if_any(all_of(cheeses_vec), ~.x == 1, na.rm = TRUE)),
+         dairy_bin = as.numeric(if_any(all_of(dairy_vec), ~.x == 1, na.rm = TRUE)),
+         spices_bin = as.numeric(if_any(all_of(spices_vec), ~.x == 1, na.rm = TRUE)),
+         cereals_bin = as.numeric(if_any(all_of(cereals_vec), ~.x == 1, na.rm = TRUE)),#now for the other categories which don't have a general variable
+         carbs_bin = as.numeric(if_any(all_of(carbs_vec), ~.x == 1, na.rm = TRUE)),
+         dessert_bin = as.numeric(if_any(all_of(dessert_vec), ~.x == 1, na.rm = TRUE)),
+         egg_bin = (egg)
+         )
+```
+
+The fact that both select the same number of rows makes having general categories redundant in the dataset. They are not useful to create the binary columns, and they are also not useful to compute the total amount of ingredients in each category per recipe --> let's just not include them in the first place
+```{r}
+
+####testing if I still need to include the general category to create the binary column now that I modified the df to only include recipes with ingredients specified
+
+#6586
+ingredients_df %>%
+  mutate(vegetables_bin = as.factor(as.numeric(if_any(c(vegetable, all_of(vegetables_vec)), ~.x == 1, na.rm = TRUE)))) %>%
+  filter(vegetables_bin == 1)
+
+#6586
+ingredients_df %>%
+  mutate(vegetables_bin = as.factor(as.numeric(if_any(all_of(vegetables_vec), ~.x == 1, na.rm = TRUE)))) %>%
+  filter(vegetables_bin == 1)
+```
+
+
+## Adding total columns
+
+```{r Adding total columns for each category}
+ingredients_df_total <- ingredients_df %>%
+  mutate(total_ingredients = rowSums(select(., c(all_of(all_ingredients)))),
+         total_meat = rowSums(select(., c(all_of(all_meats)))),
+         total_vegetables = rowSums(select(., c(all_of(vegetables_vec))))
+         ) %>% 
+  select(ID, title, total_ingredients, total_meat, total_vegetables, everything())
+```
+
+
+## Analysis part
+
+### Frequency of ingredients - binary columns categories
+
+This gives us interesting information about the frequency of each ingredient being present at least once in a recipe. As we can see, there is at least one vegetable in around 6750 recipes out of the 11380 total we have. Inversely, a very low amount of recipes contains at least one type of cereal.
+```{r}
+#creating a vector with colnames of all the binary columns to be able to select them more easily afterwards
+binary_columns <- ingredients_df_bin %>% 
+  select(contains("bin")) %>% 
+  colnames()
+
+#adding binary columns to ingredients_df
+total_categories <- ingredients_df_bin %>% 
+  select(ID, all_of(binary_columns)) %>% 
+  pivot_longer(-ID, names_to = "category", values_to = "binary_value") %>% 
+  group_by(category) %>% 
+  summarise(total = sum(binary_value))
+
+#plotting the frequency of binary columns
+total_categories %>%
+  ggplot(aes(x=reorder(category,total), y=total, fill=total)) +
+  geom_bar(stat = "identity") +
+  scale_x_discrete(guide = guide_axis(n.dodge=3))+
+  scale_fill_viridis() +
+  labs(x = "Category", y = "Amount of recipes", title = "Total amount of recipes containing at least one ingredient in defined categories")
+```
+The below boxplots give us similar information about the amount of recipe which contain at least one ingredient in each category.The only category for which the an ingredient is present at least ince in more than 50% of the recipes is vegetables.
+```{r}
+ingredients_df_bin %>% 
+  select(contains("bin")) %>%
+  mutate(across(everything(), as.factor)) %>% 
+  plot_bar(order_bar = FALSE)
+```
+
+
+### Correlation between binary columns, including the rating
+We can see that no binary variable correlated to the rating in any way.
+
+We see some somewhat strong negative correlation between vegetables and dessert, and between vegetable and fruits. This makes sense, as these ingredients are rarely found together in recipes. As a side note, we chose to classify tomato as a vegetable and strongly stand by this opinion :)
+
+Concerning positive correlations, we see nuts and desert as highly correlated. This is probably because they go well together in sugary recipes. Additionally, egg and dairy is also correlated at 0.23. This most likely comes from patisserie recipes where eggs and dairy ingredients go hand in hand.
+```{r}
+ingredients_df_bin %>% 
+  select(contains("bin"), rating) %>% 
+  plot_correlation()
+```
+```{r}
+#testing if corr matrix changes when we set the binary columns as factor instead of num
+ingredients_df_bin %>% 
+  select(contains("bin"), rating) %>% 
+  mutate(across(-rating, as.factor)) %>% 
+  plot_correlation()
+#this gives weird results
+```
+```{r}
+#now trying with rating as a factor
+ingredients_df_bin %>% 
+  select(contains("bin"), rating) %>% 
+  mutate(across(rating, as.factor)) %>% 
+  plot_correlation()
+```
+
+
+### Total individual ingredients
+
+```{r}
+#Analysis which single ingredient is present in most recipes
+df <- ingredients_df %>% 
+  select(-title, -rating) %>% 
+  pivot_longer(-ID, names_to = "ingredient", values_to = "value")
+
+
+ing_top10 <- df %>% 
+  group_by(ingredient) %>% 
+  summarise(total = sum(value)) %>% 
+  ungroup() %>% 
+  arrange(desc(total)) %>% 
+  slice(1:10)
+
+ing_top10 %>% 
+  # mutate(ingredient = fct_rev(ingredient)) %>% 
+  ggplot(aes(x=reorder(ingredient, total), y=total, fill=ingredient)) +
+  geom_bar(stat = "identity") +
+  scale_fill_viridis(discrete = TRUE) +
+  scale_x_discrete(guide = guide_axis(n.dodge=2))+
+  labs(x = "Ingredient", y = "Value", title = "Total amount of recipes containing each ingredient\nTop 10")
+```
+
+
+### Correlation between amount of ingredients and rating
+
+```{r}
+ingredients_df_total %>% 
+  select(contains("total"), rating) %>% 
+  plot_correlation()
+```
+
+
+### Amount of ingredients per recipe
+
+```{r Plotting ingredients totals}
+#checking some stuff about the new ingredients table
+ingredients_df_test <- ingredients_df_total
+
+ingredients_df_test %>% 
+  select(ID, title, total_ingredients) %>% 
+  ggplot(aes(x=total_ingredients)) + 
+  geom_bar() + geom_vline(aes(xintercept=mean(total_ingredients)),color="red", linetype="dashed", size=1)
+
+#we notice that 188 (no NAs and RAT0) recipes have 0 ingredients, let's investigate why and how that's possible
+ingredients_df_test %>% 
+  filter(total_ingredients==0)
+
+#let's pick recipe ID number 1183 which should have poppy and sesame seeds according to the title
+recipes %>% 
+  filter(ID == 1183) %>% 
+  select_if(~ any(. == 1))
+#we can see that only 3 variables are equal to 1 here
+recipes %>% 
+  filter(ID == 365) %>% 
+  select_if(~ any(. == 1))
+
+recipes %>% 
+  filter(ID == 1089) %>% 
+  select_if(~ any(. == 1))
+
+#####
+#QUESTION: do we want to keep those recipes?
+#####
+```
+
+
+```{r}
+
+ingredients_df_full <- ingredients_df %>%
+  mutate(total_ingredients = rowSums(select(., c(all_of(all_ingredients)))),
+         total_meat = rowSums(select(., c(all_of(all_meats)))),
+         total_vegetables = rowSums(select(., c(all_of(vegetables_vec))))
+         )
+
+
+```
 
