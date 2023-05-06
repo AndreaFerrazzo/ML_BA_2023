@@ -71,8 +71,11 @@ freq_na %>%
 
 # We could try to make an imputation of the 29 recipes that have only 1 NA. The same operation on the 42 recipes with 2 NAs would not deliver accurate and satisfying results. However, we believe that is not worth to make imputation of such NA values. We should not forget that the nutritional values per recipe are estimated, then making an imputation would result in a sort of estimation of an estimation. To what extent could it be reliable? We decide to eliminate recipes with NA values. Finally, we would still have 15864 recipes without NAs to analyse.
 
+#this is way faster than the code below
+recipes <- recipes %>% 
+  drop_na()
 
-recipes <- recipes[!apply(is.na(recipes) | recipes == "", 1, any), ]
+#recipes <- recipes[!apply(is.na(recipes) | recipes == "", 1, any), ]
 
 
 ```
