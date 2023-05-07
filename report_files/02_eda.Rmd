@@ -856,38 +856,155 @@ recipes_full %>%
 For instance we notice a positive correlation between proteins and meats_bin which includes all sorts of meat. Another visible positive correlation is the one between sodium and seafood_bin. We might also want to investigate the relationship between calories and carbs_bin.
 
 
-### Barplots
+### Barplot and boxplot - Meat and Proteins
 ```{r}
 
-# Meat and proteins
+# Barplot
 recipes_full %>% 
-  ggplot(aes(x=meats_bin, y=protein)) +
-  geom_bar(stat = "identity") +
-  ggtitle("Relationship between meat and proteins") +
+  ggplot(aes(x = factor(meats_bin), y = protein)) +
+  stat_summary(fun.y = mean, geom = "bar") +
+  ggtitle("Average amount of proteins per recipe with and without meat") +
+  xlab("Presence of Meat or not") +
+  ylab("Protein Content in grams")
+
+# Boxplot
+recipes_full %>% 
+  filter(protein < 450) %>% 
+  ggplot(aes(x=factor(meats_bin), y=protein, fill=factor(meats_bin))) +
+  geom_boxplot(alpha=0.3) +
+  scale_y_continuous(breaks=seq(0,7000,25)) +
+  xlab("Presence of Meat or not") +
+  ylab("Protein Content in grams") +
+  theme(legend.position="none")
+
+
+# Boxplots per different kinds of meat
+recipes_general <- recipes_full %>% 
+  select(ID) %>% 
+  left_join(recipes, 
+           by=c('ID'))
+
+recipes_meat <- recipes_general %>% 
+  select(ID, title, rating, calories, protein, fat, sodium, all_of(all_meats))
+
+recipes_meat <- recipes_meat %>% 
+  pivot_longer(cols=c("beef", "beef_rib", "beef_shank", "beef_tenderloin", "brisket", "ground_beef", "hamburger", "veal", "bacon", "ham", "pork", "pork_chop", "pork_rib", "pork_tenderloin", "prosciutto", "ground_lamb", "lamb", "lamb_chop", "lamb_shank", "rack_of_lamb", "chicken", "duck", "goose", "poultry", "poultry_sausage", "quail", "turkey", "meatball", "meatloaf", "rabbit", "sausage", "steak", "venison" ),
+                    names_to='meats',
+                    values_to='yes_or_no') %>% 
+  filter(yes_or_no == 1)
+
+recipes_meat %>% 
+  filter(protein < 450) %>%
+  ggplot(aes(x=meats, y=protein, fill=meats)) +
+  geom_boxplot(alpha=0.3) +
+  scale_y_continuous(breaks=seq(0,7000,25)) +
+  coord_flip() +
+  ggtitle("Distribution of proteins per recipe according to different kinds of meat") +
   xlab("Meats") +
-  ylab("Proteins") 
+  ylab("Protein Content in grams") +
+  theme(legend.position="none") 
 
-# We also want to show which kinds of meat specifically have a high number of proteins
+# Here we want to show which kinds of meat specifically have a high level of proteins
 
+```
+
+### Barplot and boxplot - Seafood and Sodium
+```{r}
 
 # Seafood and sodium
 recipes_full %>% 
-  ggplot(aes(x=seafood_bin, y=sodium)) +
-  geom_bar(stat = "identity") +
-  ggtitle("Relationship between seafood and sodium") +
-  xlab("Seafood") +
-  ylab("Sodium") 
+  ggplot(aes(x = factor(seafood_bin), y = sodium)) +
+  stat_summary(fun.y = mean, geom = "bar") +
+  ggtitle("Average amount of sodium per recipe with and without seafood")  +
+  xlab("Presence of Seafood or not") +
+  ylab("Sodium Content in milligrams")
 
-# We also want to show which kinds of seafood specifically have a high number of sodium
+
+# Boxplot
+recipes_full %>% 
+  filter(sodium < 10000) %>% 
+  ggplot(aes(x=factor(seafood_bin), y=sodium, fill=factor(seafood_bin))) +
+  geom_boxplot(alpha=0.3) +
+  scale_y_continuous(breaks=seq(0,30000,500)) +
+  xlab("Presence of Seafood or not") +
+  ylab("Sodium Content in milligrams") +
+  theme(legend.position="none")
+
+
+
+# Boxplots per different kinds of seafood
+
+recipes_seafood <- recipes_general %>% 
+  select(ID, title, rating, calories, protein, fat, sodium, all_of(seafood_vec))
+
+recipes_seafood <- recipes_seafood %>% 
+  pivot_longer(cols=c("clam", "crab", "lobster", "mussel", "octopus", "oyster", "scallop", "shellfish", "shrimp", "squid" ),
+                    names_to='seafoods',
+                    values_to='yes_or_no') %>% 
+  filter(yes_or_no == 1)
+
+recipes_seafood %>% 
+  filter(sodium < 10000) %>%
+  ggplot(aes(x=seafoods, y=sodium, fill=seafoods)) +
+  geom_boxplot(alpha=0.3) +
+  scale_y_continuous(breaks=seq(0,30000,500)) +
+  coord_flip() +
+  ggtitle("Distribution of sodium per recipe according to different kinds of seafood") +
+  xlab("Seafood") +
+  ylab("Sodium Content in milligrams") +
+  theme(legend.position="none") 
+
+# Here we want to show which kinds of seafood specifically have a high level of sodium
+
+```
+
+### Barplot and boxplot - Carbs and Calories
+```{r}
 
 # Carbs and calories
 recipes_full %>% 
-  ggplot(aes(x=carbs_bin, y=calories)) +
-  geom_bar(stat = "identity") +
-  ggtitle("Relationship between food high in carbs and calories") +
-  xlab("Carbs") +
-  ylab("Calories") 
+  ggplot(aes(x = factor(carbs_bin), y = calories)) +
+  stat_summary(fun.y = mean, geom = "bar") +
+  ggtitle("Average amount of calories per recipe with and without carbohydrates") +
+  xlab("Presence of carbohydrates or not") +
+  ylab("Calories content")
 
-# We also want to show which kinds of carbs specifically have a high number of calories
+# Afterwards we would also want to show which kinds of carbs specifically have a high number of calories
+
+
+# Boxplot
+recipes_full %>% 
+  ggplot(aes(x=factor(carbs_bin), y=calories, fill=factor(carbs_bin))) +
+  geom_boxplot(alpha=0.3) +
+  scale_y_continuous(breaks=seq(0,7000,500)) +
+  xlab("Presence of Carbs or not") +
+  ylab("Calories Content") +
+  theme(legend.position="none")
+
+
+# Boxplots per different kinds of carbs
+recipes_carbs <- recipes_general %>% 
+  select(ID, title, rating, calories, protein, fat, sodium, all_of(carbs_vec))
+
+recipes_carbs <- recipes_carbs %>% 
+  pivot_longer(cols=c("brown_rice", "chickpea", "cornmeal", "couscous", "hominy_cornmeal_masa", "orzo", "pasta", "potato", "rice", "semolina", "sweet_potato_yam", "wild_rice"),
+                    names_to='carbs',
+                    values_to='yes_or_no') %>% 
+  filter(yes_or_no == 1)
+
+recipes_carbs %>% 
+  filter(sodium < 10000) %>%
+  ggplot(aes(x=carbs, y=calories, fill=carbs)) +
+  geom_boxplot(alpha=0.3) +
+  scale_y_continuous(breaks=seq(0,7000,500)) +
+  coord_flip() +
+  ggtitle("Distribution of calories per recipe according to different kinds of food high in carbohydrates") +
+  xlab("Carbs") +
+  ylab("Calories Content") +
+  theme(legend.position="none") 
+
+# Here we want to show which kinds of food high in carbs specifically have a high level of calories
 
 ```
+
+
