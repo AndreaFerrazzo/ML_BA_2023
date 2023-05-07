@@ -103,13 +103,13 @@ recipes <- recipes %>%
 # We want to eliminate recipes that have multiple copies. Sometimes the recipes have the same title, but nutritional values are different. This indicates that there are various ways to prepare a specific recipe. We want to keep those recipes that have the same title, but have different nutritional values.
 
 # Let's check for instance Almond Butter Crisps, a recipe which can be found twice in the data set, with ID=1026 and ID=8908.
-recipes %>% 
-  filter(ID == 1026)
+(recipes %>% 
+  filter(ID == 1026))
 
 unique_recipes <- distinct(recipes, title, rating, protein, sodium, fat, calories, .keep_all = TRUE)
 
-unique_recipes %>% 
-  filter(ID == 8908)
+(unique_recipes %>% 
+  filter(ID == 8908))
 
 # Now the data set is free from useless copies. We discarded 1288 copies in total. #we lose a bit less if we remove the ones without specific ingredients first, meaning that some duplicate copies don't contain specific ingredients either
 
@@ -729,8 +729,8 @@ ingredients_df_total %>%
   labs(x="Number of ingredients per recipe", y = "Recipe Count", title = "Distrubution of number of ingredients per recipe")
 
 #we notice that 117 (no NAs and RAT0, and not duplicated) recipes have 0 ingredients, let's investigate why and how that's possible
-ingredients_df_test %>% 
-  filter(total_ingredients==0)
+(ingredients_df_total %>% 
+  filter(total_ingredients==0))
 
 #let's pick recipe ID number 1183 which should have poppy and sesame seeds according to the title
 recipes %>% 
