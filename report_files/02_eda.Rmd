@@ -728,7 +728,7 @@ recipes %>%
 #####
 ```
 
-
+## Left joins to aggregate data
 ```{r}
 
 ingredients_df_full <- ingredients_df %>%
@@ -736,6 +736,77 @@ ingredients_df_full <- ingredients_df %>%
          total_meat = rowSums(select(., c(all_of(all_meats)))),
          total_vegetables = rowSums(select(., c(all_of(vegetables_vec))))
          )
+
+recipes_select <- recipes %>% 
+  select(ID, title, rating, calories, protein, sodium, fat)
+
+ingredients_select <- ingredients_df_full %>% 
+  select(ID, total_ingredients, total_meat, total_vegetables)
+
+recipes_more <- recipes_select %>%
+  left_join(ingredients_select, 
+           by=c('ID'))
+
+ingredients_bin_select <- ingredients_df_bin %>% 
+  select(ID, contains("bin"))
+
+
+recipes_full <- recipes_more %>%
+  left_join(ingredients_bin_select, 
+           by=c('ID'))
+
+```
+
+### Correlation between nutritional values and categories
+```{r}
+
+recipes_full %>% 
+  select(-ID) %>% 
+  plot_correlation()
+
+
+```
+For instance we notice a positive correlation between proteins and meats_bin which includes all sorts of meat. Another visible positive correlation is the one between sodium and seafood_bin. We might also want to investigate the relationship between calories and carbs_bin.
+
+
+### Barplots
+```{r}
+
+# Meat and proteins
+recipes_full %>% 
+  ggplot(aes(x=meats_bin, y=protein)) +
+  geom_bar(stat = "identity") +
+  ggtitle("Relationship between meat and proteins") +
+  xlab("Meats") +
+  ylab("Proteins") 
+
+# We also want to show which kinds of meat specifically have a high number of proteins
+
+
+# Seafood and sodium
+recipes_full %>% 
+  ggplot(aes(x=seafood_bin, y=sodium)) +
+  geom_bar(stat = "identity") +
+  ggtitle("Relationship between seafood and sodium") +
+  xlab("Seafood") +
+  ylab("Sodium") 
+
+# We also want to show which kinds of seafood specifically have a high number of sodium
+
+# Carbs and calories
+recipes_full %>% 
+  ggplot(aes(x=carbs_bin, y=calories)) +
+  geom_bar(stat = "identity") +
+  ggtitle("Relationship between food high in carbs and calories") +
+  xlab("Carbs") +
+  ylab("Calories") 
+
+# We also want to show which kinds of carbs specifically have a high number of calories
+
+```
+### Boxplots
+```{r}
+
 
 
 ```
