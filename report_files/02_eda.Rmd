@@ -74,6 +74,7 @@ freq_na %>%
 recipes <- recipes %>% 
   drop_na()
 
+#15864 obs after droping NAs
 ```
 
 
@@ -110,7 +111,7 @@ unique_recipes <- distinct(recipes, title, rating, protein, sodium, fat, calorie
 unique_recipes %>% 
   filter(ID == 8908)
 
-# Now the data set is free from useless copies. We discarded 1288 copies in total.
+# Now the data set is free from useless copies. We discarded 1288 copies in total. #we lose a bit less if we remove the ones without specific ingredients first, meaning that some duplicate copies don't contain specific ingredients either
 
 recipes <- unique_recipes
 
@@ -141,6 +142,8 @@ recipes <- recipes %>%
   filter(!(if_all(all_of(dairy_vec), ~.x == 0) & dairy == 1)) %>% 
   filter(!(if_all(all_of(spices_vec), ~.x == 0) & spice == 1))
 #we are left with 11382 obs after removing all recipes which have no specific ingredient in at least one category, while that category general variable is at 1
+
+### without duplicated recipes we are left at 10321 obs
 ```
 
 # Visual exploration - Univariate Analysis
@@ -557,7 +560,7 @@ ingredients_df_bin <- ingredients_df %>%
          herbs_bin = as.numeric(if_any(all_of(herbs_vec), ~.x == 1, na.rm = TRUE)),
          nuts_bin = as.numeric(if_any(all_of(nuts_vec), ~.x == 1, na.rm = TRUE)),
          fruits_bin = as.numeric(if_any(all_of(fruits_vec), ~.x == 1, na.rm = TRUE)),
-         drinks_bin = as.numeric(if_any(all_of(drink_no_alcohol_vec), ~.x == 1, na.rm = TRUE)),
+         #drinks_bin = as.numeric(if_any(all_of(drink_no_alcohol_vec), ~.x == 1, na.rm = TRUE)),
          cheese_bin = as.numeric(if_any(all_of(cheeses_vec), ~.x == 1, na.rm = TRUE)),
          dairy_bin = as.numeric(if_any(all_of(dairy_vec), ~.x == 1, na.rm = TRUE)),
          spices_bin = as.numeric(if_any(all_of(spices_vec), ~.x == 1, na.rm = TRUE)),
@@ -569,19 +572,19 @@ ingredients_df_bin <- ingredients_df %>%
 ```
 
 The fact that both select the same number of rows makes having general categories redundant in the dataset. They are not useful to create the binary columns, and they are also not useful to compute the total amount of ingredients in each category per recipe --> let's just not include them in the first place
-```{r}
+```{r eval=FALSE}
 
 ####testing if I still need to include the general category to create the binary column now that I modified the df to only include recipes with ingredients specified
-
-#6586
-ingredients_df %>%
-  mutate(vegetables_bin = as.factor(as.numeric(if_any(c(vegetable, all_of(vegetables_vec)), ~.x == 1, na.rm = TRUE)))) %>%
-  filter(vegetables_bin == 1)
-
-#6586
-ingredients_df %>%
-  mutate(vegetables_bin = as.factor(as.numeric(if_any(all_of(vegetables_vec), ~.x == 1, na.rm = TRUE)))) %>%
-  filter(vegetables_bin == 1)
+# 
+# #6586
+# ingredients_df %>%
+#   mutate(vegetables_bin = as.factor(as.numeric(if_any(c(vegetable, all_of(vegetables_vec)), ~.x == 1, na.rm = TRUE)))) %>%
+#   filter(vegetables_bin == 1)
+# 
+# #6586
+# ingredients_df %>%
+#   mutate(vegetables_bin = as.factor(as.numeric(if_any(all_of(vegetables_vec), ~.x == 1, na.rm = TRUE)))) %>%
+#   filter(vegetables_bin == 1)
 ```
 
 
@@ -590,12 +593,31 @@ ingredients_df %>%
 ```{r Adding total columns for each category}
 ingredients_df_total <- ingredients_df %>%
   mutate(total_ingredients = rowSums(select(., c(all_of(all_ingredients)))),
+         total_vegetables = rowSums(select(., c(all_of(vegetables_vec)))),
          total_meat = rowSums(select(., c(all_of(all_meats)))),
-         total_vegetables = rowSums(select(., c(all_of(vegetables_vec))))
+         total_fish = rowSums(select(., c(all_of(fish_vec)))),
+         total_seafood = rowSums(select(., c(all_of(seafood_vec)))),
+         total_herbs = rowSums(select(., c(all_of(herbs_vec)))),
+         total_nuts = rowSums(select(., c(all_of(nuts_vec)))),
+         total_fruits = rowSums(select(., c(all_of(fruits_vec)))),
+         #total_drinks = rowSums(select(., c(all_of(drink_no_alcohol_vec)))),
+         total_cheese = rowSums(select(., c(all_of(cheeses_vec)))),
+         total_dairy= rowSums(select(., c(all_of(dairy_vec)))),
+         total_spices= rowSums(select(., c(all_of(spices_vec)))),
+         total_cereals= rowSums(select(., c(all_of(cereals_vec)))),
+         total_carbs = rowSums(select(., c(all_of(carbs_vec)))),
+         total_dessert = rowSums(select(., c(all_of(dessert_vec))))
          ) %>% 
-  select(ID, title, total_ingredients, total_meat, total_vegetables, everything())
+  select(ID, title, contains("total"), everything())
 ```
 
+```{r creating df with bin and total columns}
+total_join <- ingredients_df_total %>% 
+  select(ID, contains("total"))
+  
+ingredients_df_full <- ingredients_df_bin %>% 
+  left_join(total_join)
+```
 
 ## Analysis part
 
@@ -694,19 +716,19 @@ ingredients_df_total %>%
   plot_correlation()
 ```
 
-
 ### Amount of ingredients per recipe
 
+The numner of ingredients per recipe is more or less normally distributed, with a mean around 4.75.
 ```{r Plotting ingredients totals}
 #checking some stuff about the new ingredients table
-ingredients_df_test <- ingredients_df_total
-
-ingredients_df_test %>% 
+ingredients_df_total %>% 
   select(ID, title, total_ingredients) %>% 
   ggplot(aes(x=total_ingredients)) + 
-  geom_bar() + geom_vline(aes(xintercept=mean(total_ingredients)),color="red", linetype="dashed", size=1)
+  geom_bar() + geom_vline(aes(xintercept=mean(total_ingredients)),color="red", linetype="dashed", size=1)+
+   scale_x_continuous(breaks = seq(1, 12, by = 1)) +
+  labs(x="Number of ingredients per recipe", y = "Recipe Count", title = "Distrubution of number of ingredients per recipe")
 
-#we notice that 188 (no NAs and RAT0) recipes have 0 ingredients, let's investigate why and how that's possible
+#we notice that 117 (no NAs and RAT0, and not duplicated) recipes have 0 ingredients, let's investigate why and how that's possible
 ingredients_df_test %>% 
   filter(total_ingredients==0)
 
@@ -726,8 +748,73 @@ recipes %>%
 #####
 #QUESTION: do we want to keep those recipes?
 #####
+
+
+(ingredients_df_total %>% 
+  filter(total_ingredients >10))
+```
+Besides the total amount of ingredients, let's check the amount of ingredients per recipe for the top 3 categories in terms of ingredients frequency (i.e., vegetables, fruits, meats)
+
+```{r Plotting Vegetables total}
+ingredients_df_full %>%
+  filter(vegetables_bin == 1) %>% 
+  select(ID, title, total_vegetables) %>% 
+  ggplot(aes(x=total_vegetables)) + 
+  scale_x_continuous(breaks = seq(1, 9, by = 1)) +
+  geom_bar() + geom_vline(aes(xintercept=mean(total_vegetables)),color="blue", linetype="dashed", size=1)
 ```
 
+
+```{r Plotting Fruits total}
+ingredients_df_full %>%
+  filter(fruits_bin == 1) %>% 
+  select(ID, title, total_fruits) %>% 
+  ggplot(aes(x=total_fruits)) + 
+  scale_x_continuous(breaks = seq(1, 9, by = 1)) +
+  geom_bar() + geom_vline(aes(xintercept=mean(total_fruits)),color="blue", linetype="dashed", size=1)
+```
+
+```{r Plotting meat totals}
+# ingredients_df_full %>% 
+#   select(ID, title, total_meat) %>% 
+#   ggplot(aes(x=total_meat)) + 
+#   geom_bar() + geom_vline(aes(xintercept=mean(total_meat)),color="blue", linetype="dashed", size=1)+
+#   labs(x="Number of meats per recipe", y = "Recipe Count", title = "Distrubution of number of meats per recipe")
+
+#let's try to filter by recipes which contain meat to see if my functions work
+ingredients_df_full %>% 
+  filter(meats_bin == 1) %>% 
+  select(ID, title, total_meat) %>% 
+  ggplot(aes(x=total_meat)) + 
+  geom_bar() + geom_vline(aes(xintercept=mean(total_meat)),color="blue", linetype="dashed", size=1)+
+  labs(x="Number of meats per recipe", y = "Recipe Count", title = "Distrubution of number of meats per recipe")
+
+#why do we still have value in 0 meats --> it was because when creating the total meat column in ingredients_df_test I did not include the general meat category
+```
+
+## Investigating each category relative to rating
+
+It's hard to interpret the results clearly with so many rating, let's try to reduce it to 2 category --> above 4, and below 4
+
+```{r}
+ingredients_df_bin %>% 
+  select(contains("bin"), rating) %>%
+  mutate(across(everything(), as.factor)) %>% 
+  plot_bar(by = "rating", order_bar = FALSE)
+```
+We not have only 2 categories: recipes with rating above 4 and recipes with ratings below 4. There is no clear relationship in those graphs either, and this confirms the correlation results that we have above.
+
+If we look at vegetables for example, we can see that the proportion of recipes with ratings above 4 is higher for recipes containing no vegetables, when compared to recipes containing at least one vegetable.
+
+```{r}
+ingredients_df_bin %>% 
+  select(contains("bin"), rating) %>%
+  mutate(rating_4 = ifelse(rating>4, 1, 0), across(everything(), as.factor)) %>% 
+  select(-rating) %>% 
+  plot_bar(by = "rating_4", order_bar = FALSE)
+```
+
+----
 ## Left joins to aggregate data
 ```{r}
 
@@ -804,10 +891,3 @@ recipes_full %>%
 # We also want to show which kinds of carbs specifically have a high number of calories
 
 ```
-### Boxplots
-```{r}
-
-
-
-```
-
