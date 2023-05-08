@@ -7,8 +7,11 @@ date: "2023-04-20"
 ```{r echo=FALSE, message=FALSE}
 source(here::here("scripts/setup.R"))
 ```
+# Data Description and Cleaning
 
-```{r Loading and early cleaning, cache=TRUE}
+## Loading data
+Here we load the dataset and do some cleaning and processing. We standardise the variables names and add an ID column to have a unique identifier for each recipe.
+```{r Loading and early cleaning, code_folding = show}
 #loading the data
 recipes_raw <- read.csv(here("data/epi_r.csv"))
 
@@ -18,11 +21,20 @@ recipes <- recipes_raw%>%
   select(ID, everything())
 ```
 
-# Categories from all the variables
+## Data Description
+```{r}
+tibble(Variables = c("**ID**", "**title**", "**rating**", "**calories**", "**protein**", "**fat**", "**sodium**", "**674 other binary variables**"), Meaning = c("Unique ID", "Recipe name", "Rating of the recipe", "Calories contained in the recipe", "Protein contained in the recipe (grams)","Fat contained in the recipe (grams)", "Sodium contained in the recipe (milligrams)", "The rest of the data is made of many binary variables, incl. ingredients, types of recipes, US States, diet preferences, etc."))%>%
+  kbl()%>%
+  kable_styling(position = "center")
+```
 
-TO DO:
+## Classifying variables into categories
+
+Given the high amount of variables that we had (680), we decided that we needed to somewhat create categories to aggregate them and be able to use them more easily.
+
+Specifically, here are the things we had to solve when creating categories:
+
 - Merge "father_s_day" and "fathers_day" same for mother's day and for new year's and st patrick and valentines day, vermout and vermouth - DONE
-- Merge cranberry and cranberry_sauce - DONE
 - Check what leafy_green is and how many obs there is of it
 - Same for "legume"
 - Decide if we group beans together or leave them in vegetables - DONE
@@ -36,23 +48,7 @@ TO DO:
 - check how many observations with phyllo_puff_pastry_dough
 - do we separate fish and seafood?
 
-
-to CHECK:
-- meat DONE
-- legume - DONE
-- drink and drinks
-- fish or seafood - DONE
-- herb - DONE
-- nut - DONE
-- fruit - DONE
-- cheese - DONE
-- dairy - DONE
-- spice - DONE
-
-NOTES:
-final all_ingredients is 304 obs long, if you include the general categories in it, otherwise it's 293 (292 in vectors plus "egg")
-
-ALWAYS CHECK THAT ingredients_df is 321 after the binary columns and general categories are added. 322 now with rating as well
+We have now solved all these issues and manually classified every variable of our dataset in specific categories shown below.
 
 ```{r Creating Variable Categories}
 us_states <- c("alabama", "alaska", "arizona", "california", "colorado", "connecticut", "florida", "georgia", "hawaii", "idaho", "illinois", "indiana", "iowa", "kansas", "kentucky", "louisiana", "maine", "maryland", "massachusetts", "michigan", "minnesota", "mississippi", "missouri", "nebraska", "new_hampshire", "new_jersey", "new_mexico", "new_york", "north_carolina", "ohio", "oklahoma", "oregon", "pennsylvania", "rhode_island", "south_carolina", "tennessee", "texas", "utah", "vermont", "virginia", "washington", "west_virginia", "wisconsin")
@@ -73,6 +69,8 @@ season <- c("winter", "spring", "summer", "fall")
 
 celebrations <- c("anniversary", "back_to_school", "bastille_day", "birthday", "christmas", "christmas_eve", "cinco_de_mayo", "date", "diwali", "easter", "engagement_party", "family_reunion", "father_s_day", "fourth_of_july", "graduation", "halloween", "hanukkah", "kentucky_derby", "kwanzaa", "labor_day", "lunar_new_year", "mardi_gras", "mother_s_day", "new_year_s_day", "new_year_s_eve", "oktoberfest", "party", "passover", "persian_new_year", "purim", "ramadan", "rosh_hashanah_yom_kippur", "shavuot", "st_patrick_s_day", "sukkot", "super_bowl", "thanksgiving", "valentine_s_day", "wedding")
 
+drink_no_alcohol_vec <- c("apple_juice", "fruit_juice", "iced_tea", "lemon_juice", "lime_juice", "orange_juice", "pomegranate_juice", "tea")
+
 tools <- c("coffee_grinder", "double_boiler", "food_processor", "ice_cream_machine", "juicer", "mandoline", "mixer", "mortar_and_pestle", "pasta_maker", "ramekin", "skewer", "slow_cooker", "smoker", "wok", "blender", "candy_thermometer", "pressure_cooker")
 
 cooking_techniques <- c("raw", "saute", "freeze_chill", "fry", "stir_fry", "simmer", "boil", "broil", "bake", "braise", "chill", "deep_fry", "steam", "rub", "roast", "poach", "pan_fry", "marinate", "grill_barbecue", "grill")
@@ -83,7 +81,7 @@ repice_type <- c("aperitif", "appetizer", "backyard_bbq", "breakfast", "brunch",
 
 diet_preferences <- c( "dairy_free", "fat_free", "kosher","kosher_for_passover", "low_carb", "low_fat", "low_sodium", "low_sugar", "low_no_sugar", "non_alcoholic", "no_sugar_added", "organic", "soy_free", "tree_nut_free", "vegan", "vegetarian")
 
-#ingredients
+### Ingredients
 #low level categories
 
 vegetables_vec <- c("artichoke", "arugula", "asparagus", "butternut_squash", "bean", "beet", "bell_pepper", "bok_choy", "broccoli", "broccoli_rabe", "brussel_sprout", "cabbage", "capers", "carrot", "cauliflower", "celery", "chard", "chile_pepper", "collard_greens", "corn", "cucumber", "eggplant", "endive", "escarole", "fennel", "garlic", "ginger", "green_bean", "green_onion_scallion", "horseradish", "jerusalem_artichoke", "jicama", "kale", "leafy_green", "leek", "legume", "lentil", "lettuce", "lima_bean", "mushroom", "mustard_greens", "okra", "onion", "parsnip", "pea", "pickles", "poblano", "pumpkin", "radicchio", "radish", "root_vegetable", "rutabaga", "salad", "shallot", "soy", "spinach", "squash", "sugar_snap_pea", "tapioca", "tomatillo", "tomato", "turnip", "watercress", "yellow_squash", "yuca", "zucchini")
@@ -115,8 +113,6 @@ carbs_vec <- c("brown_rice", "chickpea", "cornmeal", "couscous", "hominy_cornmea
 
 fruits_vec <- c("apple", "apricot", "asian_pear", "avocado", "banana", "berry", "blackberry", "blueberry", "cantaloupe", "cherry", "citrus", "coconut", "cranberry", "currant", "dried_fruit", "fig", "grape", "grapefruit", "guava", "honeydew", "kiwi", "kumquat", "lemon", "lime", "lingonberry", "lychee", "mango", "melon", "nectarine", "olive", "orange", "papaya", "passion_fruit", "peach", "pear", "persimmon", "pineapple", "plantain", "plum", "pomegranate", "prune", "quince", "raisin", "raspberry", "rhubarb", "strawberry", "tamarind", "tangerine", "tropical_fruit", "watermelon")
 
-drink_no_alcohol_vec <- c("apple_juice", "fruit_juice", "iced_tea", "lemon_juice", "lime_juice", "orange_juice", "pomegranate_juice", "tea")
-
 dessert_vec <- c("biscuit", "brownie", "butterscotch_caramel", "cake", "candy", "chocolate", "cobbler_crumble", "cookie", "cookies", "cranberry_sauce", "crepe", "cupcake", "honey", "jam_or_jelly", "maple_syrup", "marshmallow", "muffin","pancake", "pastry", "pie", "smoothie", "sorbet", "souffle_meringue", "waffle")
 
 cheeses_vec <- c("blue_cheese", "brie", "cheddar", "cottage_cheese", "cream_cheese", "feta", "fontina", "goat_cheese", "gouda", "monterey_jack", "mozzarella", "parmesan", "ricotta", "swiss_cheese")
@@ -139,9 +135,7 @@ to_sort <- c("bread", "breadcrumbs", "brine", "burrito", "casserole_gratin", "co
 ```
 
 
-# TEMPORARY TO MAKE VARIABLE SELECTION EASIER
-
-```{r}
+```{r TEMPORARY TO MAKE VARIABLE SELECTION EASIER, eval = FALSE}
 #whole list of stuff to remove for now to be able to sort 
 to_remove_temp <- c(us_states, us_cities, countries, alcohol, wtf, chef, interesting, season, celebrations, tools, cooking_techniques, nutritional_values, repice_type, diet_preferences, all_ingredients, to_sort)
 

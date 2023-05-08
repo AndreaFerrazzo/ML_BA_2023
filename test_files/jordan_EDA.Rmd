@@ -7,7 +7,11 @@ date: "2023-04-20"
 ```{r echo=FALSE, message=FALSE}
 source(here::here("scripts/setup.R"))
 ```
+# Data
+NOTES:
+- final all_ingredients has 304 var, if you include the general categories in it, otherwise it's 293 (292 in vectors plus "egg")
 
+- ALWAYS CHECK THAT ingredients_df is 321 after the binary columns and general categories are added. 322 now with rating as well
 # EDA
 
 ## Checking for "general" ingredient columns

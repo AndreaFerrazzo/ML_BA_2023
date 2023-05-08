@@ -1,6 +1,6 @@
 ####### Load the required packages
 packages <- c(
-  "knitr", "here", "tidyverse", "summarytools", "janitor", "viridis", "corrplot", "DataExplorer"
+  "knitr", "here", "tidyverse", "summarytools", "janitor", "viridis", "corrplot", "DataExplorer", "kableExtra"
 )
 purrr::walk(packages, library, character.only = TRUE)
 
@@ -27,5 +27,5 @@ opts_chunk$set(
   warning = FALSE,
   fig.align = "center",
   echo = TRUE,
-  cache = FALSE
+  cache = TRUE
 )
