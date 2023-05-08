@@ -7,6 +7,8 @@ date: "2023-04-20"
 ```{r echo=FALSE, message=FALSE}
 source(here::here("scripts/setup.R"))
 ```
+# Notes
+any_vars and all_vars are not used anymore and have been replaced by across
 
 # EDA
 
@@ -221,3 +223,61 @@ ingredients_df_test %>%
   geom_bar() + geom_vline(aes(xintercept=mean(total_vegetables)),color="blue", linetype="dashed", size=1)
 ```
 
+# Seasons EDA
+```{r}
+#Create seasons df
+seasons_df <- recipes %>% 
+  select(ID, rating, all_of(seasons_vec)) %>% 
+  filter(if_any(all_of(seasons_vec)) == 1) %>% 
+  mutate(sum_season = rowSums(across(all_of(seasons_vec))))
+
+seasons_df %>% 
+ggplot(aes(x=sum_season)) +
+  geom_bar()
+
+seasons_df %>% 
+  filter(sum_season==3)
+
+seasons_df %>% 
+  filter(sum_season==4)
+#total of 29 recipes with either 3 or 4 --> let's discard them
+
+#let's look a bit more closely to those with 2 seasons to see if they are next to each other or not
+
+seasons_df %>% 
+  filter(sum_season==2)
+
+### should we keep those observations???
+```
+As we can see, there is again no correlation between seasons and recipe ratings.
+
+```{r}
+seasons_df %>% 
+  select(-sum_season, -ID) %>% 
+  plot_correlation()
+```
+CAN TRY TO feature engineer rating above 4
+
+Inconclusive result, again.
+
+```{r}
+seasons_df <-seasons_df %>% 
+  mutate(rating_above_4 = ifelse(rating > 4, 1, 0), rating_5 = ifelse(rating == 5, 1, 0), rating_1.25 = ifelse(rating == 1.25, 1, 0))
+
+seasons_df %>% 
+  select(rating, rating_above_4, all_of(seasons_vec))%>% 
+  plot_correlation()
+```
+
+```{r}
+seasons_df %>%
+  select(rating_5, rating_1, all_of(seasons_vec)) %>%
+  plot_correlation()
+```
+## Boxplots for seasons
+
+```{r}
+
+```
+
+## Recipe type 

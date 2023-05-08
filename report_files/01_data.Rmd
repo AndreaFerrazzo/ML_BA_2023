@@ -65,7 +65,7 @@ chef <- c("anthony_bourdain", "dorie_greenspan", "emeril_lagasse", "nancy_silver
 
 interesting <- c("advance_prep_required", "entertaining", "epi_loves_the_microwave", "friendsgiving", "game", "gourmet", "healthy", "high_fiber", "hot_drink", "kid_friendly", "kidney_friendly", "low_cal", "low_cholesterol", "microwave", "no_cook", "one_pot_meal", "oscars", "paleo", "peanut_free", "pescatarian", "poker_game_night", "potluck", "quick_easy", "sugar_conscious", "wheat_gluten_free", "cookbooks", "leftovers")
 
-season <- c("winter", "spring", "summer", "fall")
+seasons_vec <- c("winter", "spring", "summer", "fall")
 
 celebrations <- c("anniversary", "back_to_school", "bastille_day", "birthday", "christmas", "christmas_eve", "cinco_de_mayo", "date", "diwali", "easter", "engagement_party", "family_reunion", "father_s_day", "fourth_of_july", "graduation", "halloween", "hanukkah", "kentucky_derby", "kwanzaa", "labor_day", "lunar_new_year", "mardi_gras", "mother_s_day", "new_year_s_day", "new_year_s_eve", "oktoberfest", "party", "passover", "persian_new_year", "purim", "ramadan", "rosh_hashanah_yom_kippur", "shavuot", "st_patrick_s_day", "sukkot", "super_bowl", "thanksgiving", "valentine_s_day", "wedding")
 

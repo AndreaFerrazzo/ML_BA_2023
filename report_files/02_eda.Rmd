@@ -8,33 +8,9 @@ date: "2023-04-20"
 source(here::here("scripts/setup.R"))
 ```
 
-# Nutrition EDA
+# EDA General - Investigation and Cleaning
 
-## Investigation and Cleaning
-
-### Structure and summary
-
-```{r}
-
-# Now let's see the structure of our data
-recipes %>% 
-  head(20) %>% 
-  str() 
-
-# We have only numerical variables, but in reality just 4 variables could be considered as such. More in particular, "rating", "calories", "protein", "fat" and "sodium" could be considered numerical. The other variables should be considered categorical since they allow only for 0 or 1 values.
-
-
-# Let's have a different look at the data with the summary function.
-recipes %>% 
-  select(rating, calories, protein, fat, sodium) %>% 
-  dfSummary(style = "grid")
-
-# We can already see for instance that the majority of the values of the variable "rating" are 4.38 (40% of the total). Moreover, we observe that the variables "calories", "protein", "fat" and "sodium" have roughly 20% of missing values.
-
-```
-
-
-### Analysis of NAs
+## Analysis of NAs
 
 ```{r}
 
@@ -80,7 +56,7 @@ recipes <- recipes %>%
 ```
 
 
-### Eliminate recipes with rating equal to zero
+## Eliminate recipes with rating equal to zero
 
 ```{r}
 
@@ -99,7 +75,7 @@ recipes <- recipes %>%
 
 ```
 
-### Discard copies of recipes
+## Discard copies of recipes
 ```{r}
 
 # We want to eliminate recipes that have multiple copies. Sometimes the recipes have the same title, but nutritional values are different. This indicates that there are various ways to prepare a specific recipe. We want to keep those recipes that have the same title, but have different nutritional values.
@@ -121,7 +97,7 @@ recipes <- unique_recipes
 ```
 
 
-### Removing recipes without specific ingredients listed
+## Removing recipes without specific ingredients listed
 Here we are facing a challenge regarding the general ingredient categories. Indeed, when doing computations on the binary columns, there is no issue since, whether the recipe contains specific ingredients in a category, or only a 1 in the general category, then that information is captured in the corresponding binary column.
 
 However, if we want to compute the total number of ingredients in each category that is present in recipes, then we are facing problems. To illustrate, let's assume that we have a recipe which contains 3 vegetables (specific columns in the vegetables_vec). In addition, for that recipe, the general column is also a 1 --> then by summing up, we get 4 ingredients when it should be 3.
@@ -147,6 +123,29 @@ recipes <- recipes %>%
 #we are left with 11382 obs after removing all recipes which have no specific ingredient in at least one category, while that category general variable is at 1
 
 ### without duplicated recipes we are left at 10321 obs
+```
+
+# Nutrition EDA
+
+## Structure and summary
+
+```{r}
+
+# Now let's see the structure of our data
+recipes %>% 
+  head(20) %>% 
+  str() 
+
+# We have only numerical variables, but in reality just 4 variables could be considered as such. More in particular, "rating", "calories", "protein", "fat" and "sodium" could be considered numerical. The other variables should be considered categorical since they allow only for 0 or 1 values.
+
+
+# Let's have a different look at the data with the summary function.
+recipes %>% 
+  select(rating, calories, protein, fat, sodium) %>% 
+  dfSummary(style = "grid")
+
+# We can already see for instance that the majority of the values of the variable "rating" are 4.38 (40% of the total). Moreover, we observe that the variables "calories", "protein", "fat" and "sodium" have roughly 20% of missing values.
+
 ```
 
 ## Visual exploration - Univariate Analysis
@@ -820,7 +819,12 @@ ingredients_df_bin %>%
   plot_bar(by = "rating_4", order_bar = FALSE)
 ```
 
-----
+# Seasons and Recipe Type EDA
+
+```{r}
+#TO ADD WHEN COMPLETED
+```
+
 
 # Mixed EDA - ingredients and nutritional value
 
