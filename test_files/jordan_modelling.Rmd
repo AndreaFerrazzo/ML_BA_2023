@@ -1,0 +1,23 @@
+---
+title: "Jordan Test"
+output: html_document
+date: "2023-04-20"
+---
+
+```{r echo=FALSE, message=FALSE}
+source(here::here("scripts/setup.R"))
+```
+
+```{r}
+nutrional_df <- recipes %>% 
+  select(ID, all_of(nutritional_values))
+
+recipes_mod <- ingredients_df_full %>% 
+  left_join(nutrional_df) %>% 
+  select(ID, title, all_of(nutritional_values), contains("bin"), contains("total"))
+```
+# KNN
+```{r}
+
+```
+

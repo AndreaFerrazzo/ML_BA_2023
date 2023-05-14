@@ -224,6 +224,7 @@ ingredients_df_test %>%
 ```
 
 # Seasons EDA
+
 ```{r}
 #Create seasons df
 seasons_df <- recipes %>% 
@@ -249,6 +250,7 @@ seasons_df %>%
 
 ### should we keep those observations???
 ```
+
 As we can see, there is again no correlation between seasons and recipe ratings.
 
 ```{r}
@@ -256,6 +258,7 @@ seasons_df %>%
   select(-sum_season, -ID) %>% 
   plot_correlation()
 ```
+
 CAN TRY TO feature engineer rating above 4
 
 Inconclusive result, again.
@@ -274,6 +277,7 @@ seasons_df %>%
   select(rating_5, rating_1, all_of(seasons_vec)) %>%
   plot_correlation()
 ```
+
 ## Boxplots for seasons
 
 ```{r}
@@ -281,3 +285,8 @@ seasons_df %>%
 ```
 
 ## Recipe type 
+
+```{r}
+
+```
+

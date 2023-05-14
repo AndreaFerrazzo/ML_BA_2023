@@ -568,7 +568,8 @@ ingredients_df_bin <- ingredients_df %>%
          carbs_bin = as.numeric(if_any(all_of(carbs_vec), ~.x == 1, na.rm = TRUE)),
          dessert_bin = as.numeric(if_any(all_of(dessert_vec), ~.x == 1, na.rm = TRUE)),
          egg_bin = (egg)
-         )
+         ) %>% 
+  select(ID, title, contains("bin"), everything())
 ```
 
 The fact that both select the same number of rows makes having general categories redundant in the dataset. They are not useful to create the binary columns, and they are also not useful to compute the total amount of ingredients in each category per recipe --> let's just not include them in the first place
@@ -616,7 +617,8 @@ total_join <- ingredients_df_total %>%
   select(ID, contains("total"))
   
 ingredients_df_full <- ingredients_df_bin %>% 
-  left_join(total_join)
+  left_join(total_join) %>% 
+  select(ID, title, contains("bin"), contains("total"), everything())
 ```
 
 ## Analysis part - Within ingredients
@@ -719,7 +721,7 @@ ingredients_df_total %>%
 
 ### Amount of ingredients per recipe
 
-The numner of ingredients per recipe is more or less normally distributed, with a mean around 4.75.
+The number of ingredients per recipe is more or less normally distributed, with a mean around 4.75.
 ```{r Plotting ingredients totals}
 #checking some stuff about the new ingredients table
 ingredients_df_total %>% 
