@@ -287,6 +287,9 @@ seasons_df %>%
 ## Recipe type 
 
 ```{r}
-
+seasons_df <- recipes %>% 
+  select(ID, rating, all_of(seasons_vec)) %>% 
+  filter(if_any(all_of(seasons_vec)) == 1) %>% 
+  mutate(sum_season = rowSums(across(all_of(seasons_vec))))
 ```
 
