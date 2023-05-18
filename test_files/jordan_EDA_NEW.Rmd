@@ -287,9 +287,13 @@ seasons_df %>%
 ## Recipe type 
 
 ```{r}
-seasons_df <- recipes %>% 
-  select(ID, rating, all_of(seasons_vec)) %>% 
-  filter(if_any(all_of(seasons_vec)) == 1) %>% 
-  mutate(sum_season = rowSums(across(all_of(seasons_vec))))
+type_df <- recipes %>% 
+  select(ID, rating, all_of(recipe_type_vec)) %>% 
+  filter(if_any(all_of(recipe_type_vec)) == 1) %>% 
+  mutate(sum_type= rowSums(across(all_of(recipe_type_vec))))
+
+type_df %>% 
+ggplot(aes(x=sum_type)) +
+  geom_bar()
 ```
 
