@@ -10,4 +10,46 @@ source(here::here("scripts/setup.R"))
 
 # Supervised Learning
 
+Creating a new df for analysis purposes, which includes all nutrition-related features, as well as all ingredient-related features
+```{r}
+nutritional_df <- recipes %>% 
+  select(ID, all_of(nutritional_values))
+
+recipes_analysis <- ingredients_df_full %>% 
+  left_join(nutritional_df) %>% 
+  mutate(rating_bin = as.factor(ifelse(rating<4, "bad", "good"))) %>% 
+  select(ID, title, rating, rating_bin, all_of(nutritional_values), contains("bin"), contains("total"))
+```
+Creating training and test set. We chose a 75/25 split
+```{r}
+set.seed(12)
+index <- createDataPartition(recipes_analysis$rating_bin, p=0.75, list = FALSE)#data partition attemps to already balance out the data based on the outcome --> but here doesn't manage fully
+train_bin <- recipes_analysis[index, ]
+test_bin <- recipes_analysis[-index, ]
+```
+
+However, we can see that the data is pretty unbalanced between the 2 rating classes in the training set.
+```{r}
+table(train_bin$rating_bin)
+```
+
+Balancing the training set
+```{r}
+#filtering by rating class
+set.seed(12)
+tr_good <- train_bin %>%  filter(rating_bin == "good")
+tr_bad <- train_bin %>%  filter(rating_bin == "bad")
+
+#indexing "bad" and creating new resampled training set
+index_bad <- sample(x = 1:nrow(tr_bad), size = nrow(tr_good), replace = TRUE)
+upsamp_tr_bin <- tibble(rbind(tr_good, tr_bad[index_bad,]))
+
+#checking that we have the correct number of good and bad
+table(upsamp_tr_bin$rating_bin)
+```
+
+## Logistic Regression
+
+##KNN
+
 # Unsupervised Learning

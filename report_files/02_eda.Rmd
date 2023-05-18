@@ -612,13 +612,14 @@ ingredients_df_total <- ingredients_df %>%
   select(ID, title, contains("total"), everything())
 ```
 
+Creating "ingredients_df_full" which contains bin columns, total columns, and original ingredients columns
 ```{r creating df with bin and total columns}
 total_join <- ingredients_df_total %>% 
   select(ID, contains("total"))
   
 ingredients_df_full <- ingredients_df_bin %>% 
   left_join(total_join) %>% 
-  select(ID, title, contains("bin"), contains("total"), everything())
+  select(ID, title, rating, contains("bin"), contains("total"), everything())
 ```
 
 ## Analysis part - Within ingredients

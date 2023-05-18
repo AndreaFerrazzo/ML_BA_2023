@@ -20,3 +20,12 @@ output:
 
 ```{r child = c('01_data.Rmd', '02_eda.Rmd', '03_analysis.Rmd')}
 ``` 
+
+
+Questions
+- should we convert the binary columns to factor or can we leave them as integer for modelling?
+- should we balance the data, in the rating_bin case and in the rating normal with 7 classes
+- should we normalise the numerical data
+- it's mentionned in the slides that the validation set should not be balanced, but how do we do that using train() with caret?
+
+
