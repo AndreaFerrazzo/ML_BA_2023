@@ -1,6 +1,6 @@
 ####### Load the required packages
 packages <- c(
-  "knitr", "here", "tidyverse", "summarytools", "janitor", "viridis", "corrplot", "DataExplorer", "kableExtra"
+  "knitr", "here", "tidyverse", "summarytools", "janitor", "viridis", "corrplot", "DataExplorer", "kableExtra", "caret"
 )
 purrr::walk(packages, library, character.only = TRUE)
 

@@ -274,7 +274,7 @@ seasons_df %>%
 
 ```{r}
 seasons_df %>%
-  select(rating_5, rating_1, all_of(seasons_vec)) %>%
+  select(rating_5, rating_1.25, all_of(seasons_vec)) %>%
   plot_correlation()
 ```
 
@@ -293,7 +293,38 @@ type_df <- recipes %>%
   mutate(sum_type= rowSums(across(all_of(recipe_type_vec))))
 
 type_df %>% 
-ggplot(aes(x=sum_type)) +
+  ggplot(aes(x=sum_type)) +
   geom_bar()
+
+type_df %>% 
+  filter(sum_type == 2)
+```
+```{r}
+#tuning k, using upsampled data
+trCtrl <- trainControl(method = "cv",
+                       #summaryFunction = defaultSummary,
+                       #classProbs = TRUE,
+                       number = 10
+                       )
+set.seed(111)
+knn_cv <- caret::train(response ~.,
+                data = ,
+                method = "knn",
+                trControl = trCtrl,
+                metric = "Accuracy",
+                tuneGrid= data.frame(k = seq(1,30,by = 1))
+                )
+knn_cv
+```
+
+```{r}
+recipes_test <- recipes %>% 
+  mutate(rating_bin = ifelse(rating < 4, "bad", "good"))
+
+table(recipes_test$rating_bin)
+```
+
+```{r}
+
 ```
 

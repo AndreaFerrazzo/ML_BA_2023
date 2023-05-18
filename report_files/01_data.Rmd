@@ -77,7 +77,7 @@ cooking_techniques <- c("raw", "saute", "freeze_chill", "fry", "stir_fry", "simm
 
 nutritional_values <- c("calories", "protein", "fat", "sodium")
 
-recipe_type_vec <- c("aperitif", "appetizer", "backyard_bbq", "breakfast", "brunch", "dessert", "dinner", "lunch", "side", "snack")
+recipe_type_vec <- c("aperitif", "appetizer", "breakfast", "brunch", "dessert", "dinner", "lunch", "side", "snack")
 
 diet_preferences_vec <- c( "dairy_free", "fat_free", "kosher","kosher_for_passover", "low_carb", "low_fat", "low_sodium", "low_sugar", "low_no_sugar", "non_alcoholic", "no_sugar_added", "organic", "peanut_free", "soy_free", "sugar_conscious", "tree_nut_free", "vegan", "vegetarian", "wheat_gluten_free")
 
@@ -131,7 +131,7 @@ all_fish_seafood <- c(fish_vec, seafood_vec)
 all_ingredients <- c(vegetables_vec, all_meats, all_fish_seafood, herbs_vec, nuts_vec, cereals_vec, carbs_vec, fruits_vec, drink_no_alcohol_vec, dessert_vec, cheeses_vec, dairy_vec, spices_vec, "egg")
 
 #stuff which isn't ingredients and that we need to sort
-to_sort <- c("bread", "breadcrumbs", "brine", "burrito", "casserole_gratin", "coffee", "flat_bread", "hummus", "iced_coffee", "lasagna", "macaroni_and_cheese", "mayonnaise", "mustard", "noodle", "oatmeal", "omelet",  "peanut_butter", "pizza", "pot_pie", "potato_salad", "quiche", "rose", "salad_dressing", "salsa", "sandwich", "sauce", "seed", "soup_stew", "stew", "stock", "stuffing_dressing", "taco", "tart", "tofu", "tortillas", "vinegar", "frittata", "molasses", "sourdough", "fritter", "phyllo_puff_pastry_dough", "dip")
+to_sort <- c("backyard_bbq", "bread", "breadcrumbs", "brine", "burrito", "casserole_gratin", "coffee", "flat_bread", "hummus", "iced_coffee", "lasagna", "macaroni_and_cheese", "mayonnaise", "mustard", "noodle", "oatmeal", "omelet",  "peanut_butter", "pizza", "pot_pie", "potato_salad", "quiche", "rose", "salad_dressing", "salsa", "sandwich", "sauce", "seed", "soup_stew", "stew", "stock", "stuffing_dressing", "taco", "tart", "tofu", "tortillas", "vinegar", "frittata", "molasses", "sourdough", "fritter", "phyllo_puff_pastry_dough", "dip")
 ```
 
 
