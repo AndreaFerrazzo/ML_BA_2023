@@ -8,7 +8,14 @@ date: "2023-04-20"
 source(here::here("scripts/setup.R"))
 ```
 
+# Modelling
 Creating a new df for analysis purposes, which includes all nutrition-related features, as well as all ingredient-related features
+```{r}
+my_normalise <- function(x) {
+  (x - min(x)) / (max(x) - min(x))
+}
+```
+
 ```{r}
 nutritional_df <- recipes %>% 
   select(ID, all_of(nutritional_values))
@@ -16,8 +23,10 @@ nutritional_df <- recipes %>%
 recipes_analysis <- ingredients_df_full %>% 
   left_join(nutritional_df) %>% 
   mutate(rating_bin = as.factor(ifelse(rating<4, "bad", "good"))) %>% 
-  select(ID, title, rating, rating_bin, all_of(nutritional_values), contains("bin"), contains("total"))
+  mutate(across(all_of(contains("bin")), as.factor)) %>% 
+  select(rating_bin, all_of(nutritional_values), contains("bin"), contains("total"))
 ```
+
 Creating training and test set. We chose a 75/25 split
 ```{r}
 set.seed(12)
@@ -46,25 +55,233 @@ upsamp_tr_bin <- tibble(rbind(tr_good, tr_bad[index_bad,]))
 table(upsamp_tr_bin$rating_bin)
 ```
 
-# KNN
-```{r}
+## KNN - rating_bin with NUT, BIN and TOTAL - NOT NORMALISED
 
+```{r}
+train_temp <- train_bin #using unbalanced training set here as apparently it's not required for KNN for data to be balanced
+
+test_temp <- test_bin
 ```
+
+### Basic Model
+Trying to fit a basic KNN model with arbitrary K value of 3. Results are not different than that of a No Information Rate (NIR) model.
+```{r}
+mod_knn <- knn3(data = train_temp, rating_bin ~., k=3)
+
+knn_pred <- predict(mod_knn, newdata = test_temp, type = "class")
+
+confusionMatrix(reference = test_temp$rating_bin, data = knn_pred, positive="good")
+```
+
+### Tuning K
+Best K if we look at both accuracy and Kappa is 1.
+```{r}
+#tuning k, using upsampled data
+trCtrl <- trainControl(method = "cv",
+                       #summaryFunction = defaultSummary,
+                       #classProbs = TRUE,
+                       number = 10
+                       )
+set.seed(12)
+knn_cv <- caret::train(rating_bin ~.,
+                data = train_temp,
+                method = "knn",
+                trControl = trCtrl,
+                metric = "Accuracy",
+                tuneGrid= data.frame(k = seq(111, 131,by = 2))#best is 121
+                )
+knn_cv
+```
+
+#### Roc curve
+We can see that there is no clear separation at all between the probabilities of the good and bad rating. This is the sign of a classification that doesn't work.
+```{r}
+#predicting on the training set
+df <- train_bin %>% 
+  mutate(predicted_prob = predict(knn_cv, type = "prob")$"good")
+
+df %>%
+  ggplot() +
+  aes(x = predicted_prob, fill = rating_bin) +
+  geom_histogram(bins = 20) +
+  labs(x = "Probability", y = "Count", title = "Distribution of predicted probabilities")
+```
+
+### Fitting cv model with K = 121
+
+We see that the relatively high accuracy is achieved by classifying most obs as good, resulting in a high sensitivity but a very poor specificity.
+```{r}
+knn_cv_pred <- predict(knn_cv, newdata = test_temp, type = "raw")
+
+confusionMatrix(reference = test_temp$rating_bin, data = knn_cv_pred, positive="good")
+```
+
+## KNN - rating_bin with NUT, BIN and TOTAL - NORMALISED
+
+```{r}
+train_temp <- train_bin %>% #using unbalanced training set here as apparently it's not required for KNN for data to be balanced
+  select(everything()) %>% 
+  mutate(across(where(is.numeric), my_normalise))#normalising the numerical columns
+
+test_temp <- test_bin %>% 
+  mutate(across(where(is.numeric), my_normalise))#normalising the numerical columns
+```
+
+### CV and tuning K
 
 ```{r}
 #tuning k, using upsampled data
+trCtrl <- trainControl(method = "cv",
+                       #summaryFunction = defaultSummary,
+                       #classProbs = TRUE,
+                       number = 10
+                       )
+set.seed(12)
+knn_cv <- caret::train(rating_bin ~.,
+                data = train_temp,
+                method = "knn",
+                trControl = trCtrl,
+                metric = "Accuracy",
+                tuneGrid= data.frame(k = seq(115, 125,by = 2)) #initial range from 1 to 150, found 121 as best value so we reduced the range to reduce computation time
+                )
+knn_cv
+```
+
+#### Roc curve
+We can see that there is no clear separation at all between the probabilities of the good and bad rating. This is the sign of a classification that doesn't work.
+```{r}
+#predicting on the training set
+df <- train_bin %>% 
+  mutate(predicted_prob = predict(knn_cv, type = "prob")$"good")
+
+df %>%
+  ggplot() +
+  aes(x = predicted_prob, fill = rating_bin) +
+  geom_histogram(bins = 20) +
+  labs(x = "Probability", y = "Count", title = "Distribution of predicted probabilities")
+```
+
+### Fitting cv model with K = 121
+
+We see that the relatively high accuracy is achieved by classifying most obs as good again. This is even more visible than with the non-normalised model, resulting in a worst model performance (even higher p-value to NIR model)
+```{r}
+knn_cv_pred <- predict(knn_cv, newdata = test_temp, type = "raw")
+
+confusionMatrix(reference = test_temp$rating_bin, data = knn_cv_pred, positive="good")
+```
+
+
+###########
+########
+###########
+
+## KNN - rating_bin with only NUT
+
+We normalise straight away as this is what is recommended for KNN.
+```{r}
+train_temp <- train_bin %>% 
+  select(rating_bin, all_of(nutritional_values)) %>% 
+  mutate(across(where(is.numeric), my_normalise))#normalising the numerical columns
+
+test_temp <- test_bin %>%
+  select(rating_bin, all_of(nutritional_values)) %>% 
+  mutate(across(where(is.numeric), my_normalise))#normalising the numerical columns
+```
+
+### CV and tuning K
+Best K if we look at both accuracy and Kappa is 39.
+```{r}
+#tuning k
 trCtrl <- trainControl(method = "cv",
                        summaryFunction = defaultSummary,
                        #classProbs = TRUE,
                        number = 10
                        )
 set.seed(12)
-knn_cv <- caret::train(rating_bin ~.,
-                data = upsamp_tr_bin,
+knn_cv <- train(rating_bin ~.,
+                data = train_temp,
                 method = "knn",
                 trControl = trCtrl,
                 metric = "Accuracy",
-                tuneGrid= data.frame(k = seq(1,10,by = 2))
+                tuneGrid= data.frame(k = seq(1,51,by = 2))
                 )
 knn_cv
+```
+
+#### Roc curve
+We can see that the model perfectly predicts all observations in the training set, which is a sign of serious overfitting. But this also confirms that 0.5 is a good cutoff point.
+```{r}
+#predicting on the training set
+df <- train_temp %>% 
+  mutate(predicted_prob = predict(knn_cv, type = "prob")$"good")
+
+df %>%
+  ggplot() +
+  aes(x = predicted_prob, fill = rating_bin) +
+  geom_histogram(bins = 20) +
+  labs(x = "Probability", y = "Count", title = "Distribution of predicted probabilities")
+```
+
+### Fitting cv model with K = 39
+
+Once again most obs are classified as good. Not better than NIR.
+
+```{r}
+knn_cv_pred <- predict(knn_cv, newdata = test_temp, type = "raw")
+
+confusionMatrix(reference = test_temp$rating_bin, data = knn_cv_pred, positive="good")
+```
+## KNN - rating_bin with NUT and total
+Using train_bin and not the upsampled training set, as it gave worst results for models above.
+```{r}
+train_temp <- train_bin %>% 
+  select(rating_bin, all_of(nutritional_values), all_of(contains("total"))) %>% 
+  mutate(across(where(is.numeric), my_normalise))#normalising the numerical columns
+
+test_temp <- test_bin %>%
+  select(rating_bin, all_of(nutritional_values), all_of(contains("total"))) %>% 
+  mutate(across(where(is.numeric), my_normalise))#normalising the numerical columns
+```
+
+### CV and tuning K
+Best K if we look at both accuracy and Kappa is 71.
+```{r}
+#tuning k
+trCtrl <- trainControl(method = "cv",
+                       summaryFunction = defaultSummary,
+                       #classProbs = TRUE,
+                       number = 10
+                       )
+set.seed(12)
+knn_cv <- train(rating_bin ~.,
+                data = train_temp,
+                method = "knn",
+                trControl = trCtrl,
+                metric = "Accuracy",
+                tuneGrid= data.frame(k = seq(61,81,by = 2))#best was 71 across whole range
+                )
+knn_cv
+```
+
+#### Roc curve
+We can see that the model perfectly predicts all observations in the training set, which is a sign of serious overfitting. But this also confirms that 0.5 is a good cutoff point.
+```{r}
+#predicting on the training set
+df <- train_temp %>% 
+  mutate(predicted_prob = predict(knn_cv, type = "prob")$"good")
+
+df %>%
+  ggplot() +
+  aes(x = predicted_prob, fill = rating_bin) +
+  geom_histogram(bins = 20) +
+  labs(x = "Probability", y = "Count", title = "Distribution of predicted probabilities")
+```
+
+### Fitting cv model with K = 71
+Once again most obs are classified as good. Not better than NIR.
+
+```{r}
+knn_cv_pred <- predict(knn_cv, newdata = test_temp, type = "raw")
+
+confusionMatrix(reference = test_temp$rating_bin, data = knn_cv_pred, positive="good")
 ```

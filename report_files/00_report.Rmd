@@ -27,5 +27,7 @@ Questions
 - should we balance the data, in the rating_bin case and in the rating normal with 7 classes
 - should we normalise the numerical data
 - it's mentionned in the slides that the validation set should not be balanced, but how do we do that using train() with caret?
+- should we really used balanced data for training? Because at least for KNN it always makes K=1 better, whereas K is was larger when we trained with unbalanced data
+  Apparently for KNN, it's not required to balance data
 
 

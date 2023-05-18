@@ -12,14 +12,22 @@ source(here::here("scripts/setup.R"))
 
 Creating a new df for analysis purposes, which includes all nutrition-related features, as well as all ingredient-related features
 ```{r}
+my_normalise <- function(x) {
+  (x - min(x)) / (max(x) - min(x))
+}
+```
+
+```{r}
 nutritional_df <- recipes %>% 
   select(ID, all_of(nutritional_values))
 
 recipes_analysis <- ingredients_df_full %>% 
   left_join(nutritional_df) %>% 
   mutate(rating_bin = as.factor(ifelse(rating<4, "bad", "good"))) %>% 
-  select(ID, title, rating, rating_bin, all_of(nutritional_values), contains("bin"), contains("total"))
+  mutate(across(all_of(contains("bin")), as.factor)) %>% 
+  select(rating_bin, all_of(nutritional_values), contains("bin"), contains("total"))
 ```
+
 Creating training and test set. We chose a 75/25 split
 ```{r}
 set.seed(12)
@@ -50,6 +58,6 @@ table(upsamp_tr_bin$rating_bin)
 
 ## Logistic Regression
 
-##KNN
+## KNN
 
 # Unsupervised Learning
