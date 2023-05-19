@@ -27,6 +27,11 @@ recipes_analysis <- ingredients_df_full %>%
   mutate(across(all_of(contains("bin")), as.factor)) %>% 
   select(rating_bin, all_of(nutritional_values), contains("bin"), contains("total"))
 ```
+Normalising the continuous numerical values, to remain consistent across all models.
+```{r}
+recipes_analysis <- recipes_analysis %>% 
+  mutate(across(where(is.numeric), my_normalise))
+```
 
 Creating training and test set. We chose a 75/25 split
 ```{r}
@@ -41,7 +46,7 @@ However, we can see that the data is pretty unbalanced between the 2 rating clas
 table(train_bin$rating_bin)
 ```
 
-Balancing the training set
+Balancing the training set through upsampling
 ```{r}
 #filtering by rating class
 set.seed(12)
