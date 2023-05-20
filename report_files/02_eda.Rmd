@@ -833,17 +833,11 @@ ingredients_df_bin %>%
 
 ```{r Left joins to aggregate the data}
 
-ingredients_df_full <- ingredients_df %>%
-  mutate(total_ingredients = rowSums(select(., c(all_of(all_ingredients)))),
-         total_meat = rowSums(select(., c(all_of(all_meats)))),
-         total_vegetables = rowSums(select(., c(all_of(vegetables_vec))))
-         )
-
 recipes_select <- recipes %>% 
   select(ID, title, rating, calories, protein, sodium, fat)
 
-ingredients_select <- ingredients_df_full %>% 
-  select(ID, total_ingredients, total_meat, total_vegetables)
+ingredients_select <- ingredients_df_total %>% 
+  select(ID, all_of(contains("total")))
 
 recipes_more <- recipes_select %>%
   left_join(ingredients_select, 
