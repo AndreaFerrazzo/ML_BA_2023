@@ -524,6 +524,201 @@ confusionMatrix(reference = test_temp$rating_bin, data = knn_Bi_pred, positive="
 
 # Analysis - Balanced outcome variable
 
+```{r}
+#train control for with upsampling
+trCtrl <- trainControl(method = "cv",
+                       summaryFunction = defaultSummary,
+                       classProbs = TRUE,
+                       number = 10,
+                       sampling = "up"
+                       )
+```
+
+## 1 KNN - NUT, BIN and TOTAL
+
+```{r}
+#using unbalanced training set here as apparently it's not required for KNN for data to be balanced
+train_temp <- train_bin %>% 
+  select(-ID)
+
+test_temp <- test_bin %>% 
+  select(-ID)
+```
+
+### Tuning K
+Best K if we look at both accuracy and Kappa is 115.
+```{r}
+set.seed(12)
+knn_all_up <- caret::train(rating_bin ~.,
+                data = train_temp,
+                method = "knn",
+                trControl = trCtrl,
+                metric = "Accuracy",
+                tuneGrid= data.frame(k = seq(111, 121,by = 2))#initially checked on 1-151 range, best was 115
+                )
+knn_all_up
+```
+
+#### Roc curve
+We can see that there is no clear separation at all between the probabilities of the good and bad rating. This is the sign of a classification that doesn't work.
+```{r}
+#predicting on the training set
+df <- train_temp %>% 
+  mutate(predicted_prob = predict(knn_all_up, type = "prob")$"good")
+
+df %>%
+  ggplot() +
+  aes(x = predicted_prob, fill = rating_bin) +
+  geom_histogram(bins = 20) +
+  labs(x = "Probability", y = "Count", title = "Distribution of predicted probabilities")
+```
+
+### Fitting cv model with K = 115
+We see that the relatively high accuracy is achieved by classifying most obs as good, resulting in a high sensitivity but a very poor specificity.
+
+```{r}
+knn_all_up_pred <- predict(knn_all_up, newdata = test_temp, type = "raw")
+
+confusionMatrix(reference = test_temp$rating_bin, data = knn_all_up_pred, positive="good")
+```
+
+## 2 KNN - only NUT
+
+```{r}
+train_temp <- train_bin %>% 
+  select(rating_bin, all_of(nutritional_values))
+
+test_temp <- test_bin %>% 
+  select(rating_bin, all_of(nutritional_values))
+```
+
+### Tuning K
+Best K if we look at both accuracy and Kappa is 111.
+```{r}
+set.seed(12)
+knn_Nu_up <- caret::train(rating_bin ~.,
+                data = train_temp,
+                method = "knn",
+                trControl = trCtrl,
+                metric = "Accuracy",
+                tuneGrid= data.frame(k = seq(105, 115,by = 2))#initially checked on 1-151 range, best was 111
+                )
+knn_Nu_up
+```
+
+#### Roc curve
+We can see that there is no clear separation at all between the probabilities of the good and bad rating. This is the sign of a classification that doesn't work.
+```{r}
+#predicting on the training set
+df <- train_temp %>% 
+  mutate(predicted_prob = predict(knn_Nu_up, type = "prob")$"good")
+
+df %>%
+  ggplot() +
+  aes(x = predicted_prob, fill = rating_bin) +
+  geom_histogram(bins = 20) +
+  labs(x = "Probability", y = "Count", title = "Distribution of predicted probabilities")
+```
+
+### Fitting cv model with K = 111
+We see that the relatively high accuracy is achieved by classifying most obs as good, resulting in a high sensitivity but a very poor specificity.
+
+```{r}
+knn_Nu_up_pred <- predict(knn_Nu_up, newdata = test_temp, type = "raw")
+
+confusionMatrix(reference = test_temp$rating_bin, data = knn_Nu_up_pred, positive="good")
+```
+
+## 3 KNN - NUT and TOTAL
+```{r}
+train_temp <- train_bin %>% 
+  select(rating_bin, all_of(nutritional_values), all_of(contains("total")))
+
+test_temp <- test_bin %>% 
+  select(rating_bin, all_of(nutritional_values), all_of(contains("total")))
+```
+
+### Tuning K
+Best K if we look at both accuracy and Kappa is 139
+```{r}
+set.seed(12)
+knn_NuTo_up <- caret::train(rating_bin ~.,
+                data = train_temp,
+                method = "knn",
+                trControl = trCtrl,
+                metric = "Accuracy",
+                tuneGrid= data.frame(k = seq(135, 145,by = 2))#initially checked on 1-151 range, best was 139
+                )
+knn_NuTo_up
+```
+
+#### Roc curve
+We can see that there is no clear separation at all between the probabilities of the good and bad rating. This is the sign of a classification that doesn't work.
+```{r}
+#predicting on the training set
+df <- train_temp %>% 
+  mutate(predicted_prob = predict(knn_NuTo_up, type = "prob")$"good")
+
+df %>%
+  ggplot() +
+  aes(x = predicted_prob, fill = rating_bin) +
+  geom_histogram(bins = 20) +
+  labs(x = "Probability", y = "Count", title = "Distribution of predicted probabilities")
+```
+
+### Fitting cv model with K = 139
+Once again most obs are classified as good. Not better than NIR.
+```{r}
+knn_NuTo_up_pred <- predict(knn_NuTo_up, newdata = test_temp, type = "raw")
+
+confusionMatrix(reference = test_temp$rating_bin, data = knn_NuTo_up_pred, positive="good")
+```
+
+## 4 KNN - NUT and BIN
+
+```{r}
+train_temp <- train_bin %>% 
+  select(rating_bin, all_of(nutritional_values), all_of(contains("bin")))
+test_temp <- test_bin %>% 
+  select(rating_bin, all_of(nutritional_values), all_of(contains("bin")))
+```
+
+### Tuning K
+Best K if we look at both accuracy and Kappa is 135
+```{r}
+set.seed(12)
+knn_NuBi_up <- caret::train(rating_bin ~.,
+                data = train_temp,
+                method = "knn",
+                trControl = trCtrl,
+                metric = "Accuracy",
+                tuneGrid= data.frame(k = seq(35, 45,by = 2))#initially checked on 1-151 range, best was 37
+                )
+knn_NuBi_up
+```
+
+#### Roc curve
+We can see that there is no clear separation at all between the probabilities of the good and bad rating. This is the sign of a classification that doesn't work.
+```{r}
+#predicting on the training set
+df <- train_temp %>% 
+  mutate(predicted_prob = predict(knn_NuBi_up, type = "prob")$"good")
+
+df %>%
+  ggplot() +
+  aes(x = predicted_prob, fill = rating_bin) +
+  geom_histogram(bins = 20) +
+  labs(x = "Probability", y = "Count", title = "Distribution of predicted probabilities")
+```
+
+### Fitting cv model with K = 135
+Once again most obs are classified as good. Not better than NIR.
+```{r}
+knn_Bi_up_pred <- predict(knn_NuBi_up, newdata = test_temp, type = "raw")
+
+confusionMatrix(reference = test_temp$rating_bin, data = knn_Bi_up_pred, positive="good")
+```
+
 # Unsupervised Learning
 
 
