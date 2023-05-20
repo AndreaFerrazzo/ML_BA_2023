@@ -551,9 +551,8 @@ ingredients_df <- recipes %>%
 ### Adding binary columns
 
 ```{r Adding binary columns for each category - Manual Working version}
-#doing it manually, could implement a for loop but not sure I'd gain much time
 ingredients_df_bin <- ingredients_df %>%
-  mutate(vegetables_bin = as.numeric(if_any(all_of(vegetables_vec), ~.x == 1, na.rm = TRUE)),#first for categories with a general variable
+  mutate(vegetables_bin = as.numeric(if_any(all_of(vegetables_vec), ~.x == 1, na.rm = TRUE)),
          meats_bin = as.numeric(if_any(all_of(all_meats), ~.x == 1, na.rm = TRUE)),
          fish_bin = as.numeric(if_any(all_of(fish_vec), ~.x == 1, na.rm = TRUE)),
          seafood_bin = as.numeric(if_any(all_of(seafood_vec), ~.x == 1, na.rm = TRUE)),
@@ -564,7 +563,7 @@ ingredients_df_bin <- ingredients_df %>%
          cheese_bin = as.numeric(if_any(all_of(cheeses_vec), ~.x == 1, na.rm = TRUE)),
          dairy_bin = as.numeric(if_any(all_of(dairy_vec), ~.x == 1, na.rm = TRUE)),
          spices_bin = as.numeric(if_any(all_of(spices_vec), ~.x == 1, na.rm = TRUE)),
-         cereals_bin = as.numeric(if_any(all_of(cereals_vec), ~.x == 1, na.rm = TRUE)),#now for the other categories which don't have a general variable
+         cereals_bin = as.numeric(if_any(all_of(cereals_vec), ~.x == 1, na.rm = TRUE)),
          carbs_bin = as.numeric(if_any(all_of(carbs_vec), ~.x == 1, na.rm = TRUE)),
          dessert_bin = as.numeric(if_any(all_of(dessert_vec), ~.x == 1, na.rm = TRUE)),
          egg_bin = (egg)
@@ -736,8 +735,8 @@ ingredients_df_total %>%
 
 ```{r test of plot above, eval = FALSE}
 #we notice that 117 (no NAs and RAT0, and not duplicated) recipes have 0 ingredients, let's investigate why and how that's possible
-(ingredients_df_total %>% 
-  filter(total_ingredients==0))
+ingredients_df_total %>% 
+  filter(total_ingredients==0)
 
 #let's pick recipe ID number 1183 which should have poppy and sesame seeds according to the title
 recipes %>% 
@@ -760,6 +759,12 @@ recipes %>%
 ingredients_df_total %>% 
   filter(total_ingredients >10)
 ```
+Based on this information, we decide to eliminate those 117 observations which don't contain any ingredients that we have classified in our vectors.
+```{r}
+ingredients_df_full <- ingredients_df_full %>%
+  filter(!total_ingredients == 0)
+```
+
 
 Besides the total amount of ingredients, let's check the amount of ingredients per recipe for the top 3 categories in terms of ingredients frequency (i.e., vegetables, fruits, meats)
 

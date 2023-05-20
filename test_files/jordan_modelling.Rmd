@@ -55,66 +55,6 @@ upsamp_tr_bin <- tibble(rbind(tr_good, tr_bad[index_bad,]))
 table(upsamp_tr_bin$rating_bin)
 ```
 
-## KNN - rating_bin with NUT, BIN and TOTAL - NOT NORMALISED
-
-```{r}
-train_temp <- train_bin #using unbalanced training set here as apparently it's not required for KNN for data to be balanced
-
-test_temp <- test_bin
-```
-
-### Basic Model
-Trying to fit a basic KNN model with arbitrary K value of 3. Results are not different than that of a No Information Rate (NIR) model.
-```{r}
-mod_knn <- knn3(data = train_temp, rating_bin ~., k=3)
-
-knn_pred <- predict(mod_knn, newdata = test_temp, type = "class")
-
-confusionMatrix(reference = test_temp$rating_bin, data = knn_pred, positive="good")
-```
-
-### Tuning K
-Best K if we look at both accuracy and Kappa is 1.
-```{r}
-#tuning k, using upsampled data
-trCtrl <- trainControl(method = "cv",
-                       #summaryFunction = defaultSummary,
-                       #classProbs = TRUE,
-                       number = 10
-                       )
-set.seed(12)
-knn_cv <- caret::train(rating_bin ~.,
-                data = train_temp,
-                method = "knn",
-                trControl = trCtrl,
-                metric = "Accuracy",
-                tuneGrid= data.frame(k = seq(111, 131,by = 2))#best is 121
-                )
-knn_cv
-```
-
-#### Roc curve
-We can see that there is no clear separation at all between the probabilities of the good and bad rating. This is the sign of a classification that doesn't work.
-```{r}
-#predicting on the training set
-df <- train_bin %>% 
-  mutate(predicted_prob = predict(knn_cv, type = "prob")$"good")
-
-df %>%
-  ggplot() +
-  aes(x = predicted_prob, fill = rating_bin) +
-  geom_histogram(bins = 20) +
-  labs(x = "Probability", y = "Count", title = "Distribution of predicted probabilities")
-```
-
-### Fitting cv model with K = 121
-
-We see that the relatively high accuracy is achieved by classifying most obs as good, resulting in a high sensitivity but a very poor specificity.
-```{r}
-knn_cv_pred <- predict(knn_cv, newdata = test_temp, type = "raw")
-
-confusionMatrix(reference = test_temp$rating_bin, data = knn_cv_pred, positive="good")
-```
 
 ## KNN - rating_bin with NUT, BIN and TOTAL - NORMALISED
 
@@ -231,6 +171,7 @@ knn_cv_pred <- predict(knn_cv, newdata = test_temp, type = "raw")
 
 confusionMatrix(reference = test_temp$rating_bin, data = knn_cv_pred, positive="good")
 ```
+
 ## KNN - rating_bin with NUT and total
 Using train_bin and not the upsampled training set, as it gave worst results for models above.
 ```{r}

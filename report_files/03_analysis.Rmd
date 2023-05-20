@@ -21,17 +21,18 @@ my_normalise <- function(x) {
 nutritional_df <- recipes %>% 
   select(ID, all_of(nutritional_values))
 
+###### CAREFUL --> recipes_analysis should be of dim 10163 x 34
 recipes_analysis <- ingredients_df_full %>% 
   left_join(nutritional_df, by="ID") %>% 
   mutate(rating_bin = as.factor(ifelse(rating<4, "bad", "good"))) %>% 
   mutate(across(all_of(contains("bin")), as.factor)) %>% 
+  mutate(ID = as.character(ID)) %>% 
   select(ID, rating_bin, all_of(nutritional_values), contains("bin"), contains("total"))
 ```
 
 Normalising the continuous numerical values, to remain consistent across all models.
 ```{r}
 recipes_analysis <- recipes_analysis %>% 
-  mutate(ID = as.character(ID)) %>% 
   mutate(across(where(is.numeric), my_normalise))
 ```
 
@@ -39,6 +40,7 @@ Creating training and test set. We chose a 75/25 split
 ```{r}
 set.seed(12)
 index <- createDataPartition(recipes_analysis$rating_bin, p=0.75, list = FALSE)#data partition attemps to already balance out the data based on the outcome --> but here doesn't manage fully
+
 train_bin <- recipes_analysis[index, ]
 test_bin <- recipes_analysis[-index, ]
 ```
@@ -62,6 +64,7 @@ upsamp_tr_bin <- tibble(rbind(tr_good, tr_bad[index_bad,]))
 #checking that we have the correct number of good and bad
 table(upsamp_tr_bin$rating_bin)
 ```
+# Analysis Unbalanced outcome variable
 
 ## Logistic Regression
 
@@ -111,8 +114,7 @@ As we can see the predictions are not satisfying. Since the number of good recip
 
 We believe that it is worth to proceed with the same analysis using balanced data.
 
-
-### Logistic Regression with balanced data
+## Logistic Regression with balanced data
 
 ```{r}
 
@@ -144,6 +146,7 @@ summary(rating_logr_sel_up)
 All the variables selected (total_ingredients, total_vegetables, fat and sodium) are statistically significant at alpha=0.01. Therefore, we can observe that the probability of having a "good" rating increases with a higher number of ingredients per recipe, but it decreases with a higher number of vegetables per recipe. Additionally, the probability of having a "good" rating increases with the content of fat and sodium per recipe.
 
 ### Inference
+
 ```{r}
 
 prob_te_rating_up <- predict(rating_logr_sel_up, newdata = test_bin, type="response")
@@ -153,7 +156,6 @@ table(Pred=pred_te_rating_up, Obs=test_bin$rating_bin)
 
 ```
 Compared to unbalanced data, we can observe that the model is now better at predicting "bad" ratings, even though it is has worsened at predicting "good" ratings. The use of balanced data has then proved to be useful.
-
 
 ## SVM
 
@@ -186,7 +188,7 @@ confusionMatrix(data=recipe_svm_pred, reference = test_bin$rating_bin)
 In this case the accuracy stands at 59.2%, but we observe that the model is poorly predicting "bad" ratings. Before going too much further with the analysis of SVM, we will try to use balanced data to improve the accuracy.
 
 
-### SVM - balanced data
+## SVM - balanced data
 
 ```{r}
 
@@ -301,4 +303,227 @@ The result indicates that with the tuned hyperparameters on the radial basis SVM
 
 ## KNN
 
+## KNN - NUT, BIN and TOTAL
+
+```{r}
+#using unbalanced training set here as apparently it's not required for KNN for data to be balanced
+train_temp <- train_bin %>% 
+  select(-ID)
+
+test_temp <- test_bin %>% 
+  select(-ID)
+```
+
+### Basic Model
+Trying to fit a basic KNN model with arbitrary K value of 3. Results are not different than that of a No Information Rate (NIR) model.
+```{r}
+mod_knn <- knn3(data = train_temp, rating_bin ~., k=3)
+
+knn_pred <- predict(mod_knn, newdata = test_temp, type = "class")
+
+confusionMatrix(reference = test_temp$rating_bin, data = knn_pred, positive="good")
+```
+
+### Tuning K
+Best K if we look at both accuracy and Kappa is 115.
+```{r}
+#tuning k, using upsampled data
+trCtrl <- trainControl(method = "cv",
+                       #summaryFunction = defaultSummary,
+                       #classProbs = TRUE,
+                       number = 10
+                       )
+set.seed(12)
+knn_all <- caret::train(rating_bin ~.,
+                data = train_temp,
+                method = "knn",
+                trControl = trCtrl,
+                metric = "Accuracy",
+                tuneGrid= data.frame(k = seq(111, 121,by = 2))#initially checked on 1-151 range, best was 115
+                )
+knn_all
+```
+
+#### Roc curve
+We can see that there is no clear separation at all between the probabilities of the good and bad rating. This is the sign of a classification that doesn't work.
+```{r}
+#predicting on the training set
+df <- train_temp %>% 
+  mutate(predicted_prob = predict(knn_all, type = "prob")$"good")
+
+df %>%
+  ggplot() +
+  aes(x = predicted_prob, fill = rating_bin) +
+  geom_histogram(bins = 20) +
+  labs(x = "Probability", y = "Count", title = "Distribution of predicted probabilities")
+```
+
+### Fitting cv model with K = 115
+We see that the relatively high accuracy is achieved by classifying most obs as good, resulting in a high sensitivity but a very poor specificity.
+
+```{r}
+knn_all_pred <- predict(knn_all, newdata = test_temp, type = "raw")
+
+confusionMatrix(reference = test_temp$rating_bin, data = knn_all_pred, positive="good")
+```
+
+## KNN - only NUT
+
+```{r}
+train_temp <- train_bin %>% 
+  select(rating_bin, all_of(nutritional_values))
+
+test_temp <- test_bin %>% 
+  select(rating_bin, all_of(nutritional_values))
+```
+
+### Tuning K
+Best K if we look at both accuracy and Kappa is 111.
+```{r}
+#tuning k, using upsampled data
+trCtrl <- trainControl(method = "cv",
+                       #summaryFunction = defaultSummary,
+                       #classProbs = TRUE,
+                       number = 10
+                       )
+set.seed(12)
+knn_Nu <- caret::train(rating_bin ~.,
+                data = train_temp,
+                method = "knn",
+                trControl = trCtrl,
+                metric = "Accuracy",
+                tuneGrid= data.frame(k = seq(105, 115,by = 2))#initially checked on 1-151 range, best was 111
+                )
+knn_Nu
+```
+
+#### Roc curve
+We can see that there is no clear separation at all between the probabilities of the good and bad rating. This is the sign of a classification that doesn't work.
+```{r}
+#predicting on the training set
+df <- train_temp %>% 
+  mutate(predicted_prob = predict(knn_Nu, type = "prob")$"good")
+
+df %>%
+  ggplot() +
+  aes(x = predicted_prob, fill = rating_bin) +
+  geom_histogram(bins = 20) +
+  labs(x = "Probability", y = "Count", title = "Distribution of predicted probabilities")
+```
+
+### Fitting cv model with K = 111
+We see that the relatively high accuracy is achieved by classifying most obs as good, resulting in a high sensitivity but a very poor specificity.
+
+```{r}
+knn_Nu_pred <- predict(knn_Nu, newdata = test_temp, type = "raw")
+
+confusionMatrix(reference = test_temp$rating_bin, data = knn_Nu_pred, positive="good")
+```
+
+## KNN - NUT and TOTAL
+```{r}
+train_temp <- train_bin %>% 
+  select(rating_bin, all_of(nutritional_values), all_of(contains("total")))
+
+test_temp <- test_bin %>% 
+  select(rating_bin, all_of(nutritional_values), all_of(contains("total")))
+```
+
+### Tuning K
+Best K if we look at both accuracy and Kappa is 139
+```{r}
+#tuning k, using upsampled data
+trCtrl <- trainControl(method = "cv",
+                       #summaryFunction = defaultSummary,
+                       #classProbs = TRUE,
+                       number = 10
+                       )
+set.seed(12)
+knn_NuTo <- caret::train(rating_bin ~.,
+                data = train_temp,
+                method = "knn",
+                trControl = trCtrl,
+                metric = "Accuracy",
+                tuneGrid= data.frame(k = seq(135, 145,by = 2))#initially checked on 1-151 range, best was 139
+                )
+knn_NuTo
+```
+
+#### Roc curve
+We can see that there is no clear separation at all between the probabilities of the good and bad rating. This is the sign of a classification that doesn't work.
+```{r}
+#predicting on the training set
+df <- train_temp %>% 
+  mutate(predicted_prob = predict(knn_NuTo, type = "prob")$"good")
+
+df %>%
+  ggplot() +
+  aes(x = predicted_prob, fill = rating_bin) +
+  geom_histogram(bins = 20) +
+  labs(x = "Probability", y = "Count", title = "Distribution of predicted probabilities")
+```
+
+### Fitting cv model with K = 139
+Once again most obs are classified as good. Not better than NIR.
+```{r}
+knn_NuTo_pred <- predict(knn_NuTo, newdata = test_temp, type = "raw")
+
+confusionMatrix(reference = test_temp$rating_bin, data = knn_NuTo_pred, positive="good")
+```
+
+## KNN - NUT and BIN
+
+```{r}
+train_temp <- train_bin %>% 
+  select(rating_bin, all_of(nutritional_values), all_of(contains("bin")))
+test_temp <- test_bin %>% 
+  select(rating_bin, all_of(nutritional_values), all_of(contains("bin")))
+```
+
+### Tuning K
+Best K if we look at both accuracy and Kappa is 135
+```{r}
+#tuning k, using upsampled data
+trCtrl <- trainControl(method = "cv",
+                       #summaryFunction = defaultSummary,
+                       #classProbs = TRUE,
+                       number = 10
+                       )
+set.seed(12)
+knn_NuBi <- caret::train(rating_bin ~.,
+                data = train_temp,
+                method = "knn",
+                trControl = trCtrl,
+                metric = "Accuracy",
+                tuneGrid= data.frame(k = seq(131, 141,by = 2))#initially checked on 1-151 range, best was 135
+                )
+knn_NuBi
+```
+
+#### Roc curve
+We can see that there is no clear separation at all between the probabilities of the good and bad rating. This is the sign of a classification that doesn't work.
+```{r}
+#predicting on the training set
+df <- train_temp %>% 
+  mutate(predicted_prob = predict(knn_NuBi, type = "prob")$"good")
+
+df %>%
+  ggplot() +
+  aes(x = predicted_prob, fill = rating_bin) +
+  geom_histogram(bins = 20) +
+  labs(x = "Probability", y = "Count", title = "Distribution of predicted probabilities")
+```
+
+### Fitting cv model with K = 135
+Once again most obs are classified as good. Not better than NIR.
+```{r}
+knn_Bi_pred <- predict(knn_NuBi, newdata = test_temp, type = "raw")
+
+confusionMatrix(reference = test_temp$rating_bin, data = knn_Bi_pred, positive="good")
+```
+
+# Analysis - Balanced outcome variable
+
 # Unsupervised Learning
+
+
