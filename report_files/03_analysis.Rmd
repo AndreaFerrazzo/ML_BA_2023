@@ -27,7 +27,7 @@ recipes_analysis <- ingredients_df_full %>%
   mutate(rating_bin = as.factor(ifelse(rating<4, "bad", "good"))) %>% 
   mutate(across(all_of(contains("bin")), as.factor)) %>% 
   mutate(ID = as.character(ID)) %>% 
-  select(ID, rating_bin, all_of(nutritional_values), contains("bin"), contains("total"))
+  select(rating_bin, all_of(nutritional_values), contains("bin"), contains("total"))
 ```
 
 Normalising the continuous numerical values, to remain consistent across all models.
@@ -80,10 +80,10 @@ test_bin$rating_bin <- ifelse(test_bin$rating_bin=="good",1,0)
 
 ```{r}
 
-# since the data has already been splitted we proceed with the fitting of the logistic regression
-# nutritional values and total ingredients
+# since the data has already been split we proceed with the fitting of the logistic regression
+# nutritional values, categories and total ingredients 
 
-rating_logr <- glm(rating_bin ~ calories + protein + fat + sodium + total_ingredients + total_meat + total_vegetables, data=train_bin, family="binomial")
+rating_logr <- glm(rating_bin ~., data=train_bin, family="binomial")
 
 summary(rating_logr)
 
@@ -96,9 +96,9 @@ rating_logr_sel <- step(rating_logr)
 summary(rating_logr_sel)
 
 ```
-The variables total_ingredients and total_vegetables are statistically significant at alpha=0.01. Therefore, we can observe that the probability of having a "good" rating increases with a higher number of ingredients per recipe, but it decreases with a higher number of vegetables per recipe.
+The variables calories, total_fruits, total_carbs, total_fruits and seafood_bin are statistically significant at alpha=0.01. For instance, we can observe that the probability of having a "good" rating increases with a higher value of calories per recipe, but it decreases with a larger number of food high in carbs per recipe.
 
-The variables fat and sodium are statistically significant at alpha=0.05. In this case we see that the probability of having a "good" rating increases with the content of fat and sodium per recipe.
+The variables total_fish, total_herbs, total_cheese and meats_bin are statistically significant at alpha=0.05. In this case we would see the probability of having a "good" rating increasing with a higher number of cheeses per recipe.
 
 ### Inference
 ```{r}
@@ -108,9 +108,13 @@ pred_te_rating <- ifelse(prob_te_rating >= 0.5, 1, 0)
 
 table(Pred=pred_te_rating, Obs=test_bin$rating_bin)
 
+accuracy_rating <- sum(pred_te_rating == test_bin$rating_bin) / length(test_bin$rating_bin)
+
+print(paste("Accuracy:", accuracy_rating))
+
 
 ```
-As we can see the predictions are not satisfying. Since the number of good recipes is larger than the number of bad recipes, predicting a 1 always provides a good model overall. Anyway the model is not reliable when it comes to predict recipes with a 0. 
+As we can see the predictions are not satisfying. Since the number of good recipes is larger than the number of bad recipes, predicting a 1 will always provide a good model overall. Anyway the model is not reliable when it comes to predict recipes with a 0. 
 
 We believe that it is worth to proceed with the same analysis using balanced data.
 
@@ -128,9 +132,9 @@ upsamp_tr_bin$rating_bin <- ifelse(upsamp_tr_bin$rating_bin=="good",1,0)
 ```{r}
 
 # since the data has already been splitted we proceed with the fitting of the logistic regression
-# nutritional values and total ingredients
+# nutritional values, categories and total ingredients 
 
-rating_logr_up <- glm(rating_bin ~ calories + protein + fat + sodium + total_ingredients + total_meat + total_vegetables, data=upsamp_tr_bin, family="binomial")
+rating_logr_up <- glm(rating_bin ~., data=upsamp_tr_bin, family="binomial")
 
 summary(rating_logr_up)
 
@@ -143,7 +147,7 @@ rating_logr_sel_up <- step(rating_logr_up)
 summary(rating_logr_sel_up)
 
 ```
-All the variables selected (total_ingredients, total_vegetables, fat and sodium) are statistically significant at alpha=0.01. Therefore, we can observe that the probability of having a "good" rating increases with a higher number of ingredients per recipe, but it decreases with a higher number of vegetables per recipe. Additionally, the probability of having a "good" rating increases with the content of fat and sodium per recipe.
+Among the variables selected, total_carbs, total_fruits, total_meat, seafood_bin and calories are statistically significant at alpha=0.01. For instance, we can observe that the probability of having a "good" rating increases with a higher number of fruits per recipe, but it decreases with a larger number of food high in carbs per recipe. Additionally, the probability of having a "good" rating increases with the content of calories.
 
 ### Inference
 
@@ -154,11 +158,266 @@ pred_te_rating_up <- ifelse(prob_te_rating_up >= 0.5, 1, 0)
 
 table(Pred=pred_te_rating_up, Obs=test_bin$rating_bin)
 
+accuracy_rating_up <- sum(pred_te_rating_up == test_bin$rating_bin) / length(test_bin$rating_bin)
+
+print(paste("Accuracy:", accuracy_rating_up))
+
 ```
 Compared to unbalanced data, we can observe that the model is now better at predicting "bad" ratings, even though it is has worsened at predicting "good" ratings. The use of balanced data has then proved to be useful.
 
-## SVM
 
+## Logistic Regression with balanced data 
+Focus on nutritional values only
+```{r}
+
+rating_logr_up_nutritional <- glm(rating_bin ~ calories + protein + fat + sodium, data=upsamp_tr_bin, family="binomial")
+
+summary(rating_logr_up_nutritional)
+
+```
+
+
+### Variable selection and interpretation
+```{r}
+
+rating_logr_sel_up_nutritional <- step(rating_logr_up_nutritional)
+summary(rating_logr_sel_up_nutritional)
+
+```
+
+We can observe only two variables which are statistically significant at alpha=0.05. More in particular, we can observe that the probability of having a "good" rating increases with a higher content of fat and sodium per recipe.
+
+### Inference
+```{r}
+
+prob_te_rating_up_nutritional <- predict(rating_logr_sel_up_nutritional, newdata = test_bin, type="response")
+pred_te_rating_up_nutritional <- ifelse(prob_te_rating_up_nutritional >= 0.5, 1, 0)
+
+table(Pred=pred_te_rating_up_nutritional, Obs=test_bin$rating_bin)
+
+accuracy_rating_up_nutritional <- sum(pred_te_rating_up_nutritional == test_bin$rating_bin) / length(test_bin$rating_bin)
+
+print(paste("Accuracy:", accuracy_rating_up_nutritional))
+
+```
+In this case the accuracy is lower compared to the model with all variables included.
+
+
+## Logistic Regression with balanced data 
+Focus on nutritional values and total
+```{r}
+
+rating_logr_up_nutritional_total <- glm(rating_bin ~ calories + protein + fat + sodium + total_ingredients + total_vegetables + total_meat + total_fish + total_seafood + total_herbs + total_nuts + total_fruits + total_nuts + total_fruits + total_cheese + total_dairy + total_spices + total_cereals + total_carbs + total_dessert, data=upsamp_tr_bin, family="binomial")
+
+summary(rating_logr_up_nutritional_total)
+
+```
+
+
+### Variable selection and interpretation
+```{r}
+
+rating_logr_sel_up_nutritional_total <- step(rating_logr_up_nutritional_total)
+summary(rating_logr_sel_up_nutritional_total)
+
+```
+
+Among the variables selected, calories, total_carbs, total_fruits, total_meat, total_seafood are statistically significant at alpha=0.01. The rest of the variables are statistically significant at alpha=0.05. For instance, we can observe that the probability of having a "good" rating increases with a higher number of seafood per recipe, but it decreases with a larger number of food high in carbs per recipe.
+
+### Inference
+```{r}
+
+prob_te_rating_up_nutritional_total <- predict(rating_logr_sel_up_nutritional_total, newdata = test_bin, type="response")
+pred_te_rating_up_nutritional_total <- ifelse(prob_te_rating_up_nutritional_total >= 0.5, 1, 0)
+
+table(Pred=pred_te_rating_up_nutritional_total, Obs=test_bin$rating_bin)
+
+accuracy_rating_up_nutritional_total <- sum(pred_te_rating_up_nutritional_total == test_bin$rating_bin) / length(test_bin$rating_bin)
+
+print(paste("Accuracy:", accuracy_rating_up_nutritional_total))
+
+```
+Better to add "total" variables to the model rather than using only nutritional values. The accuracy increases from 47.9% to 53.1%.
+
+
+## Logistic Regression with balanced data 
+Focus on nutritional values and bins
+```{r}
+
+rating_logr_up_nutritional_bin <- glm(rating_bin ~ calories + protein + fat + sodium + vegetables_bin + meats_bin + fish_bin + seafood_bin + herbs_bin + nuts_bin + fruits_bin + cheese_bin + dairy_bin + spices_bin + cereals_bin + carbs_bin + dessert_bin + egg_bin, data=upsamp_tr_bin, family="binomial")
+
+summary(rating_logr_up_nutritional_bin)
+
+```
+
+
+### Variable selection and interpretation
+```{r}
+
+rating_logr_sel_up_nutritional_bin <- step(rating_logr_up_nutritional_bin)
+summary(rating_logr_sel_up_nutritional_bin)
+
+```
+
+Among the variables selected, calories, seafood_bin, fruits_bin, carbs_bin, meats_bin, fish_bin and nuts_bin are statistically significant at alpha=0.01. The rest of the variables, apart from cheese_bin, are statistically significant at alpha=0.05. For instance, also in this case we can observe that the probability of having a "good" rating increases with a higher number of seafood per recipe, but it decreases with a larger number of food high in carbs per recipe.
+
+### Inference
+```{r}
+
+prob_te_rating_up_nutritional_bin <- predict(rating_logr_sel_up_nutritional_bin, newdata = test_bin, type="response")
+pred_te_rating_up_nutritional_bin <- ifelse(prob_te_rating_up_nutritional_bin >= 0.5, 1, 0)
+
+table(Pred=pred_te_rating_up_nutritional_bin, Obs=test_bin$rating_bin)
+
+accuracy_rating_up_nutritional_bin <- sum(pred_te_rating_up_nutritional_bin == test_bin$rating_bin) / length(test_bin$rating_bin)
+
+print(paste("Accuracy:", accuracy_rating_up_nutritional_bin))
+
+```
+Better to add "bin" variables to the model rather than using nutritional values and total. The accuracy slightly improves from 53.1% to 53.7%.
+
+
+################
+
+## SVM
+Only nutritional values
+```{r}
+
+recipe_svm_nutritional <- svm(rating_bin ~ calories + protein + fat + sodium , data=train_bin, kernel="linear") # we fit the linear kernel
+recipe_svm_nutritional
+
+```
+
+Let us make predictions and check the accuracy
+```{r}
+
+recipe_svm_pred_nutritional <- predict(recipe_svm_nutritional, newdata = test_bin)
+
+table(Pred=recipe_svm_pred_nutritional, obs=test_bin$rating_bin) # we check predictions on the test set
+
+# with the function confusionMatrix() of the library caret we get the accuracy measure which shows the proportion of correct predictions
+confusionMatrix(data=recipe_svm_pred_nutritional, reference = test_bin$rating_bin)
+
+```
+In this case the accuracy stands at 59.1%, but we observe that the model is poorly predicting "bad" ratings. Before going too much further with the analysis of SVM, we will try to use balanced data to improve the accuracy.
+
+
+## SVM - balanced data
+
+```{r}
+
+upsamp_tr_bin$rating_bin <- as.factor(upsamp_tr_bin$rating_bin)
+
+recipe_svm_up_nutritional <- svm(rating_bin ~ calories + protein + fat + sodium, data=upsamp_tr_bin, kernel="linear") # we fit the linear kernel
+recipe_svm_up_nutritional
+
+```
+
+```{r}
+
+recipe_svm_up_pred_nutritional <- predict(recipe_svm_up_nutritional, newdata = test_bin)
+
+table(Pred=recipe_svm_up_pred_nutritional, obs=test_bin$rating_bin) # we check predictions on the test set
+
+# with the function confusionMatrix() of the library caret we get the accuracy measure which shows the proportion of correct predictions
+confusionMatrix(data=recipe_svm_up_pred_nutritional, reference = test_bin$rating_bin)
+
+```
+Compared to unbalanced data, we can observe that the model is now better at predicting "bad" ratings, even though it is has considerably worsened at predicting "good" ratings. This explains why with balanced data the accuracy stands at 43%.
+We will proceed the rest of the analysis with balanced data.
+
+### Radial basis SVM
+```{r}
+
+recipe_rb_nutritional <- svm(rating_bin ~ calories + protein + fat + sodium, data=upsamp_tr_bin, kernel="radial") # we fit the radial basis kernel
+recipe_rb_nutritional
+
+```
+
+Let us make predictions and check the accuracy
+```{r}
+
+recipe_rb_pred_nutritional <- predict(recipe_rb_nutritional, newdata = test_bin)
+confusionMatrix(data=recipe_rb_pred_nutritional, reference = test_bin$rating_bin)
+
+```
+The accuracy is now 52.5% meaning that the radial basis kernel seems to do much better than the linear one. However, we should not forget that we used default parameters so far. Let us try to do better by tuning hyperparameters.
+
+
+### Tuning the Hyperparameters - Linear SVM
+```{r}
+
+trctrl <- trainControl(method = "cv", number=10)
+
+svm_Linear_nutritional <- train(rating_bin ~ calories + protein + fat + sodium, data=upsamp_tr_bin, method = "svmLinear", trControl=trctrl)
+svm_Linear_nutritional
+
+```
+The validation accuracy stands at 50.9%, which is not that high even though it is computed on the training set.
+The next step consists in creating a grid of values for the cost that we want to try and pass to the argugment tuneGrid.
+
+```{r}
+
+grid <- expand.grid(C = c(0.01, 0.1, 1, 10, 100, 1000))
+grid
+
+svm_Linear_Grid_nutritional <- train(rating_bin ~ calories + protein + fat + sodium, data=upsamp_tr_bin, method = "svmLinear", trControl=trctrl, tuneGrid = grid)
+svm_Linear_Grid_nutritional
+
+plot(svm_Linear_Grid_nutritional)
+
+```
+
+
+```{r}
+
+svm_Linear_Grid_nutritional$bestTune
+
+```
+The result indicates that setting the cost to C=10 provides the best model with accuracy=50.7%. The accuracy apparently reaches a plateau at this value. It represents an improvement compared to the previous linear SVM with default parameter cost C=1.
+
+### Tuning the Hyperparameters - Radial basis SVM
+```{r}
+
+grid_radial <- expand.grid(sigma = c(0.01, 0.02, 0.05, 0.1),
+                           C = c(1, 10, 100, 500, 1000))
+grid_radial
+
+svm_Radial_Grid_nutritional <- train(rating_bin ~ calories + protein + fat + sodium, data=upsamp_tr_bin, method = "svmRadial", trControl=trctrl, tuneGrid = grid_radial)
+svm_Radial_Grid_nutritional
+
+plot(svm_Radial_Grid_nutritional)
+
+```
+
+
+```{r}
+
+svm_Radial_Grid_nutritional$bestTune
+
+```
+The optimal model from this search is with sigma = 0.1 and C = 1000
+This optimal model would then reach accuracy=55.7%.
+
+### Best model selection
+
+```{r}
+# After finding the best hyperparameters, we re-train the model with the best hyperparameters on the entire training set. Afterwards we will evaluate the model on the test set.
+
+recipe_rb_tuned_nutritional <- svm(rating_bin ~ calories + protein + fat + sodium, data=upsamp_tr_bin, 
+                       kernel = "radial", gamma = svm_Radial_Grid_nutritional$bestTune$sigma, 
+                       cost = svm_Radial_Grid_nutritional$bestTune$C)
+
+recipe_rb_tuned_pred_nutritional <- predict(recipe_rb_tuned_nutritional, newdata = test_bin)
+
+confusionMatrix(data=recipe_rb_tuned_pred_nutritional, reference = test_bin$rating_bin)
+
+```
+The result indicates that with the tuned hyperparameters on the radial basis SVM model we achieve an accuracy of 52.8% on the test set. We can conclude that among all the models, the radial basis kernel SVM with C=1000 and sigma=0.01 is the best model.
+
+###########
+
+## SVM
 ```{r}
 library(e1071)
 # with the svm() function of the e1071 package we can fit SVM to the data with several possible kernels 
@@ -169,7 +428,7 @@ train_bin$rating_bin <- as.factor(train_bin$rating_bin)
 test_bin$rating_bin <- as.factor(test_bin$rating_bin)
 
 
-recipe_svm <- svm(rating_bin ~ calories + protein + fat + sodium + total_ingredients + total_meat + total_vegetables, data=train_bin, kernel="linear") # we fit the linear kernel
+recipe_svm <- svm(rating_bin ~ calories + protein + fat + sodium + vegetables_bin + meats_bin + fish_bin + seafood_bin + herbs_bin + nuts_bin + fruits_bin + cheese_bin + dairy_bin + spices_bin + cereals_bin + carbs_bin + dessert_bin + egg_bin, data=train_bin, kernel="linear") # we fit the linear kernel
 recipe_svm
 
 ```
@@ -185,7 +444,7 @@ table(Pred=recipe_svm_pred, obs=test_bin$rating_bin) # we check predictions on t
 confusionMatrix(data=recipe_svm_pred, reference = test_bin$rating_bin)
 
 ```
-In this case the accuracy stands at 59.2%, but we observe that the model is poorly predicting "bad" ratings. Before going too much further with the analysis of SVM, we will try to use balanced data to improve the accuracy.
+In this case the accuracy stands at 59%, but we observe that the model is poorly predicting "bad" ratings. Before going too much further with the analysis of SVM, we will try to use balanced data to improve the quality of our analysis.
 
 
 ## SVM - balanced data
@@ -194,7 +453,7 @@ In this case the accuracy stands at 59.2%, but we observe that the model is poor
 
 upsamp_tr_bin$rating_bin <- as.factor(upsamp_tr_bin$rating_bin)
 
-recipe_svm_up <- svm(rating_bin ~ calories + protein + fat + sodium + total_ingredients + total_meat + total_vegetables, data=upsamp_tr_bin, kernel="linear") # we fit the linear kernel
+recipe_svm_up <- svm(rating_bin ~ calories + protein + fat + sodium + vegetables_bin + meats_bin + fish_bin + seafood_bin + herbs_bin + nuts_bin + fruits_bin + cheese_bin + dairy_bin + spices_bin + cereals_bin + carbs_bin + dessert_bin + egg_bin, data=upsamp_tr_bin, kernel="linear") # we fit the linear kernel
 recipe_svm_up
 
 ```
@@ -209,13 +468,13 @@ table(Pred=recipe_svm_up_pred, obs=test_bin$rating_bin) # we check predictions o
 confusionMatrix(data=recipe_svm_up_pred, reference = test_bin$rating_bin)
 
 ```
-Compared to unbalanced data, we can observe that the model is now better at predicting "bad" ratings, even though it is has considerably worsened at predicting "good" ratings. This explains why with balanced data the accuracy stands at 50.4%.
+Compared to unbalanced data, we can observe that the model is now better at predicting "bad" ratings, even though it is has considerably worsened at predicting "good" ratings. This explains why with balanced data the accuracy stands at 57.3%.
 We will proceed the rest of the analysis with balanced data.
 
 ### Radial basis SVM
 ```{r}
 
-recipe_rb <- svm(rating_bin ~ calories + protein + fat + sodium + total_ingredients + total_meat + total_vegetables, data=upsamp_tr_bin, kernel="radial") # we fit the radial basis kernel
+recipe_rb <- svm(rating_bin ~ calories + protein + fat + sodium + vegetables_bin + meats_bin + fish_bin + seafood_bin + herbs_bin + nuts_bin + fruits_bin + cheese_bin + dairy_bin + spices_bin + cereals_bin + carbs_bin + dessert_bin + egg_bin, data=upsamp_tr_bin, kernel="radial") # we fit the radial basis kernel
 recipe_rb
 
 ```
@@ -227,7 +486,7 @@ recipe_rb_pred <- predict(recipe_rb, newdata = test_bin)
 confusionMatrix(data=recipe_rb_pred, reference = test_bin$rating_bin)
 
 ```
-The accuracy is now 51.6% meaning that the radial basis kernel seems to do slightly better than the linear one. However, we should not forget that we used default parameters so far. Let us try to do better by tuning hyperparameters.
+The accuracy is now 53.3% meaning that the radial basis kernel seems to do slightly better than the linear one. However, we should not forget that we used default parameters so far. Let us try to do better by tuning hyperparameters.
 
 
 ### Tuning the Hyperparameters - Linear SVM
@@ -235,11 +494,11 @@ The accuracy is now 51.6% meaning that the radial basis kernel seems to do sligh
 
 trctrl <- trainControl(method = "cv", number=10)
 
-svm_Linear <- train(rating_bin ~ calories + protein + fat + sodium + total_ingredients + total_meat + total_vegetables, data=upsamp_tr_bin, method = "svmLinear", trControl=trctrl)
+svm_Linear <- train(rating_bin ~ calories + protein + fat + sodium + vegetables_bin + meats_bin + fish_bin + seafood_bin + herbs_bin + nuts_bin + fruits_bin + cheese_bin + dairy_bin + spices_bin + cereals_bin + carbs_bin + dessert_bin + egg_bin, data=upsamp_tr_bin, method = "svmLinear", trControl=trctrl)
 svm_Linear
 
 ```
-The validation accuracy stands at 52.9%, which is not that high even though it is computed on the training set.
+The validation accuracy stands at 53.2%, which is not that high even though it is computed on the training set.
 The next step consists in creating a grid of values for the cost that we want to try and pass to the argugment tuneGrid.
 
 ```{r}
@@ -247,7 +506,7 @@ The next step consists in creating a grid of values for the cost that we want to
 grid <- expand.grid(C = c(0.01, 0.1, 1, 10, 100, 1000))
 grid
 
-svm_Linear_Grid <- train(rating_bin ~ calories + protein + fat + sodium + total_ingredients + total_meat + total_vegetables, data=upsamp_tr_bin, method = "svmLinear", trControl=trctrl, tuneGrid = grid)
+svm_Linear_Grid <- train(rating_bin ~ calories + protein + fat + sodium + vegetables_bin + meats_bin + fish_bin + seafood_bin + herbs_bin + nuts_bin + fruits_bin + cheese_bin + dairy_bin + spices_bin + cereals_bin + carbs_bin + dessert_bin + egg_bin, data=upsamp_tr_bin, method = "svmLinear", trControl=trctrl, tuneGrid = grid)
 svm_Linear_Grid
 
 plot(svm_Linear_Grid)
@@ -260,7 +519,7 @@ plot(svm_Linear_Grid)
 svm_Linear_Grid$bestTune
 
 ```
-The result indicates that setting the cost to C=0.01 provides the best model with accuracy=53.2%. The accuracy apparently reaches a plateau at this value. It represents an improvement compared to the previous linear SVM with default parameter cost C=1.
+The result indicates that setting the cost to C=1000 provides the best model with accuracy=54.5%. The accuracy apparently reaches a plateau at this value. It represents an improvement compared to the previous linear SVM with default parameter cost C=1.
 
 ### Tuning the Hyperparameters - Radial basis SVM
 ```{r}
@@ -269,7 +528,7 @@ grid_radial <- expand.grid(sigma = c(0.01, 0.02, 0.05, 0.1),
                            C = c(1, 10, 100, 500, 1000))
 grid_radial
 
-svm_Radial_Grid <- train(rating_bin ~ calories + protein + fat + sodium + total_ingredients + total_meat + total_vegetables, data=upsamp_tr_bin, method = "svmRadial", trControl=trctrl, tuneGrid = grid_radial)
+svm_Radial_Grid <- train(rating_bin ~ calories + protein + fat + sodium + vegetables_bin + meats_bin + fish_bin + seafood_bin + herbs_bin + nuts_bin + fruits_bin + cheese_bin + dairy_bin + spices_bin + cereals_bin + carbs_bin + dessert_bin + egg_bin, data=upsamp_tr_bin, method = "svmRadial", trControl=trctrl, tuneGrid = grid_radial)
 svm_Radial_Grid
 
 plot(svm_Radial_Grid)
@@ -283,14 +542,14 @@ svm_Radial_Grid$bestTune
 
 ```
 The optimal model from this search is with sigma = 0.1 and C = 1000
-This optimal model would then reach accuracy=58.2%.
+This optimal model would then reach accuracy=64.2%.
 
 ### Best model selection
 
 ```{r}
 # After finding the best hyperparameters, we re-train the model with the best hyperparameters on the entire training set. Afterwards we will evaluate the model on the test set.
 
-recipe_rb_tuned <- svm(rating_bin ~ calories + protein + fat + sodium + total_ingredients + total_meat + total_vegetables, data=upsamp_tr_bin, 
+recipe_rb_tuned <- svm(rating_bin ~ calories + protein + fat + sodium + vegetables_bin + meats_bin + fish_bin + seafood_bin + herbs_bin + nuts_bin + fruits_bin + cheese_bin + dairy_bin + spices_bin + cereals_bin + carbs_bin + dessert_bin + egg_bin, data=upsamp_tr_bin, 
                        kernel = "radial", gamma = svm_Radial_Grid$bestTune$sigma, 
                        cost = svm_Radial_Grid$bestTune$C)
 
@@ -299,7 +558,9 @@ recipe_rb_tuned_pred <- predict(recipe_rb_tuned, newdata = test_bin)
 confusionMatrix(data=recipe_rb_tuned_pred, reference = test_bin$rating_bin)
 
 ```
-The result indicates that with the tuned hyperparameters on the radial basis SVM model we achieve an accuracy of 52% on the test set. We can conclude that among all the models, the radial basis kernel SVM with cost of 1000 and sigma equal to 0.1 is the best model.
+The result indicates that with the tuned hyperparameters on the radial basis SVM model we achieve an accuracy of 54.3% on the test set. We can conclude that among the models , the linear kernal SVM without tuned hyperparameters represents the best model with 57.3% accuracy.
+
+########################
 
 ## KNN
 
