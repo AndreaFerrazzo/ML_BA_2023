@@ -783,7 +783,76 @@ knn_Bi_pred <- predict(knn_NuBi, newdata = test_temp, type = "raw")
 confusionMatrix(reference = test_temp$rating_bin, data = knn_Bi_pred, positive="good")
 ```
 
-# Analysis - Balanced outcome variable
+## CART - NUT, BIN and TOTAL
+```{r}
+#using all features
+train_temp <- train_bin
+
+test_temp <- test_bin
+```
+
+### Plotting initial tree
+```{r}
+cart_all <- rpart(rating_bin ~ ., data = train_temp)
+
+rpart.plot(cart_all)
+```
+### Pruning the tree
+We decided to use the package "adabag" to automatically prune the tree, using the 1-SE rule. The CP evaluation relies on a cross-validation procedure, which is why we need to set the seed before using the function.
+
+```{r eval=FALSE}
+set.seed(12)
+cart_all_pruned <- autoprune(rating_bin ~ ., data = train_temp)
+
+rpart.plot(cart_all_pruned, roundint=FALSE)
+```
+
+### Making predictions
+```{r eval=FALSE}
+#predicting the test set
+cart_all_pruned_pred <- predict(cart_all_pruned, newdata=test_temp, type="class")
+
+#confusion matrix
+confusionMatrix(data=cart_all_pruned_pred, reference = test_temp$rating_bin, positive="good")
+```
+
+## CART - NUT and BIN
+```{r}
+#using all features
+train_temp <- train_bin %>% 
+  select(all_of(nutritional_values), contains("bin"))
+
+test_temp <- test_bin %>% 
+  select(all_of(nutritional_values), contains("bin"))
+```
+
+### Plotting initial tree
+```{r}
+cart_NuBi <- rpart(rating_bin ~ ., data = train_temp)
+
+rpart.plot(cart_NuBi)
+```
+
+### Pruning the tree
+We decided to use the package "adabag" to automatically prune the tree, using the 1-SE rule. The CP evaluation relies on a cross-validation procedure, which is why we need to set the seed before using the function.
+
+```{r eval=FALSE}
+set.seed(12)
+cart_NuBi_pruned <- autoprune(rating_bin ~ ., data = train_temp)
+
+rpart.plot(cart_NuBi_pruned, roundint=FALSE)
+```
+
+### Making predictions
+```{r eval=FALSE}
+#predicting the test set
+cart_NuBi_pruned_pred <- predict(cart_NuBi_pruned, newdata=test_temp, type="class")
+
+#confusion matrix
+confusionMatrix(data=cart_NuBi_pruned_pred, reference = test_temp$rating_bin, positive="good")
+```
+
+# 3.1 Analysis - Balanced outcome variable
 
 ```{r}
 #train control for with upsampling
@@ -978,6 +1047,78 @@ Once again most obs are classified as good. Not better than NIR.
 knn_Bi_up_pred <- predict(knn_NuBi_up, newdata = test_temp, type = "raw")
 
 confusionMatrix(reference = test_temp$rating_bin, data = knn_Bi_up_pred, positive="good")
+```
+
+## CART - NUT, BIN and TOTAL
+```{r}
+#using all features
+train_temp <- upsamp_tr_bin
+
+test_temp <- test_bin
+```
+
+### Plotting initial tree
+```{r}
+cart_all_up <- rpart(rating_bin ~ ., data = train_temp)
+
+rpart.plot(cart_all_up)
+```
+
+### Pruning the tree
+We decided to use the package "adabag" to automatically prune the tree, using the 1-SE rule. The CP evaluation relies on a cross-validation procedure, which is why we need to set the seed before using the function.
+
+```{r}
+set.seed(12)
+cart_all_up_pruned <- autoprune(rating_bin ~ ., data = train_temp)
+
+rpart.plot(cart_all_up_pruned, roundint=FALSE)
+```
+
+### Making predictions
+Classifies everything as good.
+```{r}
+#predicting the test set
+cart_all_up_pruned_pred <- predict(cart_all_up_pruned, newdata=test_temp, type="class")
+length(cart_all_up_pruned_pred)
+#confusion matrix
+confusionMatrix(data=cart_all_up_pruned_pred, reference = test_temp$rating_bin, positive="good")
+```
+
+## CART - NUT, BIN
+```{r}
+#using all features
+train_temp <- upsamp_tr_bin %>% 
+  select(all_of(nutritional_values), contains("bin"))
+
+test_temp <- test_bin %>% 
+    select(all_of(nutritional_values), contains("bin"))
+```
+
+### Plotting initial tree
+```{r}
+cart_NuBi_up <- rpart(rating_bin ~ ., data = train_temp)
+
+rpart.plot(cart_NuBi_up)
+```
+
+### Pruning the tree
+We decided to use the package "adabag" to automatically prune the tree, using the 1-SE rule. The CP evaluation relies on a cross-validation procedure, which is why we need to set the seed before using the function.
+
+```{r}
+set.seed(12)
+cart_NuBi_up_pruned <- autoprune(rating_bin ~ ., data = train_temp)
+
+rpart.plot(cart_NuBi_up_pruned, roundint=FALSE)
+```
+
+### Making predictions
+Classifies everything as good.
+```{r}
+#predicting the test set
+cart_NuBi_up_pruned_pred <- predict(cart_NuBi_up_pruned, newdata=test_temp, type="class")
+length(cart_all_up_pruned_pred)
+#confusion matrix
+confusionMatrix(data=cart_NuBi_up_pruned_pred, reference = test_temp$rating_bin, positive="good")
 ```
 
 # Unsupervised Learning
