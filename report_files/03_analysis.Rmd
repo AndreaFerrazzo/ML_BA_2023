@@ -568,11 +568,9 @@ The result indicates that with the tuned hyperparameters on the radial basis SVM
 
 ```{r}
 #using unbalanced training set here as apparently it's not required for KNN for data to be balanced
-train_temp <- train_bin %>% 
-  select(-ID)
+train_temp <- train_bin
 
-test_temp <- test_bin %>% 
-  select(-ID)
+test_temp <- test_bin
 ```
 
 ### Basic Model
@@ -856,7 +854,7 @@ confusionMatrix(data=cart_NuBi_pruned_pred, reference = test_temp$rating_bin, po
 
 ```{r}
 #train control for with upsampling
-trCtrl <- trainControl(method = "cv",
+trCtrl_up <- trainControl(method = "cv",
                        summaryFunction = defaultSummary,
                        classProbs = TRUE,
                        number = 10,
@@ -868,11 +866,9 @@ trCtrl <- trainControl(method = "cv",
 
 ```{r}
 #using unbalanced training set here as apparently it's not required for KNN for data to be balanced
-train_temp <- train_bin %>% 
-  select(-ID)
+train_temp <- train_bin
 
-test_temp <- test_bin %>% 
-  select(-ID)
+test_temp <- test_bin
 ```
 
 ### Tuning K
@@ -882,9 +878,19 @@ set.seed(12)
 knn_all_up <- caret::train(rating_bin ~.,
                 data = train_temp,
                 method = "knn",
-                trControl = trCtrl,
+                trControl = trCtrl_up,
                 metric = "Accuracy",
-                tuneGrid= data.frame(k = seq(111, 121,by = 2))#initially checked on 1-151 range, best was 115
+                tuneGrid= data.frame(k = seq(115, 120,by = 1))#initially checked on 1-151 range, best was 115
+                )
+knn_all_up
+
+set.seed(12)
+knn_all_up <- caret::train(rating_bin ~.,
+                data = train_temp,
+                method = "knn",
+                trControl = trCtrl_up,
+                metric = "Accuracy",
+                tuneGrid= data.frame(k = seq(116, 121,by = 1))#initially checked on 1-151 range, best was 115
                 )
 knn_all_up
 ```

@@ -1,4 +1,5 @@
 ####### Load the required packages
+install.packages(packages)
 packages <- c(
   "knitr", "here", "tidyverse", "summarytools", "janitor", "viridis", "corrplot", "DataExplorer", "kableExtra",
   "caret",
