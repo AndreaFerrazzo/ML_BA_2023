@@ -1,13 +1,3 @@
----
-title: "EDA"
-output: html_document
-date: "2023-04-20"
----
-
-```{r echo=FALSE, message=FALSE}
-source(here::here("scripts/setup.R"))
-```
-
 # EDA General - Investigation and Cleaning
 
 ## Analysis of NAs
@@ -827,13 +817,6 @@ ingredients_df_bin %>%
   plot_bar(by = "rating_4", order_bar = FALSE)
 ```
 
-# Seasons and Recipe Type EDA
-
-```{r}
-#TO ADD WHEN COMPLETED
-```
-
-
 # Mixed EDA - ingredients and nutritional value
 
 ```{r Left joins to aggregate the data}
@@ -1018,4 +1001,9 @@ recipes_carbs %>%
   theme(legend.position="none") 
 
 # Here we want to show which kinds of food high in carbs specifically have a high level of calories
+```
+# Seasons and Recipe Type EDA
+
+```{r}
+#TO ADD WHEN COMPLETED
 ```

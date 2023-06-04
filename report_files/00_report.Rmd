@@ -7,7 +7,7 @@ output:
     number_sections: yes
     code_folding: hide
     toc: true
-    toc_depth: 3
+    toc_depth: 2
     toc_float:
       collapsed: true
 ---
@@ -18,7 +18,7 @@ output:
     }
 ```
 
-```{r child = c('01_data.Rmd', '02_eda.Rmd', '03_analysis.Rmd')}
+```{r child = c('setup.Rmd', '01_data.Rmd', '02_eda.Rmd', '03_supervised_learning.Rmd', '04_unsupervised_learning.Rmd')}
 ``` 
 
 

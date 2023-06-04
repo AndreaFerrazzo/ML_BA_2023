@@ -1,13 +1,3 @@
----
-title: "Analysis"
-output: html_document
-date: "2023-04-20"
----
-
-```{r echo=FALSE, message=FALSE}
-source(here::here("scripts/setup.R"))
-```
-
 # Supervised Learning
 
 Creating a new df for analysis purposes, which includes all nutrition-related features, as well as all ingredient-related features
@@ -1126,7 +1116,3 @@ length(cart_all_up_pruned_pred)
 #confusion matrix
 confusionMatrix(data=cart_NuBi_up_pruned_pred, reference = test_temp$rating_bin, positive="good")
 ```
-
-# Unsupervised Learning
-
-

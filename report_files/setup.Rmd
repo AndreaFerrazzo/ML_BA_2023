@@ -1,4 +1,4 @@
-####### Load the required packages
+```{r include=FALSE}
 packages <- c(
   "knitr", "here", "tidyverse", "summarytools", "janitor", "viridis", "corrplot", "DataExplorer", "kableExtra",
   "caret",
@@ -6,17 +6,17 @@ packages <- c(
   "rpart", "rpart.plot", "adabag"#for CART
 )
 purrr::walk(packages, library, character.only = TRUE)
+```
 
-
-####### Report Options
-
+```{r include=FALSE}
 # general options
 options(
   digits = 3,
   str = strOptions(strict.width = "cut"),
   width = 69,
   tibble.width = 69,
-  cli.unicode = FALSE
+  cli.unicode = FALSE,
+  dplyr.summarise.inform = FALSE
 )
 
 # ggplot options
@@ -30,5 +30,10 @@ opts_chunk$set(
   warning = FALSE,
   fig.align = "center",
   echo = TRUE,
-  cache = TRUE
-)
+  cache = TRUE,
+  dev = "png",
+  dpi = 300)
+
+opts_knit$set(width=75)
+opts_template$set(fig.large = list(fig.width=30, fig.height=12))
+```
