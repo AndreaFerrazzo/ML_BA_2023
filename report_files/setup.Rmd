@@ -2,7 +2,7 @@
 packages <- c(
   "knitr", "here", "tidyverse", "summarytools", "janitor", "viridis", "corrplot", "DataExplorer", "kableExtra",
   "caret",
-  "kernlab",#for SVM
+  "kernlab", "e1071",#for SVM
   "rpart", "rpart.plot", "adabag"#for CART
 )
 purrr::walk(packages, library, character.only = TRUE)
@@ -10,7 +10,7 @@ purrr::walk(packages, library, character.only = TRUE)
 
 ```{r include=FALSE}
 # general options
-options(
+base::options(
   digits = 3,
   str = strOptions(strict.width = "cut"),
   width = 69,

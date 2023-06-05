@@ -196,15 +196,15 @@ recipes %>%
 ## Analysis of NAs
 
 ```{r}
+#we use the temp_df each time we want to create a temporary df for a single analysis and we know we won't reuse that dataframe later on
+temp_df <- recipes %>% 
+  select(title, all_of(nutritional_values))
 
-recipes_nutrition <- recipes %>% 
-  select(title, calories, protein, fat, sodium)
 
-
-na_obs <- which(rowSums(is.na(recipes_nutrition)) > 0)
+na_obs <- which(rowSums(is.na(temp_df)) > 0)
 
 # subset the original dataframe to only include rows with NA values
-df_na <- recipes_nutrition[na_obs, ]
+df_na <- temp_df[na_obs, ]
 
 # print the result
 #df_na
