@@ -12,6 +12,20 @@ recipes <- recipes_raw%>%
   select(ID, everything())
 ```
 
+## Example of the data
+```{r}
+
+selected_columns <- names(recipes)[recipes[1, ] == 1]
+additional_variables <- c("title", "rating", "calories", "protein", "fat", "sodium")
+selected_columns <- unique(c(additional_variables, selected_columns))
+
+recipes[, selected_columns] %>% 
+  filter(ID==1)
+  
+
+```
+Let us focus on the first recipe as an example and take a look at the different variables of interest. We can observe the title as well as the numerical variables such as rating, calories, protein, fat and sodium. We will then see among the many categorical variables, those that are related to our recipe such as apple, bean, cookie, fruit, kid_friendly and so on.
+
 ## Data Description
 ```{r}
 tibble(Variables = c("**ID**", "**title**", "**rating**", "**calories**", "**protein**", "**fat**", "**sodium**", "**674 other binary variables**"), Meaning = c("Unique ID", "Recipe name", "Rating of the recipe", "Calories contained in the recipe", "Protein contained in the recipe (grams)","Fat contained in the recipe (grams)", "Sodium contained in the recipe (milligrams)", "The rest of the data is made of many binary variables, incl. ingredients, types of recipes, US States, diet preferences, etc."))%>%
@@ -211,18 +225,19 @@ freq_na %>%
   geom_bar(stat="identity") +
   xlab("Number of NAs") +
   ylab("Frequency") +
-  ggtitle("Number of NAs in nutritional values per recipe") +
+  labs(title ="Number of NAs in nutritional values per recipe", subtitle = "NAs among variables calories, protein, fat, sodium") +
   coord_flip()
-  
-# Among the recipes which have NAs, we notice that many of them have 4 NAs for all the 4 nutritional values, more precisely 4117  out of 4188 recipes. Without any other information available, making an imputation to retrieve such values would not make any sense.
 
-# We could try to make an imputation of the 29 recipes that have only 1 NA. The same operation on the 42 recipes with 2 NAs would not deliver accurate and satisfying results. However, we believe that is not worth to make imputation of such NA values. We should not forget that the nutritional values per recipe are estimated, then making an imputation would result in a sort of estimation of an estimation. To what extent could it be reliable? We decide to eliminate recipes with NA values. Finally, we would still have 15864 recipes without NAs for our analysis.
 
 recipes <- recipes %>% 
   drop_na()
 
-#15864 obs after droping NAs
 ```
+Among the recipes which have NAs, we notice that many of them have 4 NAs for all the 4 nutritional values, more precisely 4117  out of 4188 recipes. Without any other information available, making an imputation to retrieve such values would not make any sense. Interestingly, we do not observe 3 contemporary NAs for recipes.
+
+We could try to make an imputation of the 29 recipes that have only 1 NA. The same operation on the 42 recipes with 2 NAs would not deliver accurate and satisfying results. However, we believe that is not worth to make imputation of such NA values. We should not forget that the nutritional values per recipe are estimated, then making an imputation would result in a sort of estimation of an estimation. To what extent could it be reliable? We decide to eliminate recipes with NA values. Finally, we would still have 15864 recipes without NAs for our analysis.
+
+After dropping the NAs we get 15864 obs.
 
 
 ## Eliminate recipes with rating equal to zero
