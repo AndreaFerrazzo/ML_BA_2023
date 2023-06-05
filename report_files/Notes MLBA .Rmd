@@ -1,0 +1,13 @@
+# Notes MLBA
+
+Analysis Balanced
+- Engineered features
+  - 8 models
+  
+- All variables
+  - 3 models
+    - RF, XGB, LogReg
+  
+- PCA to determine automatically the best variables
+  - 3 models
+    - RF, XGB, LogReg

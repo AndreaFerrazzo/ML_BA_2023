@@ -1,144 +1,6 @@
-# Data Cleaning
-
-## Analysis of NAs
-
-```{r}
-
-recipes_nutrition <- recipes %>% 
-  select(title, calories, protein, fat, sodium)
-
-
-na_obs <- which(rowSums(is.na(recipes_nutrition)) > 0)
-
-# subset the original dataframe to only include rows with NA values
-df_na <- recipes_nutrition[na_obs, ]
-
-# print the result
-#df_na
-
-
-# count the number of NAs for each row
-na_count <- rowSums(is.na(df_na))
-
-# count the frequency of NA counts
-freq_table_na <- table(na_count)
-
-freq_na <- as.data.frame(freq_table_na) %>% 
-  mutate(na_count = as.character(na_count))
-
-
-freq_na %>% 
-  ggplot(aes(x=na_count, y=Freq)) +
-  geom_bar(stat="identity") +
-  xlab("Number of NAs") +
-  ylab("Frequency") +
-  ggtitle("Number of NAs in nutritional values per recipe") +
-  coord_flip()
-  
-# Among the recipes which have NAs, we notice that many of them have 4 NAs for all the 4 nutritional values, more precisely 4117  out of 4188 recipes. Without any other information available, making an imputation to retrieve such values would not make any sense.
-
-# We could try to make an imputation of the 29 recipes that have only 1 NA. The same operation on the 42 recipes with 2 NAs would not deliver accurate and satisfying results. However, we believe that is not worth to make imputation of such NA values. We should not forget that the nutritional values per recipe are estimated, then making an imputation would result in a sort of estimation of an estimation. To what extent could it be reliable? We decide to eliminate recipes with NA values. Finally, we would still have 15864 recipes without NAs for our analysis.
-
-recipes <- recipes %>% 
-  drop_na()
-
-#15864 obs after droping NAs
-```
-
-
-## Eliminate recipes with rating equal to zero
-
-```{r}
-
-rating_count <- table(recipes$rating)
-
-rating_count <- as.data.frame(rating_count) %>% 
-  rename(rating = Var1,
-    frequency = Freq)
-
-# There are 1293 recipes which have rating equal to zero. Some of those might be unpopular, others might be too recent to have a rating. For the purpose of our analysis, we decide to eliminate these specific recipes.
-
-recipes <- recipes %>% 
-  filter(rating != 0)
-
-# We are left with 14568 observations after removing NAs and obs with a 0 rating value
-
-```
-
-## Discard copies of recipes
-```{r}
-
-# We want to eliminate recipes that have multiple copies. Sometimes the recipes have the same title, but nutritional values are different. This indicates that there are various ways to prepare a specific recipe. We want to keep those recipes that have the same title, but have different nutritional values.
-
-# Let's check for instance Almond Butter Crisps, a recipe which can be found twice in the data set, with ID=1026 and ID=8908.
-
-# recipes %>% 
-#   filter(ID == 1026)
-
-unique_recipes <- distinct(recipes, title, rating, protein, sodium, fat, calories, .keep_all = TRUE)
-
-# unique_recipes %>% 
-#   filter(ID == 8908)
-
-# Now the data set is free from useless copies. We discarded 1288 copies in total. #we lose a bit less if we remove the ones without specific ingredients first, meaning that some duplicate copies don't contain specific ingredients either
-
-recipes <- unique_recipes
-
-```
-
-
-## Removing recipes without specific ingredients listed
-Here we are facing a challenge regarding the general ingredient categories. Indeed, when doing computations on the binary columns, there is no issue since, whether the recipe contains specific ingredients in a category, or only a 1 in the general category, then that information is captured in the corresponding binary column.
-
-However, if we want to compute the total number of ingredients in each category that is present in recipes, then we are facing problems. To illustrate, let's assume that we have a recipe which contains 3 vegetables (specific columns in the vegetables_vec). In addition, for that recipe, the general column is also a 1 --> then by summing up, we get 4 ingredients when it should be 3.
-
-Another problem is related to recipes for which the only column in a category (e.g., vegetables) that has a 1 is the general category (i.e., vegetable), and there isn't any specific ingredient listed within the vegetable category (in vegetables_vec) --> this can lead to issues when counting the number of specific ingredients per category.
-
-In order to decide whether we want to analyse with or without general categories, let's see how many observations would remain if we remove all the obs for which we have a general category at 1, and all specific ingredients in that category is set to 0.
-
-```{r Removing recipes without ingredients specified}
-#this filters out the observations which have 1 for general category and 0s for every ingredient in that category
-recipes <- recipes %>%
-  filter(!(if_all(all_of(vegetables_vec), ~.x == 0) & vegetable == 1)) %>% 
-  filter(!(if_all(all_of(all_meats), ~.x == 0) & meat == 1)) %>% 
-  filter(!(if_all(all_of(fish_vec), ~.x == 0) & fish == 1)) %>% 
-  filter(!(if_all(all_of(seafood_vec), ~.x == 0) & seafood == 1)) %>% 
-  filter(!(if_all(all_of(herbs_vec), ~.x == 0) & herb == 1)) %>% 
-  filter(!(if_all(all_of(nuts_vec), ~.x == 0) & nut == 1)) %>% 
-  filter(!(if_all(all_of(fruits_vec), ~.x == 0) & fruit == 1)) %>% 
-  filter(!(if_all(all_of(drink_no_alcohol_vec), ~.x == 0) & drink == 1)) %>% 
-  filter(!(if_all(all_of(cheeses_vec), ~.x == 0) & cheese == 1)) %>% 
-  filter(!(if_all(all_of(dairy_vec), ~.x == 0) & dairy == 1)) %>% 
-  filter(!(if_all(all_of(spices_vec), ~.x == 0) & spice == 1))
-#we are left with 11382 obs after removing all recipes which have no specific ingredient in at least one category, while that category general variable is at 1
-
-### without duplicated recipes we are left at 10321 obs
-```
-
 # EDA
 
 ## Nutrution EDA
-
-### Structure and summary
-
-```{r}
-
-# Now let's see the structure of our data
-recipes %>% 
-  head(20) %>% 
-  str() 
-
-# We have only numerical variables, but in reality just 4 variables could be considered as such. More in particular, "rating", "calories", "protein", "fat" and "sodium" could be considered numerical. The other variables should be considered categorical since they allow only for 0 or 1 values.
-
-
-# Let's have a different look at the data with the summary function.
-recipes %>% 
-  select(rating, calories, protein, fat, sodium) %>% 
-  dfSummary(style = "grid")
-
-# We can already see for instance that the majority of the values of the variable "rating" are 4.38 (40% of the total). Moreover, we observe that the variables "calories", "protein", "fat" and "sodium" have roughly 20% of missing values.
-
-```
 
 ### Visual exploration - Univariate Analysis
 
@@ -1004,6 +866,10 @@ recipes_carbs %>%
 
 # Here we want to show which kinds of food high in carbs specifically have a high level of calories
 ```
+
+## Exploratory PCA Analysis
+- With all variables 680
+- With only the ones we believe could be useful
 ## Seasons and Recipe Type EDA
 
 ```{r}
