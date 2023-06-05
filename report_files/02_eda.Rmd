@@ -1,4 +1,4 @@
-# EDA General - Investigation and Cleaning
+# Data Cleaning
 
 ## Analysis of NAs
 
@@ -115,9 +115,11 @@ recipes <- recipes %>%
 ### without duplicated recipes we are left at 10321 obs
 ```
 
-# Nutrition EDA
+# EDA
 
-## Structure and summary
+## Nutrution EDA
+
+### Structure and summary
 
 ```{r}
 
@@ -138,9 +140,9 @@ recipes %>%
 
 ```
 
-## Visual exploration - Univariate Analysis
+### Visual exploration - Univariate Analysis
 
-### Rating Barplot
+#### Rating Barplot
 
 ```{r}
 
@@ -159,7 +161,7 @@ recipes %>%
 ```
 
 
-### Calories - Boxplot and Histogram
+#### Calories - Boxplot and Histogram
 
 ```{r}
 
@@ -226,7 +228,7 @@ recipes_calories %>%
 We can observe that most of the recipes have between 200 and 600 calories. By checking with the histogram the distribution of calories, we observe that indeed most of the recipes have less than 1000 calories.
 
 
-### Protein - Boxplot and Histogram
+#### Protein - Boxplot and Histogram
 
 ```{r}
 
@@ -287,7 +289,7 @@ recipes_protein %>%
 From the boxplot, we observe that most recipes have less than 30 grams of proteins. By plotting the histogram, we verify that this information is correct. We could even extend the range to 100 proteins per recipe. We assume that recipes with values above this threshold contain ingredients like meat, tuna, salmon or shrimps.
 
 
-### Sodium - Boxplot and Histogram
+#### Sodium - Boxplot and Histogram
 
 ```{r}
 
@@ -348,7 +350,7 @@ recipes_sodium %>%
 From the boxplot we observe that most recipes have sodium values below 750 milligrams. The histogram informs us that most of recipes have indeed less than 750 milligrams of sodium, even though we cannot exclude the presence of a good amount of recipes with sodium between 750 and 2000 milligrams.
 
 
-### Fat - Boxplot and Histogram
+#### Fat - Boxplot and Histogram
 
 ```{r}
 
@@ -410,9 +412,9 @@ It is hard to interpret the boxplot. There are certain recipes which could have 
 
 
 
-## Visual exploration - Multivariate Analysis
+### Visual exploration - Multivariate Analysis
 
-### Scatterplots of Rating
+#### Scatterplots of Rating
 ```{r}
   
 recipes <- recipes %>% 
@@ -465,7 +467,7 @@ recipes %>%
 ```
 
 
-### Correlogram
+#### Correlogram
 ```{r}
 corr_nutritional_values = recipes %>% 
   select(rating, calories, protein, fat, sodium) %>% 
@@ -477,7 +479,7 @@ corrplot(corr_nutritional_values)
 The previous scatterplots illuded us that there was somehow a correlation between rating and the nutritional values. This hypothesis has been refuted because the correlation against the rating is almost at zero for all the nutritional values. On the other hand we notice a strong positive correlation between calories and fat as well as between calories and proteins.
 
 
-### Grouped Scatter
+#### Grouped Scatter
 ```{r}
 
 # We decide to plot together the variables which highlight a great level of correlation.
@@ -523,9 +525,9 @@ recipes_plot4 %>%
 
 
 
-# Ingredients EDA
+## Ingredients EDA
 
-## Feature engineering 
+### Feature engineering 
 
 ```{r Creating ingredients_df}
 #Creating a new dataframe with only the ID, title and the ingredients
@@ -538,7 +540,7 @@ ingredients_df <- recipes %>%
 ```
 
 
-### Adding binary columns
+#### Adding binary columns
 
 ```{r Adding binary columns for each category - Manual Working version}
 ingredients_df_bin <- ingredients_df %>%
@@ -578,7 +580,7 @@ The fact that both select the same number of rows makes having general categorie
 ```
 
 
-### Adding total columns
+#### Adding total columns
 
 ```{r Adding total columns for each category}
 ingredients_df_total <- ingredients_df %>%
@@ -611,9 +613,9 @@ ingredients_df_full <- ingredients_df_bin %>%
   select(ID, title, rating, contains("bin"), contains("total"), everything())
 ```
 
-## Analysis part - Within ingredients
+### Analysis part - Within ingredients
 
-### Frequency of ingredients - binary columns categories
+#### Frequency of ingredients - binary columns categories
 
 This gives us interesting information about the frequency of each ingredient being present at least once in a recipe. As we can see, there is at least one vegetable in around 6750 recipes out of the 11380 total we have. Inversely, a very low amount of recipes contains at least one type of cereal.
 ```{r}
@@ -647,7 +649,7 @@ ingredients_df_bin %>%
 ```
 
 
-### Correlation between binary columns, including the rating
+#### Correlation between binary columns, including the rating
 We can see that no binary variable correlated to the rating in any way.
 
 We see some somewhat strong negative correlation between vegetables and dessert, and between vegetable and fruits. This makes sense, as these ingredients are rarely found together in recipes. As a side note, we chose to classify tomato as a vegetable and strongly stand by this opinion :)
@@ -675,7 +677,7 @@ ingredients_df_bin %>%
 ```
 
 
-### Total individual ingredients
+#### Total individual ingredients
 
 ```{r}
 #Analysis which single ingredient is present in most recipes
@@ -701,7 +703,7 @@ ing_top10 %>%
 ```
 
 
-### Correlation between number of ingredients and rating
+#### Correlation between number of ingredients and rating
 
 ```{r}
 ingredients_df_total %>% 
@@ -709,7 +711,7 @@ ingredients_df_total %>%
   plot_correlation()
 ```
 
-### Amount of ingredients per recipe
+#### Amount of ingredients per recipe
 
 The number of ingredients per recipe is more or less normally distributed, with a mean around 4.75.
 ```{r Plotting ingredients totals}
@@ -795,7 +797,7 @@ ingredients_df_full %>%
 #why do we still have value in 0 meats --> it was because when creating the total meat column in ingredients_df_test I did not include the general meat category
 ```
 
-## Categories relative to rating
+### Categories relative to rating
 
 It's hard to interpret the results clearly with so many rating, let's try to reduce it to 2 category --> above 4, and below 4
 
@@ -817,7 +819,7 @@ ingredients_df_bin %>%
   plot_bar(by = "rating_4", order_bar = FALSE)
 ```
 
-# Mixed EDA - ingredients and nutritional value
+## Mixed EDA - ingredients and nutritional value
 
 ```{r Left joins to aggregate the data}
 
@@ -841,7 +843,7 @@ recipes_full <- recipes_more %>%
 
 ```
 
-## Correlation between nutritional values and categories
+### Correlation between nutritional values and categories
 ```{r}
 
 recipes_full %>% 
@@ -853,7 +855,7 @@ recipes_full %>%
 For instance we notice a positive correlation between proteins and meats_bin which includes all sorts of meat. Another visible positive correlation is the one between sodium and seafood_bin. We might also want to investigate the relationship between calories and carbs_bin.
 
 
-## Barplot and boxplot - Meat and Proteins
+### Barplot and boxplot - Meat and Proteins
 ```{r}
 
 # Barplot
@@ -905,7 +907,7 @@ recipes_meat %>%
 
 ```
 
-## Barplot and boxplot - Seafood and Sodium
+### Barplot and boxplot - Seafood and Sodium
 ```{r}
 
 # Seafood and sodium
@@ -955,7 +957,7 @@ recipes_seafood %>%
 
 ```
 
-## Barplot and boxplot - Carbs and Calories
+### Barplot and boxplot - Carbs and Calories
 ```{r}
 
 # Carbs and calories
@@ -1002,7 +1004,7 @@ recipes_carbs %>%
 
 # Here we want to show which kinds of food high in carbs specifically have a high level of calories
 ```
-# Seasons and Recipe Type EDA
+## Seasons and Recipe Type EDA
 
 ```{r}
 #TO ADD WHEN COMPLETED

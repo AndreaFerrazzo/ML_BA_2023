@@ -3,22 +3,50 @@ title: "Recipe Rating Analysis: Nutritional Values and Ingredients"
 author: "Andrea Ferrazzo, Jordan Vazquez"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output:
-  html_document:
-    number_sections: yes
+  rmdformats::readthedown:
     code_folding: hide
-    toc: true
-    toc_depth: 2
-    toc_float:
-      collapsed: true
+    highlight: espresso
+    self_contained: true
+    toc_depth: 3
+    number_sections: true
 ---
 
 ```{css, echo = FALSE}
-.main-container {
-        max-width: 1000px;
-    }
+#sidebar {
+  background: #5A7B9C;
+}
+
+#postamble {
+  background:#003366;
+  border-top:solid 10px #5A7B9C;
+}
+
+.title {
+  text-align: center;
+  color: #003366;
+}
+
+.subtitle {
+  color: #003366;
+}
+
+h1, h2, h3, h4, h5, h6, legend {
+  color: #5A7B9C;
+}
+
+#sidebar h2 {
+    background-color: #003366;
+}
+#sidebar a {
+    color: #003366;
+}
+#sidebar a:hover {
+    color: #FFFFFF;
+}
 ```
 
-```{r child = c('setup.Rmd', '01_data.Rmd', '02_eda.Rmd', '03_supervised_learning.Rmd', '04_unsupervised_learning.Rmd')}
+```{r child = c('setup.Rmd', '01_data.Rmd', '02_eda.Rmd')}
+#'03_supervised_learning.Rmd', '04_unsupervised_learning.Rmd'
 ``` 
 
 

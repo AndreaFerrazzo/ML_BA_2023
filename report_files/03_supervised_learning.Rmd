@@ -1,6 +1,7 @@
 # Supervised Learning
 
 Creating a new df for analysis purposes, which includes all nutrition-related features, as well as all ingredient-related features
+
 ```{r}
 my_normalise <- function(x) {
   (x - min(x)) / (max(x) - min(x))
@@ -21,12 +22,14 @@ recipes_analysis <- ingredients_df_full %>%
 ```
 
 Normalising the continuous numerical values, to remain consistent across all models.
+
 ```{r}
 recipes_analysis <- recipes_analysis %>% 
   mutate(across(where(is.numeric), my_normalise))
 ```
 
 Creating training and test set. We chose a 75/25 split
+
 ```{r}
 set.seed(12)
 index <- createDataPartition(recipes_analysis$rating_bin, p=0.75, list = FALSE)#data partition attemps to already balance out the data based on the outcome --> but here doesn't manage fully
@@ -36,11 +39,13 @@ test_bin <- recipes_analysis[-index, ]
 ```
 
 However, we can see that the data is pretty unbalanced between the 2 rating classes in the training set.
+
 ```{r}
 table(train_bin$rating_bin)
 ```
 
 Balancing the training set through upsampling
+
 ```{r}
 #filtering by rating class
 set.seed(12)
@@ -54,6 +59,7 @@ upsamp_tr_bin <- tibble(rbind(tr_good, tr_bad[index_bad,]))
 #checking that we have the correct number of good and bad
 table(upsamp_tr_bin$rating_bin)
 ```
+
 # Analysis Unbalanced outcome variable
 
 ## Logistic Regression
@@ -80,17 +86,18 @@ summary(rating_logr)
 ```
 
 ### Variable selection and interpretation
-```{r}
 
+```{r}
 rating_logr_sel <- step(rating_logr)
 summary(rating_logr_sel)
-
 ```
+
 The variables calories, total_fruits, total_carbs, total_fruits and seafood_bin are statistically significant at alpha=0.01. For instance, we can observe that the probability of having a "good" rating increases with a higher value of calories per recipe, but it decreases with a larger number of food high in carbs per recipe.
 
 The variables total_fish, total_herbs, total_cheese and meats_bin are statistically significant at alpha=0.05. In this case we would see the probability of having a "good" rating increasing with a higher number of cheeses per recipe.
 
 ### Inference
+
 ```{r}
 
 prob_te_rating <- predict(rating_logr_sel, newdata = test_bin, type="response")
@@ -104,7 +111,8 @@ print(paste("Accuracy:", accuracy_rating))
 
 
 ```
-As we can see the predictions are not satisfying. Since the number of good recipes is larger than the number of bad recipes, predicting a 1 will always provide a good model overall. Anyway the model is not reliable when it comes to predict recipes with a 0. 
+
+As we can see the predictions are not satisfying. Since the number of good recipes is larger than the number of bad recipes, predicting a 1 will always provide a good model overall. Anyway the model is not reliable when it comes to predict recipes with a 0.
 
 We believe that it is worth to proceed with the same analysis using balanced data.
 
@@ -131,12 +139,14 @@ summary(rating_logr_up)
 ```
 
 ### Variable selection and interpretation
+
 ```{r}
 
 rating_logr_sel_up <- step(rating_logr_up)
 summary(rating_logr_sel_up)
 
 ```
+
 Among the variables selected, total_carbs, total_fruits, total_meat, seafood_bin and calories are statistically significant at alpha=0.01. For instance, we can observe that the probability of having a "good" rating increases with a higher number of fruits per recipe, but it decreases with a larger number of food high in carbs per recipe. Additionally, the probability of having a "good" rating increases with the content of calories.
 
 ### Inference
@@ -153,11 +163,13 @@ accuracy_rating_up <- sum(pred_te_rating_up == test_bin$rating_bin) / length(tes
 print(paste("Accuracy:", accuracy_rating_up))
 
 ```
+
 Compared to unbalanced data, we can observe that the model is now better at predicting "bad" ratings, even though it is has worsened at predicting "good" ratings. The use of balanced data has then proved to be useful.
 
+## Logistic Regression with balanced data
 
-## Logistic Regression with balanced data 
 Focus on nutritional values only
+
 ```{r}
 
 rating_logr_up_nutritional <- glm(rating_bin ~ calories + protein + fat + sodium, data=upsamp_tr_bin, family="binomial")
@@ -166,8 +178,8 @@ summary(rating_logr_up_nutritional)
 
 ```
 
-
 ### Variable selection and interpretation
+
 ```{r}
 
 rating_logr_sel_up_nutritional <- step(rating_logr_up_nutritional)
@@ -178,6 +190,7 @@ summary(rating_logr_sel_up_nutritional)
 We can observe only two variables which are statistically significant at alpha=0.05. More in particular, we can observe that the probability of having a "good" rating increases with a higher content of fat and sodium per recipe.
 
 ### Inference
+
 ```{r}
 
 prob_te_rating_up_nutritional <- predict(rating_logr_sel_up_nutritional, newdata = test_bin, type="response")
@@ -190,11 +203,13 @@ accuracy_rating_up_nutritional <- sum(pred_te_rating_up_nutritional == test_bin$
 print(paste("Accuracy:", accuracy_rating_up_nutritional))
 
 ```
+
 In this case the accuracy is lower compared to the model with all variables included.
 
+## Logistic Regression with balanced data
 
-## Logistic Regression with balanced data 
 Focus on nutritional values and total
+
 ```{r}
 
 rating_logr_up_nutritional_total <- glm(rating_bin ~ calories + protein + fat + sodium + total_ingredients + total_vegetables + total_meat + total_fish + total_seafood + total_herbs + total_nuts + total_fruits + total_nuts + total_fruits + total_cheese + total_dairy + total_spices + total_cereals + total_carbs + total_dessert, data=upsamp_tr_bin, family="binomial")
@@ -203,8 +218,8 @@ summary(rating_logr_up_nutritional_total)
 
 ```
 
-
 ### Variable selection and interpretation
+
 ```{r}
 
 rating_logr_sel_up_nutritional_total <- step(rating_logr_up_nutritional_total)
@@ -215,6 +230,7 @@ summary(rating_logr_sel_up_nutritional_total)
 Among the variables selected, calories, total_carbs, total_fruits, total_meat, total_seafood are statistically significant at alpha=0.01. The rest of the variables are statistically significant at alpha=0.05. For instance, we can observe that the probability of having a "good" rating increases with a higher number of seafood per recipe, but it decreases with a larger number of food high in carbs per recipe.
 
 ### Inference
+
 ```{r}
 
 prob_te_rating_up_nutritional_total <- predict(rating_logr_sel_up_nutritional_total, newdata = test_bin, type="response")
@@ -227,11 +243,13 @@ accuracy_rating_up_nutritional_total <- sum(pred_te_rating_up_nutritional_total 
 print(paste("Accuracy:", accuracy_rating_up_nutritional_total))
 
 ```
+
 Better to add "total" variables to the model rather than using only nutritional values. The accuracy increases from 47.9% to 53.1%.
 
+## Logistic Regression with balanced data
 
-## Logistic Regression with balanced data 
 Focus on nutritional values and bins
+
 ```{r}
 
 rating_logr_up_nutritional_bin <- glm(rating_bin ~ calories + protein + fat + sodium + vegetables_bin + meats_bin + fish_bin + seafood_bin + herbs_bin + nuts_bin + fruits_bin + cheese_bin + dairy_bin + spices_bin + cereals_bin + carbs_bin + dessert_bin + egg_bin, data=upsamp_tr_bin, family="binomial")
@@ -240,8 +258,8 @@ summary(rating_logr_up_nutritional_bin)
 
 ```
 
-
 ### Variable selection and interpretation
+
 ```{r}
 
 rating_logr_sel_up_nutritional_bin <- step(rating_logr_up_nutritional_bin)
@@ -252,6 +270,7 @@ summary(rating_logr_sel_up_nutritional_bin)
 Among the variables selected, calories, seafood_bin, fruits_bin, carbs_bin, meats_bin, fish_bin and nuts_bin are statistically significant at alpha=0.01. The rest of the variables, apart from cheese_bin, are statistically significant at alpha=0.05. For instance, also in this case we can observe that the probability of having a "good" rating increases with a higher number of seafood per recipe, but it decreases with a larger number of food high in carbs per recipe.
 
 ### Inference
+
 ```{r}
 
 prob_te_rating_up_nutritional_bin <- predict(rating_logr_sel_up_nutritional_bin, newdata = test_bin, type="response")
@@ -264,13 +283,15 @@ accuracy_rating_up_nutritional_bin <- sum(pred_te_rating_up_nutritional_bin == t
 print(paste("Accuracy:", accuracy_rating_up_nutritional_bin))
 
 ```
+
 Better to add "bin" variables to the model rather than using nutritional values and total. The accuracy slightly improves from 53.1% to 53.7%.
 
-
-################
+################ 
 
 ## SVM
+
 Only nutritional values
+
 ```{r}
 
 recipe_svm_nutritional <- svm(rating_bin ~ calories + protein + fat + sodium , data=train_bin, kernel="linear") # we fit the linear kernel
@@ -279,6 +300,7 @@ recipe_svm_nutritional
 ```
 
 Let us make predictions and check the accuracy
+
 ```{r}
 
 recipe_svm_pred_nutritional <- predict(recipe_svm_nutritional, newdata = test_bin)
@@ -289,8 +311,8 @@ table(Pred=recipe_svm_pred_nutritional, obs=test_bin$rating_bin) # we check pred
 confusionMatrix(data=recipe_svm_pred_nutritional, reference = test_bin$rating_bin)
 
 ```
-In this case the accuracy stands at 59.1%, but we observe that the model is poorly predicting "bad" ratings. Before going too much further with the analysis of SVM, we will try to use balanced data to improve the accuracy.
 
+In this case the accuracy stands at 59.1%, but we observe that the model is poorly predicting "bad" ratings. Before going too much further with the analysis of SVM, we will try to use balanced data to improve the accuracy.
 
 ## SVM - balanced data
 
@@ -313,10 +335,11 @@ table(Pred=recipe_svm_up_pred_nutritional, obs=test_bin$rating_bin) # we check p
 confusionMatrix(data=recipe_svm_up_pred_nutritional, reference = test_bin$rating_bin)
 
 ```
-Compared to unbalanced data, we can observe that the model is now better at predicting "bad" ratings, even though it is has considerably worsened at predicting "good" ratings. This explains why with balanced data the accuracy stands at 43%.
-We will proceed the rest of the analysis with balanced data.
+
+Compared to unbalanced data, we can observe that the model is now better at predicting "bad" ratings, even though it is has considerably worsened at predicting "good" ratings. This explains why with balanced data the accuracy stands at 43%. We will proceed the rest of the analysis with balanced data.
 
 ### Radial basis SVM
+
 ```{r}
 
 recipe_rb_nutritional <- svm(rating_bin ~ calories + protein + fat + sodium, data=upsamp_tr_bin, kernel="radial") # we fit the radial basis kernel
@@ -325,16 +348,18 @@ recipe_rb_nutritional
 ```
 
 Let us make predictions and check the accuracy
+
 ```{r}
 
 recipe_rb_pred_nutritional <- predict(recipe_rb_nutritional, newdata = test_bin)
 confusionMatrix(data=recipe_rb_pred_nutritional, reference = test_bin$rating_bin)
 
 ```
+
 The accuracy is now 52.5% meaning that the radial basis kernel seems to do much better than the linear one. However, we should not forget that we used default parameters so far. Let us try to do better by tuning hyperparameters.
 
-
 ### Tuning the Hyperparameters - Linear SVM
+
 ```{r}
 
 trctrl <- trainControl(method = "cv", number=10)
@@ -343,8 +368,8 @@ svm_Linear_nutritional <- train(rating_bin ~ calories + protein + fat + sodium, 
 svm_Linear_nutritional
 
 ```
-The validation accuracy stands at 50.9%, which is not that high even though it is computed on the training set.
-The next step consists in creating a grid of values for the cost that we want to try and pass to the argugment tuneGrid.
+
+The validation accuracy stands at 50.9%, which is not that high even though it is computed on the training set. The next step consists in creating a grid of values for the cost that we want to try and pass to the argugment tuneGrid.
 
 ```{r}
 
@@ -358,15 +383,16 @@ plot(svm_Linear_Grid_nutritional)
 
 ```
 
-
 ```{r}
 
 svm_Linear_Grid_nutritional$bestTune
 
 ```
+
 The result indicates that setting the cost to C=10 provides the best model with accuracy=50.7%. The accuracy apparently reaches a plateau at this value. It represents an improvement compared to the previous linear SVM with default parameter cost C=1.
 
 ### Tuning the Hyperparameters - Radial basis SVM
+
 ```{r}
 
 grid_radial <- expand.grid(sigma = c(0.01, 0.02, 0.05, 0.1),
@@ -380,14 +406,13 @@ plot(svm_Radial_Grid_nutritional)
 
 ```
 
-
 ```{r}
 
 svm_Radial_Grid_nutritional$bestTune
 
 ```
-The optimal model from this search is with sigma = 0.1 and C = 1000
-This optimal model would then reach accuracy=55.7%.
+
+The optimal model from this search is with sigma = 0.1 and C = 1000 This optimal model would then reach accuracy=55.7%.
 
 ### Best model selection
 
@@ -403,11 +428,13 @@ recipe_rb_tuned_pred_nutritional <- predict(recipe_rb_tuned_nutritional, newdata
 confusionMatrix(data=recipe_rb_tuned_pred_nutritional, reference = test_bin$rating_bin)
 
 ```
+
 The result indicates that with the tuned hyperparameters on the radial basis SVM model we achieve an accuracy of 52.8% on the test set. We can conclude that among all the models, the radial basis kernel SVM with C=1000 and sigma=0.01 is the best model.
 
-###########
+########### 
 
 ## SVM
+
 ```{r}
 library(e1071)
 # with the svm() function of the e1071 package we can fit SVM to the data with several possible kernels 
@@ -424,6 +451,7 @@ recipe_svm
 ```
 
 Let us make predictions and check the accuracy
+
 ```{r}
 
 recipe_svm_pred <- predict(recipe_svm, newdata = test_bin)
@@ -434,8 +462,8 @@ table(Pred=recipe_svm_pred, obs=test_bin$rating_bin) # we check predictions on t
 confusionMatrix(data=recipe_svm_pred, reference = test_bin$rating_bin)
 
 ```
-In this case the accuracy stands at 59%, but we observe that the model is poorly predicting "bad" ratings. Before going too much further with the analysis of SVM, we will try to use balanced data to improve the quality of our analysis.
 
+In this case the accuracy stands at 59%, but we observe that the model is poorly predicting "bad" ratings. Before going too much further with the analysis of SVM, we will try to use balanced data to improve the quality of our analysis.
 
 ## SVM - balanced data
 
@@ -458,10 +486,11 @@ table(Pred=recipe_svm_up_pred, obs=test_bin$rating_bin) # we check predictions o
 confusionMatrix(data=recipe_svm_up_pred, reference = test_bin$rating_bin)
 
 ```
-Compared to unbalanced data, we can observe that the model is now better at predicting "bad" ratings, even though it is has considerably worsened at predicting "good" ratings. This explains why with balanced data the accuracy stands at 57.3%.
-We will proceed the rest of the analysis with balanced data.
+
+Compared to unbalanced data, we can observe that the model is now better at predicting "bad" ratings, even though it is has considerably worsened at predicting "good" ratings. This explains why with balanced data the accuracy stands at 57.3%. We will proceed the rest of the analysis with balanced data.
 
 ### Radial basis SVM
+
 ```{r}
 
 recipe_rb <- svm(rating_bin ~ calories + protein + fat + sodium + vegetables_bin + meats_bin + fish_bin + seafood_bin + herbs_bin + nuts_bin + fruits_bin + cheese_bin + dairy_bin + spices_bin + cereals_bin + carbs_bin + dessert_bin + egg_bin, data=upsamp_tr_bin, kernel="radial") # we fit the radial basis kernel
@@ -470,16 +499,18 @@ recipe_rb
 ```
 
 Let us make predictions and check the accuracy
+
 ```{r}
 
 recipe_rb_pred <- predict(recipe_rb, newdata = test_bin)
 confusionMatrix(data=recipe_rb_pred, reference = test_bin$rating_bin)
 
 ```
+
 The accuracy is now 53.3% meaning that the radial basis kernel seems to do slightly better than the linear one. However, we should not forget that we used default parameters so far. Let us try to do better by tuning hyperparameters.
 
-
 ### Tuning the Hyperparameters - Linear SVM
+
 ```{r}
 
 trctrl <- trainControl(method = "cv", number=10)
@@ -488,8 +519,8 @@ svm_Linear <- train(rating_bin ~ calories + protein + fat + sodium + vegetables_
 svm_Linear
 
 ```
-The validation accuracy stands at 53.2%, which is not that high even though it is computed on the training set.
-The next step consists in creating a grid of values for the cost that we want to try and pass to the argugment tuneGrid.
+
+The validation accuracy stands at 53.2%, which is not that high even though it is computed on the training set. The next step consists in creating a grid of values for the cost that we want to try and pass to the argugment tuneGrid.
 
 ```{r}
 
@@ -503,15 +534,16 @@ plot(svm_Linear_Grid)
 
 ```
 
-
 ```{r}
 
 svm_Linear_Grid$bestTune
 
 ```
+
 The result indicates that setting the cost to C=1000 provides the best model with accuracy=54.5%. The accuracy apparently reaches a plateau at this value. It represents an improvement compared to the previous linear SVM with default parameter cost C=1.
 
 ### Tuning the Hyperparameters - Radial basis SVM
+
 ```{r}
 
 grid_radial <- expand.grid(sigma = c(0.01, 0.02, 0.05, 0.1),
@@ -525,14 +557,13 @@ plot(svm_Radial_Grid)
 
 ```
 
-
 ```{r}
 
 svm_Radial_Grid$bestTune
 
 ```
-The optimal model from this search is with sigma = 0.1 and C = 1000
-This optimal model would then reach accuracy=64.2%.
+
+The optimal model from this search is with sigma = 0.1 and C = 1000 This optimal model would then reach accuracy=64.2%.
 
 ### Best model selection
 
@@ -548,9 +579,10 @@ recipe_rb_tuned_pred <- predict(recipe_rb_tuned, newdata = test_bin)
 confusionMatrix(data=recipe_rb_tuned_pred, reference = test_bin$rating_bin)
 
 ```
+
 The result indicates that with the tuned hyperparameters on the radial basis SVM model we achieve an accuracy of 54.3% on the test set. We can conclude that among the models , the linear kernal SVM without tuned hyperparameters represents the best model with 57.3% accuracy.
 
-########################
+######################## 
 
 ## KNN
 
@@ -564,7 +596,9 @@ test_temp <- test_bin
 ```
 
 ### Basic Model
+
 Trying to fit a basic KNN model with arbitrary K value of 3. Results are not different than that of a No Information Rate (NIR) model.
+
 ```{r}
 mod_knn <- knn3(data = train_temp, rating_bin ~., k=3)
 
@@ -574,7 +608,9 @@ confusionMatrix(reference = test_temp$rating_bin, data = knn_pred, positive="goo
 ```
 
 ### Tuning K
+
 Best K if we look at both accuracy and Kappa is 115.
+
 ```{r}
 #tuning k, using upsampled data
 trCtrl <- trainControl(method = "cv",
@@ -594,7 +630,9 @@ knn_all
 ```
 
 #### Roc curve
+
 We can see that there is no clear separation at all between the probabilities of the good and bad rating. This is the sign of a classification that doesn't work.
+
 ```{r}
 #predicting on the training set
 df <- train_temp %>% 
@@ -608,6 +646,7 @@ df %>%
 ```
 
 ### Fitting cv model with K = 115
+
 We see that the relatively high accuracy is achieved by classifying most obs as good, resulting in a high sensitivity but a very poor specificity.
 
 ```{r}
@@ -627,7 +666,9 @@ test_temp <- test_bin %>%
 ```
 
 ### Tuning K
+
 Best K if we look at both accuracy and Kappa is 111.
+
 ```{r}
 #tuning k, using upsampled data
 trCtrl <- trainControl(method = "cv",
@@ -647,7 +688,9 @@ knn_Nu
 ```
 
 #### Roc curve
+
 We can see that there is no clear separation at all between the probabilities of the good and bad rating. This is the sign of a classification that doesn't work.
+
 ```{r}
 #predicting on the training set
 df <- train_temp %>% 
@@ -661,6 +704,7 @@ df %>%
 ```
 
 ### Fitting cv model with K = 111
+
 We see that the relatively high accuracy is achieved by classifying most obs as good, resulting in a high sensitivity but a very poor specificity.
 
 ```{r}
@@ -670,6 +714,7 @@ confusionMatrix(reference = test_temp$rating_bin, data = knn_Nu_pred, positive="
 ```
 
 ## KNN - NUT and TOTAL
+
 ```{r}
 train_temp <- train_bin %>% 
   select(rating_bin, all_of(nutritional_values), all_of(contains("total")))
@@ -679,7 +724,9 @@ test_temp <- test_bin %>%
 ```
 
 ### Tuning K
+
 Best K if we look at both accuracy and Kappa is 139
+
 ```{r}
 #tuning k, using upsampled data
 trCtrl <- trainControl(method = "cv",
@@ -699,7 +746,9 @@ knn_NuTo
 ```
 
 #### Roc curve
+
 We can see that there is no clear separation at all between the probabilities of the good and bad rating. This is the sign of a classification that doesn't work.
+
 ```{r}
 #predicting on the training set
 df <- train_temp %>% 
@@ -713,7 +762,9 @@ df %>%
 ```
 
 ### Fitting cv model with K = 139
+
 Once again most obs are classified as good. Not better than NIR.
+
 ```{r}
 knn_NuTo_pred <- predict(knn_NuTo, newdata = test_temp, type = "raw")
 
@@ -730,7 +781,9 @@ test_temp <- test_bin %>%
 ```
 
 ### Tuning K
+
 Best K if we look at both accuracy and Kappa is 135
+
 ```{r}
 #tuning k, using upsampled data
 trCtrl <- trainControl(method = "cv",
@@ -750,7 +803,9 @@ knn_NuBi
 ```
 
 #### Roc curve
+
 We can see that there is no clear separation at all between the probabilities of the good and bad rating. This is the sign of a classification that doesn't work.
+
 ```{r}
 #predicting on the training set
 df <- train_temp %>% 
@@ -764,7 +819,9 @@ df %>%
 ```
 
 ### Fitting cv model with K = 135
+
 Once again most obs are classified as good. Not better than NIR.
+
 ```{r}
 knn_Bi_pred <- predict(knn_NuBi, newdata = test_temp, type = "raw")
 
@@ -772,6 +829,7 @@ confusionMatrix(reference = test_temp$rating_bin, data = knn_Bi_pred, positive="
 ```
 
 ## CART - NUT, BIN and TOTAL
+
 ```{r}
 #using all features
 train_temp <- train_bin
@@ -780,12 +838,15 @@ test_temp <- test_bin
 ```
 
 ### Plotting initial tree
+
 ```{r}
 cart_all <- rpart(rating_bin ~ ., data = train_temp)
 
 rpart.plot(cart_all)
 ```
+
 ### Pruning the tree
+
 We decided to use the package "adabag" to automatically prune the tree, using the 1-SE rule. The CP evaluation relies on a cross-validation procedure, which is why we need to set the seed before using the function.
 
 ```{r eval=FALSE}
@@ -796,6 +857,7 @@ rpart.plot(cart_all_pruned, roundint=FALSE)
 ```
 
 ### Making predictions
+
 ```{r eval=FALSE}
 #predicting the test set
 cart_all_pruned_pred <- predict(cart_all_pruned, newdata=test_temp, type="class")
@@ -805,6 +867,7 @@ confusionMatrix(data=cart_all_pruned_pred, reference = test_temp$rating_bin, pos
 ```
 
 ## CART - NUT and BIN
+
 ```{r}
 #using all features
 train_temp <- train_bin %>% 
@@ -815,6 +878,7 @@ test_temp <- test_bin %>%
 ```
 
 ### Plotting initial tree
+
 ```{r}
 cart_NuBi <- rpart(rating_bin ~ ., data = train_temp)
 
@@ -822,6 +886,7 @@ rpart.plot(cart_NuBi)
 ```
 
 ### Pruning the tree
+
 We decided to use the package "adabag" to automatically prune the tree, using the 1-SE rule. The CP evaluation relies on a cross-validation procedure, which is why we need to set the seed before using the function.
 
 ```{r eval=FALSE}
@@ -832,6 +897,7 @@ rpart.plot(cart_NuBi_pruned, roundint=FALSE)
 ```
 
 ### Making predictions
+
 ```{r eval=FALSE}
 #predicting the test set
 cart_NuBi_pruned_pred <- predict(cart_NuBi_pruned, newdata=test_temp, type="class")
@@ -862,7 +928,9 @@ test_temp <- test_bin
 ```
 
 ### Tuning K
+
 Best K if we look at both accuracy and Kappa is 115.
+
 ```{r}
 set.seed(12)
 knn_all_up <- caret::train(rating_bin ~.,
@@ -886,7 +954,9 @@ knn_all_up
 ```
 
 #### Roc curve
+
 We can see that there is no clear separation at all between the probabilities of the good and bad rating. This is the sign of a classification that doesn't work.
+
 ```{r}
 #predicting on the training set
 df <- train_temp %>% 
@@ -900,6 +970,7 @@ df %>%
 ```
 
 ### Fitting cv model with K = 115
+
 We see that the relatively high accuracy is achieved by classifying most obs as good, resulting in a high sensitivity but a very poor specificity.
 
 ```{r}
@@ -919,7 +990,9 @@ test_temp <- test_bin %>%
 ```
 
 ### Tuning K
+
 Best K if we look at both accuracy and Kappa is 111.
+
 ```{r}
 set.seed(12)
 knn_Nu_up <- caret::train(rating_bin ~.,
@@ -933,7 +1006,9 @@ knn_Nu_up
 ```
 
 #### Roc curve
+
 We can see that there is no clear separation at all between the probabilities of the good and bad rating. This is the sign of a classification that doesn't work.
+
 ```{r}
 #predicting on the training set
 df <- train_temp %>% 
@@ -947,6 +1022,7 @@ df %>%
 ```
 
 ### Fitting cv model with K = 111
+
 We see that the relatively high accuracy is achieved by classifying most obs as good, resulting in a high sensitivity but a very poor specificity.
 
 ```{r}
@@ -956,6 +1032,7 @@ confusionMatrix(reference = test_temp$rating_bin, data = knn_Nu_up_pred, positiv
 ```
 
 ## 3 KNN - NUT and TOTAL
+
 ```{r}
 train_temp <- train_bin %>% 
   select(rating_bin, all_of(nutritional_values), all_of(contains("total")))
@@ -965,7 +1042,9 @@ test_temp <- test_bin %>%
 ```
 
 ### Tuning K
+
 Best K if we look at both accuracy and Kappa is 139
+
 ```{r}
 set.seed(12)
 knn_NuTo_up <- caret::train(rating_bin ~.,
@@ -979,7 +1058,9 @@ knn_NuTo_up
 ```
 
 #### Roc curve
+
 We can see that there is no clear separation at all between the probabilities of the good and bad rating. This is the sign of a classification that doesn't work.
+
 ```{r}
 #predicting on the training set
 df <- train_temp %>% 
@@ -993,7 +1074,9 @@ df %>%
 ```
 
 ### Fitting cv model with K = 139
+
 Once again most obs are classified as good. Not better than NIR.
+
 ```{r}
 knn_NuTo_up_pred <- predict(knn_NuTo_up, newdata = test_temp, type = "raw")
 
@@ -1010,7 +1093,9 @@ test_temp <- test_bin %>%
 ```
 
 ### Tuning K
+
 Best K if we look at both accuracy and Kappa is 135
+
 ```{r}
 set.seed(12)
 knn_NuBi_up <- caret::train(rating_bin ~.,
@@ -1024,7 +1109,9 @@ knn_NuBi_up
 ```
 
 #### Roc curve
+
 We can see that there is no clear separation at all between the probabilities of the good and bad rating. This is the sign of a classification that doesn't work.
+
 ```{r}
 #predicting on the training set
 df <- train_temp %>% 
@@ -1038,7 +1125,9 @@ df %>%
 ```
 
 ### Fitting cv model with K = 135
+
 Once again most obs are classified as good. Not better than NIR.
+
 ```{r}
 knn_Bi_up_pred <- predict(knn_NuBi_up, newdata = test_temp, type = "raw")
 
@@ -1046,6 +1135,7 @@ confusionMatrix(reference = test_temp$rating_bin, data = knn_Bi_up_pred, positiv
 ```
 
 ## CART - NUT, BIN and TOTAL
+
 ```{r}
 #using all features
 train_temp <- upsamp_tr_bin
@@ -1054,6 +1144,7 @@ test_temp <- test_bin
 ```
 
 ### Plotting initial tree
+
 ```{r}
 cart_all_up <- rpart(rating_bin ~ ., data = train_temp)
 
@@ -1061,6 +1152,7 @@ rpart.plot(cart_all_up)
 ```
 
 ### Pruning the tree
+
 We decided to use the package "adabag" to automatically prune the tree, using the 1-SE rule. The CP evaluation relies on a cross-validation procedure, which is why we need to set the seed before using the function.
 
 ```{r}
@@ -1071,7 +1163,9 @@ rpart.plot(cart_all_up_pruned, roundint=FALSE)
 ```
 
 ### Making predictions
+
 Classifies everything as good.
+
 ```{r}
 #predicting the test set
 cart_all_up_pruned_pred <- predict(cart_all_up_pruned, newdata=test_temp, type="class")
@@ -1081,6 +1175,7 @@ confusionMatrix(data=cart_all_up_pruned_pred, reference = test_temp$rating_bin, 
 ```
 
 ## CART - NUT, BIN
+
 ```{r}
 #using all features
 train_temp <- upsamp_tr_bin %>% 
@@ -1091,6 +1186,7 @@ test_temp <- test_bin %>%
 ```
 
 ### Plotting initial tree
+
 ```{r}
 cart_NuBi_up <- rpart(rating_bin ~ ., data = train_temp)
 
@@ -1098,6 +1194,7 @@ rpart.plot(cart_NuBi_up)
 ```
 
 ### Pruning the tree
+
 We decided to use the package "adabag" to automatically prune the tree, using the 1-SE rule. The CP evaluation relies on a cross-validation procedure, which is why we need to set the seed before using the function.
 
 ```{r}
@@ -1108,7 +1205,9 @@ rpart.plot(cart_NuBi_up_pruned, roundint=FALSE)
 ```
 
 ### Making predictions
+
 Classifies everything as good.
+
 ```{r}
 #predicting the test set
 cart_NuBi_up_pruned_pred <- predict(cart_NuBi_up_pruned, newdata=test_temp, type="class")
