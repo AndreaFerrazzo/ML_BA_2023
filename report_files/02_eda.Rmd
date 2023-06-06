@@ -636,26 +636,23 @@ ingredients_df_full <- ingredients_df_full %>%
 
 Besides the total amount of ingredients, let's check the amount of ingredients per recipe for the top 3 categories in terms of ingredients frequency (i.e., vegetables, fruits, meats)
 
-```{r Plotting Vegetables total}
-ingredients_df_full %>%
+```{r}
+show_nveg <- ingredients_df_full %>%
   filter(vegetables_bin == 1) %>% 
   select(ID, title, total_vegetables) %>% 
   ggplot(aes(x=total_vegetables)) + 
   scale_x_continuous(breaks = seq(1, 9, by = 1)) +
   geom_bar() + geom_vline(aes(xintercept=mean(total_vegetables)),color="blue", linetype="dashed", size=1)
-```
 
 
-```{r Plotting Fruits total}
-ingredients_df_full %>%
+show_nfruit <- ingredients_df_full %>%
   filter(fruits_bin == 1) %>% 
   select(ID, title, total_fruits) %>% 
   ggplot(aes(x=total_fruits)) + 
   scale_x_continuous(breaks = seq(1, 9, by = 1)) +
   geom_bar() + geom_vline(aes(xintercept=mean(total_fruits)),color="blue", linetype="dashed", size=1)
-```
 
-```{r Plotting meat totals}
+
 # ingredients_df_full %>% 
 #   select(ID, title, total_meat) %>% 
 #   ggplot(aes(x=total_meat)) + 
@@ -663,7 +660,7 @@ ingredients_df_full %>%
 #   labs(x="Number of meats per recipe", y = "Recipe Count", title = "Distrubution of number of meats per recipe")
 
 #let's try to filter by recipes which contain meat to see if my functions work
-ingredients_df_full %>% 
+show_nmeat <- ingredients_df_full %>% 
   filter(meats_bin == 1) %>% 
   select(ID, title, total_meat) %>% 
   ggplot(aes(x=total_meat)) + 
@@ -671,21 +668,23 @@ ingredients_df_full %>%
   labs(x="Number of meats per recipe", y = "Recipe Count", title = "Distrubution of number of meats per recipe")
 
 #why do we still have value in 0 meats --> it was because when creating the total meat column in ingredients_df_test I did not include the general meat category
+
+grid.arrange(show_nveg, show_nfruit, show_nmeat, ncol=2, nrow =2)
+
 ```
+As we can observe, most of the recipes have 1 or 2 vegetables and rarely more than 4. The same is true for fruits. Concerning the meat, it usual to see one kind of meat, but rare to see 3 or more in the same recipe.
+
 
 ### Categories relative to rating
-
-It's hard to interpret the results clearly with so many rating, let's try to reduce it to 2 category --> above 4, and below 4
-
 ```{r}
 ingredients_df_bin %>% 
   select(contains("bin"), rating) %>%
   mutate(across(everything(), as.factor)) %>% 
   plot_bar(by = "rating", order_bar = FALSE)
 ```
-We not have only 2 categories: recipes with rating above 4 and recipes with ratings below 4. There is no clear relationship in those graphs either, and this confirms the correlation results that we have above.
+It's hard to interpret the results clearly with so many rating, let's try to reduce it to 2 category: rating above 4 vs rating below 4.
 
-If we look at vegetables for example, we can see that the proportion of recipes with ratings above 4 is higher for recipes containing no vegetables, when compared to recipes containing at least one vegetable.
+
 
 ```{r}
 ingredients_df_bin %>% 
@@ -694,6 +693,10 @@ ingredients_df_bin %>%
   select(-rating) %>% 
   plot_bar(by = "rating_4", order_bar = FALSE)
 ```
+We not have only 2 categories: recipes with rating above 4 and recipes with ratings below 4. There is no clear relationship in those graphs either, and this confirms the correlation results that we have found above.
+
+If we look at vegetables for example, we can see that the proportion of recipes with ratings above 4 is higher for recipes containing no vegetables, when compared to recipes containing at least one vegetable.
+
 
 ## Mixed EDA - ingredients and nutritional value
 
