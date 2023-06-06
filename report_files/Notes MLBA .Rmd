@@ -2,7 +2,14 @@
 
 Analysis Balanced
 
-- Engineered features
+- Engineered features - 7-level rating
+ - Unbalanced
+  - 2 versions of RF
+
+- Engineered features - binary rating
+ - Unbalanced
+  - What we already have 
+ - Balanced
   - 8 models
   
 - All variables
