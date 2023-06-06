@@ -626,6 +626,12 @@ ingredients_df_total %>%
 ```
 Based on this information, we decide to eliminate those 117 observations which don't contain any ingredients that we have classified in our vectors.
 ```{r}
+index_zero_ingredient <- ingredients_df_full %>% 
+  filter(total_ingredients == 0) %>% pull(ID)
+
+recipes <- recipes %>% 
+  filter(!ID %in% index_zero_ingredient)
+
 ingredients_df_full <- ingredients_df_full %>%
   filter(!total_ingredients == 0)
 ```
