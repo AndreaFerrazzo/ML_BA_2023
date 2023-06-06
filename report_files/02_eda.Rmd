@@ -14,29 +14,26 @@ recipes %>%
   scale_fill_manual(values = c("red4", "red3", "orangered", "orange", "gold", "greenyellow", "green3", "green4") ) +
   theme(legend.position="none") +
   scale_y_continuous(breaks=seq(0,10000,1000)) +
-  labs(x = "Rating", y = "Count", 
+  labs(x = "Rating", y = "Number of recipes", 
        title = "Overview of recipes' ratings")
 
-# As we can see, most of the ratings have value above 3.75, more in particular we notice that most of the recipes are rates with 4.375.
-# A zero rating indicates that the recipe has not been evaluated yet.
-
 ```
-
+The data available provide ratings which are separated in 7 distinct categories, which span from 1.25 to 5. We do not forget that we decided to exclude recipes with rating equal to zero.
+As we can see, most of the ratings have value equal or above 3.75, more in particular we notice that most of the recipes have ratings of 4.375.
 
 #### Calories - Boxplot and Histogram
 
 ```{r}
 
-recipes_boxplot <-
+recipes_plot <-
   recipes %>% 
   pivot_longer(cols = c(calories, protein, fat, sodium),
                names_to = "nutrition",
                values_to = "n_value")
 
-recipes_calories <- recipes_boxplot %>% 
-  filter(nutrition == "calories")
-
-recipes_calories %>%
+# Calories boxplot not filtered
+recipes_plot %>%
+  filter(nutrition == "calories") %>% 
   ggplot(aes(x=nutrition, y=n_value, fill=nutrition)) +
     geom_boxplot() +
     scale_fill_viridis(discrete = TRUE, alpha=0.6, option="A") +
@@ -46,21 +43,20 @@ recipes_calories %>%
   ggtitle("Boxplot of calories nutritional value") +
   xlab("") +
   ylab("Value")
-  
 
-# We notice that there are recipes with more than 30'000'000 calories which are clearly outliers. We must then discard those values in order to continue with a meaningful analysis. Otherwise from a visual point of view we could not extract any relevant information. If we take out these recipes, we still have roughly 30 recipes which have more than 7000 calories. For the purpose of this precise visualisation, we want to exclude them to have a better overview of the boxplot, but we don't consider those as outliers.
 
-recipes_calories %>% 
+recipes_plot %>% 
+  filter(nutrition == "calories") %>% 
   select(title, nutrition, n_value) %>% 
   arrange(desc(n_value)) 
+```
 
-recipes_calories <- recipes_calories %>% 
-  filter(n_value <= 7000)
+We notice that there are recipes with more than 30'000'000 calories which are clearly outliers. It is also hard to interpret these values from the boxplot and even with a density plot we cannot extract any insight. We must then discard those values in order to continue with a meaningful analysis. There are 28 recipes which have more than 7000 calories. We consider those as extreme values which represents 0.27% of the data available. Why do they exist? It could be due to a miscalculation or to an excessive number of servings per recipe. By evaluating the usual number of calories per recipe, we decided to keep those that have a reasonable quantity, i.e., below 7000.
 
-
+```{r}
 # Calories boxplot
-
-recipes_calories %>%
+boxplot_calories <- recipes_plot %>%
+  filter(nutrition == "calories", n_value <= 7000) %>% 
   ggplot(aes(x=nutrition, y=n_value, fill=nutrition)) +
     geom_boxplot() +
     scale_fill_viridis(discrete = TRUE, alpha=0.6, option="A") +
@@ -74,8 +70,8 @@ recipes_calories %>%
 
 
 # Calories histogram
-
-recipes_calories %>% 
+histogram_calories <- recipes_plot %>% 
+  filter(nutrition == "calories", n_value <= 7000) %>% 
   ggplot(aes(x=n_value)) +
   geom_histogram(binwidth=50, fill="red3", color="red3", alpha=0.9) +
   theme(plot.title = element_text(size=15)) +
@@ -85,19 +81,28 @@ recipes_calories %>%
   xlab("Calories") +
   ylab("Count") 
 
+
+# Calories density plot
+density_calories <- recipes_plot %>% 
+  filter(nutrition == "calories", n_value <= 7000) %>% 
+  ggplot(aes(x=n_value)) +
+  geom_density(fill="red3", color="red2", alpha=0.8) +
+  scale_x_continuous(breaks=seq(0,10000,1000)) +
+  ggtitle("Distribution of calories across all recipes") +
+  xlab("Calories")
+
+grid.arrange(boxplot_calories, histogram_calories, density_calories, ncol=2, nrow =2)
 ```
 
-We can observe that most of the recipes have between 200 and 600 calories. By checking with the histogram the distribution of calories, we observe that indeed most of the recipes have less than 1000 calories.
+After filtering extreme values we can observe that most of the recipes have between 200 and 600 calories. By checking with the histogram the distribution of calories, we observe that indeed most of the recipes have less than 1000 calories.
 
 
 #### Protein - Boxplot and Histogram
 
 ```{r}
 
-recipes_protein <- recipes_boxplot %>% 
-  filter(nutrition == "protein")
-
-recipes_protein %>%
+recipes_plot %>%
+  filter(nutrition == "protein") %>% 
   ggplot(aes(x=nutrition, y=n_value, fill=nutrition)) +
     geom_boxplot() +
     scale_fill_viridis(discrete = TRUE, alpha=0.6, option="A") +
@@ -108,20 +113,19 @@ recipes_protein %>%
   xlab("") +
   ylab("Value")
   
+```
+We notice that there are recipes with more than 50'000 grams of protein which are clearly outliers. We must then discard those values in order to continue with a meaningful analysis. Otherwise from a visual point of view we could not extract any relevant information. By checking on the epicurious website recipes  with protein values above 1000, we also verified that the amount of proteins was not justified. We came to that conclusion by evaluating the average values of protein per 100grams of each ingredient in the specific recipe.
 
-# We notice that there are recipes with more than 50'000 grams of protein which are clearly outliers. We must then discard those values in order to continue with a meaningful analysis. Otherwise from a visual point of view we could not extract any relevant information. By checking on the epicurious website recipes  with protein values above 1000, we also verified that the amount of proteins was not justified. We came to that conclusion by evaluating the average values of protein per 100grams of each ingredient in the specific recipe.
-
-recipes_protein %>% 
+```{r}
+recipes_plot %>%
+  filter(nutrition == "protein") %>% 
   select(title, nutrition, n_value) %>% 
   arrange(desc(n_value)) 
 
-recipes_protein <- recipes_protein %>% 
-  filter(n_value <= 1000)
-
 
 # Proteins boxplot
-
-recipes_protein %>%
+boxplot_protein <- recipes_plot %>%
+  filter(nutrition == "protein", n_value <= 1000) %>% 
   ggplot( aes(x=nutrition, y=n_value, fill=nutrition)) +
     geom_boxplot() +
     scale_fill_viridis(discrete = TRUE, alpha=0.6, option="A") +
@@ -135,16 +139,28 @@ recipes_protein %>%
 
 
 # Proteins histogram
-
-recipes_protein %>% 
+histogram_protein <- recipes_plot %>% 
+  filter(nutrition == "protein", n_value <= 1000) %>% 
   ggplot(aes(x=n_value)) +
   geom_histogram(binwidth=7, fill="red3", color="red3", alpha=0.9) +
   theme(plot.title = element_text(size=15)) +
-  scale_x_continuous(breaks=seq(0,1000,25)) +
+  scale_x_continuous(breaks=seq(0,1000,50)) +
   scale_y_continuous(breaks=seq(0,7000,250)) +
   ggtitle("Distribution of proteins across all recipes") +
   xlab("Proteins") +
   ylab("Count") 
+
+
+# Protein density plot
+density_protein <- recipes_plot %>% 
+  filter(nutrition == "protein", n_value <= 1000) %>% 
+  ggplot(aes(x=n_value)) +
+  geom_density(fill="red3", color="red2", alpha=0.8) +
+  scale_x_continuous(breaks=seq(0,1000,50)) +
+  ggtitle("Distribution of proteins across all recipes") +
+  xlab("Proteins")
+
+grid.arrange(boxplot_protein, histogram_protein, density_protein, ncol=1, nrow =3)
 
 ```
 
@@ -155,10 +171,8 @@ From the boxplot, we observe that most recipes have less than 30 grams of protei
 
 ```{r}
 
-recipes_sodium <- recipes_boxplot %>% 
-  filter(nutrition == "sodium")
-
-recipes_sodium %>%
+recipes_plot %>%
+  filter(nutrition == "sodium") %>% 
   ggplot(aes(x=nutrition, y=n_value, fill=nutrition)) +
     geom_boxplot() +
     scale_fill_viridis(discrete = TRUE, alpha=0.6, option="A") +
@@ -168,21 +182,21 @@ recipes_sodium %>%
   ggtitle("Boxplot of sodium nutritional value") +
   xlab("") +
   ylab("Value")
+```
   
+We notice that there are recipes with more than 100'000 milligrams of sodium which are clearly outliers. We must then discard those values in order to continue with a meaningful analysis. By conducting further research, we realize that sodium values above 30'000 are highly suspicious.  
 
-# We notice that there are recipes with more than 100'000 milligrams of sodium which are clearly outliers. We must then discard those values in order to continue with a meaningful analysis. By conducting further research, we realize that sodium values above 30'000 are highly suspicious.
+```{r}
 
-recipes_sodium %>% 
+recipes_plot %>% 
+  filter(nutrition == "sodium") %>%
   select(title, nutrition, n_value) %>% 
   arrange(desc(n_value)) 
 
-recipes_sodium <- recipes_sodium %>% 
-  filter(n_value <= 30000)
-
 
 # Sodium boxplot
-
-recipes_sodium %>%
+boxplot_sodium <- recipes_plot %>%
+  filter(nutrition == "sodium", n_value <= 30000) %>% 
   ggplot(aes(x=nutrition, y=n_value, fill=nutrition)) +
     geom_boxplot() +
     scale_fill_viridis(discrete = TRUE, alpha=0.6, option="A") +
@@ -196,8 +210,8 @@ recipes_sodium %>%
 
 
 # Sodium histogram
-
-recipes_sodium %>% 
+histogram_sodium <- recipes_plot %>%
+  filter(nutrition == "sodium", n_value <= 30000) %>% 
   ggplot(aes(x=n_value)) +
   geom_histogram(binwidth=50, fill="red3", color="red3", alpha=0.9) +
   theme(plot.title = element_text(size=15)) +
@@ -207,6 +221,18 @@ recipes_sodium %>%
   xlab("Sodium") +
   ylab("Count") 
 
+
+# Sodium density plot
+density_sodium <- recipes_plot %>%
+  filter(nutrition == "sodium", n_value <= 30000) %>% 
+  ggplot(aes(x=n_value)) +
+  geom_density(fill="red3", color="red2", alpha=0.8) +
+  scale_x_continuous(breaks=seq(0,30000,1000)) +
+  ggtitle("Distribution of sodium across all recipes") +
+  xlab("Sodium") 
+
+
+grid.arrange(boxplot_sodium, histogram_sodium, density_sodium, ncol=1, nrow =3)
 ```
 
 From the boxplot we observe that most recipes have sodium values below 750 milligrams. The histogram informs us that most of recipes have indeed less than 750 milligrams of sodium, even though we cannot exclude the presence of a good amount of recipes with sodium between 750 and 2000 milligrams.
@@ -216,10 +242,8 @@ From the boxplot we observe that most recipes have sodium values below 750 milli
 
 ```{r}
 
-recipes_fat <- recipes_boxplot %>% 
-  filter(nutrition == "fat")
-
-recipes_fat %>%
+recipes_plot %>%
+  filter(nutrition == "fat") %>% 
   ggplot(aes(x=nutrition, y=n_value, fill=nutrition)) +
     geom_boxplot() +
     scale_fill_viridis(discrete = TRUE, alpha=0.6, option="A") +
@@ -229,21 +253,20 @@ recipes_fat %>%
   ggtitle("Boxplot of fat nutritional value") +
   xlab("") +
   ylab("Value")
-  
+
+```
 
 # We notice that there are recipes with more than 44'000 grams of fat which are clearly outliers. We must then discard those values in order to continue with a meaningful analysis. By checking on the epicurious website recipes  with fat values above 1000, we also verified that the amount of proteins was not justified. We came to that conclusion by evaluating the average values of protein per 100grams of each ingredient in the specific recipe.
 
-recipes_fat %>% 
+```{r}
+recipes_plot %>% 
+  filter(nutrition == "fat") %>% 
   select(title, nutrition, n_value) %>% 
   arrange(desc(n_value)) 
 
-recipes_fat <- recipes_fat %>% 
-  filter(n_value <= 40000)
-
-
 # Fat boxplot
-
-recipes_fat %>%
+boxplot_fat <- recipes_plot %>%
+  filter(nutrition == "fat", n_value <= 40000) %>% 
   ggplot( aes(x=nutrition, y=n_value, fill=nutrition)) +
     geom_boxplot() +
     scale_fill_viridis(discrete = TRUE, alpha=0.6, option="A") +
@@ -257,8 +280,8 @@ recipes_fat %>%
 
 
 # Fat histogram
-
-recipes_fat %>% 
+histogram_fat <- recipes_plot %>% 
+  filter(nutrition == "fat", n_value <= 40000) %>% 
   ggplot(aes(x=n_value)) +
   geom_histogram(binwidth=7, fill="red3", color="red3", alpha=0.9) +
   theme(plot.title = element_text(size=15)) +
@@ -268,15 +291,24 @@ recipes_fat %>%
   xlab("Fat") +
   ylab("Count") 
 
-```
+# Sodium density plot
+density_fat<- recipes_plot %>%
+  filter(nutrition == "fat", n_value <= 40000) %>% 
+  ggplot(aes(x=n_value)) +
+  geom_density(fill="red3", color="red2", alpha=0.8) +
+  scale_x_continuous(breaks=seq(0,3000,100)) +
+  ggtitle("Distribution of sodium across all recipes") +
+  xlab("Fat") 
 
+grid.arrange(boxplot_fat, histogram_fat, density_fat, ncol=1, nrow =3)
+```
 It is hard to interpret the boxplot. There are certain recipes which could have potentially more than 1000 or even 2000 grams of fat because of the high quantity of servings and the use of ingredients such as lamb, duck and bacon. We must then analyse the histogram to have a better overview and we notice that most recipes have fat values below 100 grams.
 
 
 
 ### Visual exploration - Multivariate Analysis
 
-#### Scatterplots of Rating
+#### Scatterplots of Rating-Calories
 ```{r}
   
 recipes <- recipes %>% 
@@ -284,50 +316,46 @@ recipes <- recipes %>%
 
 
 # Scatterplot of Rating-Calories
-recipes %>% 
+sp1 <- recipes %>% 
   ggplot(aes(x=calories, y=rating)) +
-  geom_point() +
+  geom_point(alpha=.5) +
   ggtitle("Scatterplot of rating against calories") +
   xlab("Calories") +
-  ylab("Rating") 
-
-# We can observe that the recipes with more than 2000 calories tend to have a higher rating. For instance, few recipes with less than a 3 star rating have more than 2000 calories.
-
+  ylab("Rating")
 
 # Scatterplot of Rating-Protein
-recipes %>% 
+sp2 <- recipes %>% 
   ggplot(aes(x=protein, y=rating)) +
-  geom_point() +
+  geom_point(alpha=.5) +
   ggtitle("Scatterplot of rating against proteins") +
   xlab("Proteins") +
   ylab("Rating") 
 
-# We can observe that the recipes with more than 125 grams of proteins tend to have a higher rating. For instance, few recipes with less than a 3 star rating have more than 125 grams of proteins.
-
-
 # Scatterplot of Rating-Fat
-recipes %>% 
+sp3 <- recipes %>% 
   ggplot(aes(x=fat, y=rating)) +
-  geom_point() +
+  geom_point(alpha=.5) +
   ggtitle("Scatterplot of rating against fat") +
   xlab("Fat") +
   ylab("Rating") 
 
-# We can observe that the recipes with more than 100 grams of fat tend to have a higher rating. For instance, few recipes with less than a 3 star rating have more than 100 grams of fat.
-
-
 # Scatterplot of Rating-Sodium
-recipes %>% 
+sp4 <- recipes %>% 
   ggplot(aes(x=sodium, y=rating)) +
-  geom_point() +
+  geom_point(alpha=.5) +
   ggtitle("Scatterplot of rating against sodium") +
   xlab("Sodium") +
   ylab("Rating") 
 
-# We can observe that the recipes with more than 5000 milligrams of sodium tend to have a higher rating. For instance, few recipes with less than a 3 star rating have more than 5000 mg of sodium.
-
+grid.arrange(sp1, sp2, sp3, sp4, ncol=2, nrow =2)
 ```
+We can observe that the recipes with more than 2000 calories tend to have a higher rating. For instance, few recipes with less than a 3 star rating have more than 2000 calories.
 
+We can observe that the recipes with more than 125 grams of proteins tend to have a higher rating. For instance, few recipes with less than a 3 star rating have more than 125 grams of proteins.
+
+We can observe that the recipes with more than 100 grams of fat tend to have a higher rating. For instance, few recipes with less than a 3 star rating have more than 100 grams of fat.
+
+We can observe that the recipes with more than 5000 milligrams of sodium tend to have a higher rating. For instance, few recipes with less than a 3 star rating have more than 5000 mg of sodium.
 
 #### Correlogram
 ```{r}
@@ -342,59 +370,49 @@ The previous scatterplots illuded us that there was somehow a correlation betwee
 
 
 #### Grouped Scatter
+We decide to plot together the variables which highlight a great level of correlation.
 ```{r}
-
-# We decide to plot together the variables which highlight a great level of correlation.
 
 # Grouped scatter of calories and fat
 recipes_plot1 <- recipes %>% 
-  filter(fat <= 400, calories <= 6000)
-
-recipes_plot1 %>% 
+  filter(fat <= 400, calories <= 6000) %>% 
   ggplot(aes(x=calories, y=fat, color=rating)) +
-  geom_point() + 
+  geom_point(alpha=.5) + 
   scale_color_gradientn(colours = rainbow(5))
 
 # Grouped scatter of calories and protein
 recipes_plot2 <- recipes %>% 
-  filter(protein <= 500, calories <= 6000)
-
-recipes_plot2 %>% 
+  filter(protein <= 500, calories <= 6000) %>% 
   ggplot(aes(x=calories, y=protein, color=rating)) +
-  geom_point() + 
+  geom_point(alpha=.5) + 
   scale_color_gradientn(colours = rainbow(5))
 
 # Grouped scatter of protein and fat
 recipes_plot3 <- recipes %>% 
-  filter(fat <= 400, protein <= 350)
-
-recipes_plot3 %>% 
+  filter(fat <= 400, protein <= 350) %>% 
   ggplot(aes(x=protein, y=fat, color=rating)) +
-  geom_point() + 
+  geom_point(alpha=.5) + 
   scale_color_gradientn(colours = rainbow(5))
 
 
 # Grouped scatter of protein and sodium
 recipes_plot4 <- recipes %>% 
-  filter(sodium <= 400, protein <= 350)
-
-recipes_plot4 %>% 
+  filter(sodium <= 400, protein <= 350) %>%  
   ggplot(aes(x=protein, y=sodium, color=rating)) +
-  geom_point() + 
+  geom_point(alpha=.5) + 
   scale_color_gradientn(colours = rainbow(5))
 
+grid.arrange(recipes_plot1, recipes_plot2, recipes_plot3, recipes_plot4, ncol=2, nrow =2)
 ```
-
+We notice a positive correlation between fat and calories as well as between protein and calories. We also see a slightly positive correlation between fat and protein. We tried to understand to what extent the rating could have an impact on such relationships, but the number of rating above 3 is overwhelming and strongly determines the behavior of these relationships.
 
 
 ## Ingredients EDA
 
 ### Feature engineering 
-
+We discovered that the variable "drinks" on it's own had only 11 observations, 4 of which also had the value "drink" equal to 1. Therefore, we decided to merge the two columns to simplify working with a single category called "drink" for all drinks.
 ```{r Creating ingredients_df}
 #Creating a new dataframe with only the ID, title and the ingredients
-
-#through the analysis above, we saw that "drinks" on it's own had only 11 observations, 4 of which also had the value "drink" = 1 --> we decided to merge the two columns to simplify working with a single category called "drink" for all drinks
 ingredients_df <- recipes %>% 
   mutate(drink = ifelse(drink == 1 | drinks == 1, 1, 0)) %>% #merging drinks and drink
   select(ID, title, all_of(all_ingredients), rating)
@@ -426,6 +444,7 @@ ingredients_df_bin <- ingredients_df %>%
 ```
 
 The fact that both select the same number of rows makes having general categories redundant in the dataset. They are not useful to create the binary columns, and they are also not useful to compute the total amount of ingredients in each category per recipe --> let's just not include them in the first place
+
 ```{r eval=FALSE}
 
 ####testing if I still need to include the general category to create the binary column now that I modified the df to only include recipes with ingredients specified
@@ -501,8 +520,9 @@ total_categories %>%
   scale_fill_viridis() +
   labs(x = "Category", y = "Amount of recipes", title = "Total amount of recipes containing at least one ingredient in defined categories")
 ```
+Most of the recipes contain vegetables, fruits, meats, herbs and carbs, which is not a surprise.
+The boxplots below give us similar information about the amount of recipe which contain at least one ingredient in each category. The only category for which an ingredient is present at least once in more than 50% of the recipes is vegetables.
 
-The below boxplots give us similar information about the amount of recipe which contain at least one ingredient in each category.The only category for which the an ingredient is present at least ince in more than 50% of the recipes is vegetables.
 ```{r}
 ingredients_df_bin %>% 
   select(contains("bin")) %>%
@@ -522,14 +542,7 @@ ingredients_df_bin %>%
   select(contains("bin"), rating) %>% 
   plot_correlation()
 ```
-```{r}
-#testing if corr matrix changes when we set the binary columns as factor instead of num
-ingredients_df_bin %>% 
-  select(contains("bin"), rating) %>% 
-  mutate(across(-rating, as.factor)) %>% 
-  plot_correlation()
-#this gives weird results
-```
+
 ```{r}
 #now trying with rating as a factor
 ingredients_df_bin %>% 
@@ -537,10 +550,9 @@ ingredients_df_bin %>%
   mutate(across(rating, as.factor)) %>% 
   plot_correlation()
 ```
-
+From this graph we notice that recipes with rating at 3.75 have slightly positive relationship with carbs and vegetables, whereas recipes with rating at 5 have slightly negative relationship with the same features. We assume then that recipes containing vegetables and carbs tend to be less appreciated.
 
 #### Total individual ingredients
-
 ```{r}
 #Analysis which single ingredient is present in most recipes
 df <- ingredients_df %>% 
@@ -563,7 +575,7 @@ ing_top10 %>%
   scale_x_discrete(guide = guide_axis(n.dodge=2))+
   labs(x = "Ingredient", y = "Value", title = "Total amount of recipes containing each ingredient\nTop 10")
 ```
-
+As we can observe, many recipes contain milk cream, onion, tomato, salad, egg and garlic. Some of these are versatile as they can be used for many different kinds of recipes. Onion and garlic are widely used for giving flavour to many dishes, whereas egg and milk cream can be used to cook salty and sweet recipes.
 
 #### Correlation between number of ingredients and rating
 
@@ -572,6 +584,8 @@ ingredients_df_total %>%
   select(contains("total"), rating) %>% 
   plot_correlation()
 ```
+We notice a negative relationship between the number of fruits and number of vegetables which makes sense these two kinds of ingredients are rarely combined in a recipe. The same is true for the number of vegetables related to the number of desserts. The results are similar to the previous correlogram with the binary columns. In this case we do not notice any significant relationship between rating and the other variables.
+
 
 #### Amount of ingredients per recipe
 
@@ -707,12 +721,9 @@ recipes_full <- recipes_more %>%
 
 ### Correlation between nutritional values and categories
 ```{r}
-
 recipes_full %>% 
   select(-ID) %>% 
   plot_correlation()
-
-
 ```
 For instance we notice a positive correlation between proteins and meats_bin which includes all sorts of meat. Another visible positive correlation is the one between sodium and seafood_bin. We might also want to investigate the relationship between calories and carbs_bin.
 
