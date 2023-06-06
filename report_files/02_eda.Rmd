@@ -64,7 +64,7 @@ boxplot_calories <- recipes_plot %>%
     theme(legend.position="none",
           plot.title = element_text(size=11)) +
   scale_y_continuous(breaks=seq(0,7000,500)) +
-  ggtitle("Boxplot of calories nutritional value") +
+  ggtitle("Boxplot of calories nutritional value filtered") +
   xlab("") +
   ylab("Calories") 
 
@@ -133,7 +133,7 @@ boxplot_protein <- recipes_plot %>%
     theme(legend.position="none",
           plot.title = element_text(size=11)) +
   scale_y_continuous(breaks=seq(0,7000,25)) +
-  ggtitle("Boxplot of protein nutritional value") +
+  ggtitle("Boxplot of protein nutritional value filtered") +
   xlab("") +
   ylab("Proteins") 
 
@@ -274,7 +274,7 @@ boxplot_fat <- recipes_plot %>%
     theme(legend.position="none",
           plot.title = element_text(size=11)) +
   scale_y_continuous(breaks=seq(0,3000,100)) +
-  ggtitle("Boxplot of fat nutritional value") +
+  ggtitle("Boxplot of fat nutritional value filtered") +
   xlab("") +
   ylab("Fat") 
 
@@ -536,21 +536,18 @@ We can see that no binary variable correlated to the rating in any way.
 
 We see some somewhat strong negative correlation between vegetables and dessert, and between vegetable and fruits. This makes sense, as these ingredients are rarely found together in recipes. As a side note, we chose to classify tomato as a vegetable and strongly stand by this opinion :)
 
-Concerning positive correlations, we see nuts and desert as highly correlated. This is probably because they go well together in sugary recipes. Additionally, egg and dairy is also correlated at 0.23. This most likely comes from patisserie recipes where eggs and dairy ingredients go hand in hand.
-```{r}
-ingredients_df_bin %>% 
-  select(contains("bin"), rating) %>% 
-  plot_correlation()
-```
+Concerning positive correlations, we see nuts and desert as highly correlated. This is probably because they go well together in sugary recipes. Additionally, egg and dairy are also slightly positively correlated. This most likely comes from patisserie recipes where eggs and dairy ingredients go hand in hand.
+
+From this graph we also notice that recipes with rating at 3.75 have slightly positive relationship with carbs and vegetables, whereas recipes with rating at 5 have slightly negative relationship with the same features. We assume then that recipes containing vegetables and carbs tend to be less appreciated.
 
 ```{r}
-#now trying with rating as a factor
+# With rating as a factor
 ingredients_df_bin %>% 
   select(contains("bin"), rating) %>% 
   mutate(across(rating, as.factor)) %>% 
   plot_correlation()
 ```
-From this graph we notice that recipes with rating at 3.75 have slightly positive relationship with carbs and vegetables, whereas recipes with rating at 5 have slightly negative relationship with the same features. We assume then that recipes containing vegetables and carbs tend to be less appreciated.
+
 
 #### Total individual ingredients
 ```{r}
@@ -693,7 +690,7 @@ ingredients_df_bin %>%
   select(-rating) %>% 
   plot_bar(by = "rating_4", order_bar = FALSE)
 ```
-We not have only 2 categories: recipes with rating above 4 and recipes with ratings below 4. There is no clear relationship in those graphs either, and this confirms the correlation results that we have found above.
+We now have only 2 categories: recipes with rating above 4 and recipes with ratings below 4. There is no clear relationship in those graphs either, and this confirms the correlation results that we have found above.
 
 If we look at vegetables for example, we can see that the proportion of recipes with ratings above 4 is higher for recipes containing no vegetables, when compared to recipes containing at least one vegetable.
 
@@ -732,26 +729,15 @@ For instance we notice a positive correlation between proteins and meats_bin whi
 
 
 ### Barplot and boxplot - Meat and Proteins
-```{r}
+```{r fig.width=7}
 
 # Barplot
-recipes_full %>% 
+barplot1 <- recipes_full %>% 
   ggplot(aes(x = factor(meats_bin), y = protein)) +
   stat_summary(fun.y = mean, geom = "bar") +
   ggtitle("Average amount of proteins per recipe with and without meat") +
   xlab("Presence of Meat or not") +
   ylab("Protein Content in grams")
-
-# Boxplot
-recipes_full %>% 
-  filter(protein < 450) %>% 
-  ggplot(aes(x=factor(meats_bin), y=protein, fill=factor(meats_bin))) +
-  geom_boxplot(alpha=0.3) +
-  scale_y_continuous(breaks=seq(0,7000,25)) +
-  xlab("Presence of Meat or not") +
-  ylab("Protein Content in grams") +
-  theme(legend.position="none")
-
 
 # Boxplots per different kinds of meat
 recipes_general <- recipes_full %>% 
@@ -768,7 +754,7 @@ recipes_meat <- recipes_meat %>%
                     values_to='yes_or_no') %>% 
   filter(yes_or_no == 1)
 
-recipes_meat %>% 
+multi_boxplot1 <- recipes_meat %>% 
   filter(protein < 450) %>%
   ggplot(aes(x=meats, y=protein, fill=meats)) +
   geom_boxplot(alpha=0.3) +
@@ -781,30 +767,19 @@ recipes_meat %>%
 
 # Here we want to show which kinds of meat specifically have a high level of proteins
 
+grid.arrange(barplot1, multi_boxplot1, ncol=2, nrow =1)
 ```
 
 ### Barplot and boxplot - Seafood and Sodium
-```{r}
+```{r fig.width=7}
 
 # Seafood and sodium
-recipes_full %>% 
+barplot2 <- recipes_full %>% 
   ggplot(aes(x = factor(seafood_bin), y = sodium)) +
   stat_summary(fun.y = mean, geom = "bar") +
   ggtitle("Average amount of sodium per recipe with and without seafood")  +
   xlab("Presence of Seafood or not") +
   ylab("Sodium Content in milligrams")
-
-
-# Boxplot
-recipes_full %>% 
-  filter(sodium < 10000) %>% 
-  ggplot(aes(x=factor(seafood_bin), y=sodium, fill=factor(seafood_bin))) +
-  geom_boxplot(alpha=0.3) +
-  scale_y_continuous(breaks=seq(0,30000,500)) +
-  xlab("Presence of Seafood or not") +
-  ylab("Sodium Content in milligrams") +
-  theme(legend.position="none")
-
 
 
 # Boxplots per different kinds of seafood
@@ -818,7 +793,7 @@ recipes_seafood <- recipes_seafood %>%
                     values_to='yes_or_no') %>% 
   filter(yes_or_no == 1)
 
-recipes_seafood %>% 
+multi_boxplot2 <- recipes_seafood %>% 
   filter(sodium < 10000) %>%
   ggplot(aes(x=seafoods, y=sodium, fill=seafoods)) +
   geom_boxplot(alpha=0.3) +
@@ -831,13 +806,14 @@ recipes_seafood %>%
 
 # Here we want to show which kinds of seafood specifically have a high level of sodium
 
+grid.arrange(barplot2, multi_boxplot2, ncol=2, nrow =1)
 ```
 
 ### Barplot and boxplot - Carbs and Calories
-```{r}
+```{r fig.width=7}
 
 # Carbs and calories
-recipes_full %>% 
+barplot3 <- recipes_full %>% 
   ggplot(aes(x = factor(carbs_bin), y = calories)) +
   stat_summary(fun.y = mean, geom = "bar") +
   ggtitle("Average amount of calories per recipe with and without carbohydrates") +
@@ -845,16 +821,6 @@ recipes_full %>%
   ylab("Calories content")
 
 # Afterwards we would also want to show which kinds of carbs specifically have a high number of calories
-
-
-# Boxplot
-recipes_full %>% 
-  ggplot(aes(x=factor(carbs_bin), y=calories, fill=factor(carbs_bin))) +
-  geom_boxplot(alpha=0.3) +
-  scale_y_continuous(breaks=seq(0,7000,500)) +
-  xlab("Presence of Carbs or not") +
-  ylab("Calories Content") +
-  theme(legend.position="none")
 
 
 # Boxplots per different kinds of carbs
@@ -867,7 +833,7 @@ recipes_carbs <- recipes_carbs %>%
                     values_to='yes_or_no') %>% 
   filter(yes_or_no == 1)
 
-recipes_carbs %>% 
+multi_boxplot3 <- recipes_carbs %>% 
   filter(sodium < 10000) %>%
   ggplot(aes(x=carbs, y=calories, fill=carbs)) +
   geom_boxplot(alpha=0.3) +
@@ -878,7 +844,7 @@ recipes_carbs %>%
   ylab("Calories Content") +
   theme(legend.position="none") 
 
-# Here we want to show which kinds of food high in carbs specifically have a high level of calories
+grid.arrange(barplot3, multi_boxplot3, ncol=2, nrow =1)
 ```
 
 ## Exploratory PCA Analysis
