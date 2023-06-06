@@ -235,36 +235,36 @@ recipes <- recipes %>%
 ```
 Among the recipes which have NAs, we notice that many of them have 4 NAs for all the 4 nutritional values, more precisely 4117  out of 4188 recipes. Without any other information available, making an imputation to retrieve such values would not make any sense. Interestingly, we do not observe 3 contemporary NAs for recipes.
 
-We could try to make an imputation of the 29 recipes that have only 1 NA. The same operation on the 42 recipes with 2 NAs would not deliver accurate and satisfying results. However, we believe that is not worth to make imputation of such NA values. We should not forget that the nutritional values per recipe are estimated, then making an imputation would result in a sort of estimation of an estimation. To what extent could it be reliable? We decide to eliminate recipes with NA values. Finally, we would still have 15864 recipes without NAs for our analysis.
+We could try to make an imputation of the 29 recipes that have only 1 NA. The same operation on the 42 recipes with 2 NAs would not deliver accurate and satisfying results. However, we believe that is not worth to make imputation of such NA values. We should not forget that the nutritional values per recipe are estimated, then making an imputation would result in a sort of estimation of an estimation. To what extent could it be reliable? We decide to eliminate recipes with NAs for nutritional values. Nutritional values represent a crucial information for our analysis. 
 
-After dropping the NAs we get 15864 obs.
+Finally, we would still have 15864 recipes without NAs.
 
 
 ## Eliminate recipes with rating equal to zero
 
 ```{r}
 
-rating_count <- table(recipes$rating)
-
-rating_count <- as.data.frame(rating_count) %>% 
+rating_count <- table(recipes$rating) %>% 
+  as.data.frame() %>% 
   rename(rating = Var1,
     frequency = Freq)
-
-# There are 1293 recipes which have rating equal to zero. Some of those might be unpopular, others might be too recent to have a rating. For the purpose of our analysis, we decide to eliminate these specific recipes.
 
 recipes <- recipes %>% 
   filter(rating != 0)
 
-# We are left with 14568 observations after removing NAs and obs with a 0 rating value
 
 ```
 
+There are 1296 recipes which have rating equal to zero. Some of those might be unpopular, others might be too recent to have a rating. For the purpose of our analysis, we decide to eliminate these specific recipes.
+
+We are left with 14568 observations after removing NAs and obs with a 0 rating value.
+
 ## Discard copies of recipes
+
+We want to eliminate recipes that have multiple copies. Sometimes the recipes have the same title, but nutritional values are different. This indicates that there are various ways to prepare a specific recipe. We want to keep those recipes that have the same title, but have different nutritional values.
+
+Let's check for instance Almond Butter Crisps, a recipe which can be found twice in the data set, with ID=1026 and ID=8908.
 ```{r}
-
-# We want to eliminate recipes that have multiple copies. Sometimes the recipes have the same title, but nutritional values are different. This indicates that there are various ways to prepare a specific recipe. We want to keep those recipes that have the same title, but have different nutritional values.
-
-# Let's check for instance Almond Butter Crisps, a recipe which can be found twice in the data set, with ID=1026 and ID=8908.
 
 # recipes %>% 
 #   filter(ID == 1026)
@@ -274,11 +274,11 @@ unique_recipes <- distinct(recipes, title, rating, protein, sodium, fat, calorie
 # unique_recipes %>% 
 #   filter(ID == 8908)
 
-# Now the data set is free from useless copies. We discarded 1288 copies in total. #we lose a bit less if we remove the ones without specific ingredients first, meaning that some duplicate copies don't contain specific ingredients either
-
 recipes <- unique_recipes
 
 ```
+
+Now the data set is free from useless copies. We discarded 1288 copies in total. We lose a bit less if we remove the ones without specific ingredients first, meaning that some duplicate copies don't contain specific ingredients either.
 
 
 ## Removing recipes without specific ingredients listed
@@ -304,7 +304,5 @@ recipes <- recipes %>%
   filter(!(if_all(all_of(cheeses_vec), ~.x == 0) & cheese == 1)) %>% 
   filter(!(if_all(all_of(dairy_vec), ~.x == 0) & dairy == 1)) %>% 
   filter(!(if_all(all_of(spices_vec), ~.x == 0) & spice == 1))
-#we are left with 11382 obs after removing all recipes which have no specific ingredient in at least one category, while that category general variable is at 1
-
-### without duplicated recipes we are left at 10321 obs
 ```
+We are left with 10321 obs after removing all recipes which have no specific ingredient in at least one category, while that category general variable is at 1.
