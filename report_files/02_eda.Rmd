@@ -769,6 +769,7 @@ multi_boxplot1 <- recipes_meat %>%
 
 grid.arrange(barplot1, multi_boxplot1, ncol=2, nrow =1)
 ```
+It is very clear that among the recipes with meat, the average content of protein is higher than in recipes without meat. Among those that have meat we notice that goose, venison and lamb shank have the highest content of protein.
 
 ### Barplot and boxplot - Seafood and Sodium
 ```{r fig.width=7}
@@ -808,6 +809,7 @@ multi_boxplot2 <- recipes_seafood %>%
 
 grid.arrange(barplot2, multi_boxplot2, ncol=2, nrow =1)
 ```
+In this case it is very clear that among the recipes with seafood, the average content of sodium is higher than in recipes without seafood. Among those that have seafood we notice that clams and lobsters have the highest content of sodium.
 
 ### Barplot and boxplot - Carbs and Calories
 ```{r fig.width=7}
@@ -846,6 +848,8 @@ multi_boxplot3 <- recipes_carbs %>%
 
 grid.arrange(barplot3, multi_boxplot3, ncol=2, nrow =1)
 ```
+Recipes which contain carbs register a higher average content of calories than recipes without carbs. Among those that have carbs we notice that pasta and chickpeas are the richest in calories.
+
 
 ## Exploratory PCA Analysis
 - With all variables 680
