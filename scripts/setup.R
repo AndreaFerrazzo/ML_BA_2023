@@ -1,7 +1,8 @@
 ####### Load the required packages
 packages <- c(
-  "knitr", "here", "tidyverse", "summarytools", "janitor", "viridis", "corrplot", "DataExplorer", "kableExtra",
+  "knitr", "here", "tidyverse", "summarytools", "janitor", "viridis", "corrplot", "DataExplorer", "kableExtra", "gridExtra",
   "caret",
+  "FactoMineR", "factoextra", #for PCA
   "kernlab",#for SVM
   "rpart", "rpart.plot", "adabag"#for CART
 )

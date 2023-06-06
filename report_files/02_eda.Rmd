@@ -853,7 +853,117 @@ Recipes which contain carbs register a higher average content of calories than r
 
 ## Exploratory PCA Analysis
 - With all variables 680
+
+```{r}
+
+recipes_pca <- recipes %>% 
+  select(-ID, -title) %>% 
+  PCA(ncp = 679, graph = FALSE)
+
+recipes_pca
+
+fviz_pca_var(recipes_pca)
+```
+Hard to interpret this PCA output. The two dimensions explain together only 2.1% of the variability in the data.
+
+```{r}
+
+fviz_contrib(recipes_pca, choice = "var", axes = 1)
+fviz_contrib(recipes_pca, choice = "var", axes = 2)
+
+```
+Also in this case it difficult to understand which are contributing to each dimension since the dimension itself accounts for a little percentage of variability.
+
+
+```{r}
+
+fviz_pca_biplot(recipes_pca) ## biplot
+
+```
+
+```{r}
+
+fviz_eig(recipes_pca, addlabels = TRUE, ncp=11)
+
+```
+
+```{r}
+
+recipe_hc <- hclust(dist(recipes[,-c(1,2)], method = "manhattan"))
+
+recipe_clust <- cutree(recipe_hc, k = 10)
+
+fviz_pca_biplot(recipes_pca,
+             col.ind = factor(recipe_clust))
+
+```
+
+### Exploratory PCA Analysis
 - With only the ones we believe could be useful
+```{r}
+nutritional_df <- recipes %>% 
+  select(ID, all_of(nutritional_values))
+
+###### CAREFUL --> recipes_analysis should be of dim 10163 x 33
+recipes_analysis <- ingredients_df_full %>% 
+  left_join(nutritional_df, by="ID") %>% 
+  mutate(across(all_of(contains("bin"))), ID = as.character(ID)) %>% 
+  select(rating, all_of(nutritional_values), contains("bin"), contains("total"))
+```
+
+```{r}
+
+recipes_pca2 <- PCA(recipes_analysis, ncp = 33, graph = FALSE)
+
+recipes_pca2
+
+fviz_pca_var(recipes_pca2)
+```
+
+
+```{r}
+
+fviz_contrib(recipes_pca2, choice = "var", axes = 1)
+fviz_contrib(recipes_pca2, choice = "var", axes = 2)
+
+```
+
+```{r}
+
+fviz_pca_biplot(recipes_pca2) ## biplot
+
+```
+
+```{r}
+
+fviz_eig(recipes_pca2, addlabels = TRUE, ncp=11)
+
+```
+
+```{r}
+
+p1 <- fviz_pca_biplot(recipes_pca2, axes = 1:2) 
+p2 <- fviz_pca_biplot(recipes_pca2, axes = 3:4) 
+p3 <- fviz_pca_biplot(recipes_pca2, axes = 5:6) 
+p4 <- fviz_pca_biplot(recipes_pca2, axes = 7:8) 
+p5 <- fviz_pca_biplot(recipes_pca2, axes = 9:10) 
+
+grid.arrange(p1, p2, p3, p4, p5, nrow = 3, ncol=2)
+
+```
+
+
+```{r}
+
+recipe_hc2 <- hclust(dist(recipes_analysis, method = "manhattan"))
+
+recipe_clust2 <- cutree(recipe_hc2, k = 10)
+
+fviz_pca_biplot(recipes_pca2,
+             col.ind = factor(recipe_clust2))
+
+```
+
 ## Seasons and Recipe Type EDA
 
 ```{r}
