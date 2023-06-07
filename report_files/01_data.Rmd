@@ -84,7 +84,7 @@ nutritional_values <- c("calories", "protein", "fat", "sodium")
 
 recipe_type_vec <- c("aperitif", "appetizer", "breakfast", "brunch", "dessert", "dinner", "lunch", "side", "snack")
 
-diet_preferences_vec <- c( "dairy_free", "fat_free", "kosher","kosher_for_passover", "low_carb", "low_fat", "low_sodium", "low_sugar", "low_no_sugar", "non_alcoholic", "no_sugar_added", "organic", "peanut_free", "soy_free", "sugar_conscious", "tree_nut_free", "vegan", "vegetarian", "wheat_gluten_free")
+diet_preferences_vec <- c("dairy_free", "fat_free", "kosher","kosher_for_passover", "low_carb", "low_fat", "low_sodium", "low_sugar", "low_no_sugar", "non_alcoholic", "no_sugar_added", "organic", "peanut_free", "soy_free", "sugar_conscious", "tree_nut_free", "vegan", "vegetarian", "wheat_gluten_free")
 
 ### Ingredients
 #low level categories

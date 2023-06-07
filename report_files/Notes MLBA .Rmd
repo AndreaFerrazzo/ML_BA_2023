@@ -10,8 +10,14 @@ Analysis Balanced
  - Unbalanced
   - What we already have 
  - Balanced
-  - 8 models
-  
+  - 5 models
+    - LogReg
+    - SVM
+    - CART
+    - KNN
+    - RF
+    
+
 - All variables
   - 3 models
     - RF, XGB, LogReg

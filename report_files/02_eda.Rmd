@@ -64,9 +64,7 @@ boxplot_calories <- recipes_plot %>%
     theme(legend.position="none",
           plot.title = element_text(size=11)) +
   scale_y_continuous(breaks=seq(0,7000,500)) +
-  ggtitle("Boxplot of calories nutritional value filtered") +
-  xlab("") +
-  ylab("Calories") 
+  labs(x = "", y = "Calories", title = "Boxplot of calories nutritional value filtered")
 
 
 # Calories histogram
@@ -74,12 +72,10 @@ histogram_calories <- recipes_plot %>%
   filter(nutrition == "calories", n_value <= 7000) %>% 
   ggplot(aes(x=n_value)) +
   geom_histogram(binwidth=50, fill="red3", color="red3", alpha=0.9) +
-  theme(plot.title = element_text(size=15)) +
+  theme(plot.title = element_text(size=11)) +
   scale_x_continuous(breaks=seq(0,10000,1000)) +
   scale_y_continuous(breaks=seq(0,1750,250)) +
-  ggtitle("Distribution of calories across all recipes") +
-  xlab("Calories") +
-  ylab("Count") 
+  labs(x = "Count", y = "Calories", title = "Distribution of calories across all recipes")
 
 
 # Calories density plot
@@ -87,6 +83,7 @@ density_calories <- recipes_plot %>%
   filter(nutrition == "calories", n_value <= 7000) %>% 
   ggplot(aes(x=n_value)) +
   geom_density(fill="red3", color="red2", alpha=0.8) +
+  theme(plot.title = element_text(size=11)) +
   scale_x_continuous(breaks=seq(0,10000,1000)) +
   ggtitle("Distribution of calories across all recipes") +
   xlab("Calories")
@@ -160,7 +157,7 @@ density_protein <- recipes_plot %>%
   ggtitle("Distribution of proteins across all recipes") +
   xlab("Proteins")
 
-grid.arrange(boxplot_protein, histogram_protein, density_protein, ncol=1, nrow =3)
+grid.arrange(boxplot_protein, histogram_protein, density_protein, ncol=2, nrow =3)
 
 ```
 
@@ -300,11 +297,9 @@ density_fat<- recipes_plot %>%
   ggtitle("Distribution of sodium across all recipes") +
   xlab("Fat") 
 
-grid.arrange(boxplot_fat, histogram_fat, density_fat, ncol=1, nrow =3)
+grid.arrange(boxplot_fat, histogram_fat, density_fat, ncol=3)
 ```
 It is hard to interpret the boxplot. There are certain recipes which could have potentially more than 1000 or even 2000 grams of fat because of the high quantity of servings and the use of ingredients such as lamb, duck and bacon. We must then analyse the histogram to have a better overview and we notice that most recipes have fat values below 100 grams.
-
-
 
 ### Visual exploration - Multivariate Analysis
 
@@ -893,7 +888,7 @@ fviz_eig(recipes_pca, addlabels = TRUE, ncp=11)
 
 ```
 
-```{r}
+```{r eval = FALSE}
 
 recipe_hc <- hclust(dist(recipes[,-c(1,2)], method = "manhattan"))
 
@@ -959,7 +954,7 @@ grid.arrange(p1, p2, p3, p4, p5, nrow = 3, ncol=2)
 ```
 
 
-```{r}
+```{r eval=FALSE}
 
 recipe_hc2 <- hclust(dist(recipes_analysis, method = "manhattan"))
 
