@@ -233,7 +233,6 @@ From the boxplot we observe that most recipes have sodium values below 750 milli
 #### Fat - Boxplot and Histogram
 
 ```{r}
-
 recipes_plot %>%
   filter(nutrition == "fat") %>% 
   ggplot(aes(x=nutrition, y=n_value, fill=nutrition)) +
@@ -245,7 +244,6 @@ recipes_plot %>%
   ggtitle("Boxplot of fat nutritional value") +
   xlab("") +
   ylab("Value")
-
 ```
 
 We notice that there are recipes with more than 44'000 grams of fat which are clearly outliers. We must then discard those values in order to continue with a meaningful analysis. By checking on the epicurious website recipes  with fat values above 1000, we also verified that the amount of proteins was not justified. We came to that conclusion by evaluating the average values of protein per 100grams of each ingredient in the specific recipe.
@@ -300,7 +298,7 @@ It is hard to interpret the boxplot. There are certain recipes which could have 
 
 #### Scatterplots of Rating-Calories
 ```{r}
-  
+#removing the outliers we discovered above from the recipes df
 recipes <- recipes %>% 
   filter(calories <= 7000, protein <= 1000, sodium <= 30000, fat <= 40000)
 
