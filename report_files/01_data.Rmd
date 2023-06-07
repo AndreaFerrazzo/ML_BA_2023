@@ -28,7 +28,7 @@ Let us focus on the first recipe as an example and take a look at the different 
 
 ## Data Description
 ```{r}
-tibble(Variables = c("**ID**", "**title**", "**rating**", "**calories**", "**protein**", "**fat**", "**sodium**", "**674 other binary variables**"), Meaning = c("Unique ID", "Recipe name", "Rating of the recipe", "Calories contained in the recipe", "Protein contained in the recipe (grams)","Fat contained in the recipe (grams)", "Sodium contained in the recipe (milligrams)", "The rest of the data is made of many binary variables, incl. ingredients, types of recipes, US States, diet preferences, etc."))%>%
+tibble(Variables = c("**ID**", "**title**", "**rating**", "**calories**", "**protein**", "**fat**", "**sodium**", "**674 other binary variables**"), Meaning = c("Unique ID", "Recipe name", "Rating of the recipe", "Calories contained in the recipe", "Protein contained in the recipe (grams)","Fat contained in the recipe (grams)", "Sodium contained in the recipe (milligrams)", "The rest of the data is made of many binary variables, incl. ingredients, types of recipes, US States, diet preferences, etc."), Variable_Type = c("Character", "Character", "Categorical", "Numerical", "Numerical", "Numerical", "Numerical", "Binary"))%>%
   kbl()%>%
   kable_styling(position = "center")
 ```
@@ -194,6 +194,14 @@ recipes %>%
 # Data Cleaning
 
 ## Analysis of NAs
+```{r}
+#plot of missing values for each variable
+
+recipes %>% 
+  select(rating, all_of(nutritional_values)) %>% 
+  gg_miss_var()+
+  labs(title = "Number of NA Values for Rating and the nutritional Variables")
+```
 
 ```{r}
 #we use the temp_df each time we want to create a temporary df for a single analysis and we know we won't reuse that dataframe later on

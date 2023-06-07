@@ -1,6 +1,6 @@
 ```{r include=FALSE}
 packages <- c(
-  "knitr", "here", "tidyverse", "summarytools", "janitor", "viridis", "corrplot", "DataExplorer",
+  "knitr", "here", "tidyverse", "summarytools", "janitor", "viridis", "corrplot", "DataExplorer", "naniar",
   "kableExtra", "gridExtra",
   "FactoMineR","factoextra",
   "caret", "ROCit",#for modelling

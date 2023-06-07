@@ -25,8 +25,7 @@ As we can see, most of the ratings have value equal or above 3.75, more in parti
 
 ```{r}
 
-recipes_plot <-
-  recipes %>% 
+recipes_plot <- recipes %>% 
   pivot_longer(cols = c(calories, protein, fat, sodium),
                names_to = "nutrition",
                values_to = "n_value")
@@ -55,20 +54,21 @@ We notice that there are recipes with more than 30'000'000 calories which are cl
 
 ```{r}
 # Calories boxplot
-boxplot_calories <- recipes_plot %>%
-  filter(nutrition == "calories", n_value <= 7000) %>% 
+df <- recipes_plot %>%
+  filter(nutrition == "calories", n_value <= 7000)
+
+boxplot_calories <- df %>% 
   ggplot(aes(x=nutrition, y=n_value, fill=nutrition)) +
-    geom_boxplot()
-    scale_fill_viridis(discrete = TRUE, alpha=0.6, option="A") +
-    theme(legend.position="none",
-          plot.title = element_text(size=11)) +
+  geom_boxplot()+
+  scale_fill_viridis(discrete = TRUE, alpha=0.6) +
+  theme(legend.position="none",
+        plot.title = element_text(size=11)) +
   scale_y_continuous(breaks=seq(0,7000,500)) +
   labs(x = "", y = "Calories", title = "Boxplot of calories nutritional value filtered")
 
 
 # Calories histogram
-histogram_calories <- recipes_plot %>% 
-  filter(nutrition == "calories", n_value <= 7000) %>% 
+histogram_calories <- df %>% 
   ggplot(aes(x=n_value)) +
   geom_histogram(binwidth=50, fill="red3", color="red3", alpha=0.9) +
   theme(plot.title = element_text(size=11)) +
@@ -78,8 +78,7 @@ histogram_calories <- recipes_plot %>%
 
 
 # Calories density plot
-density_calories <- recipes_plot %>% 
-  filter(nutrition == "calories", n_value <= 7000) %>% 
+density_calories <- df %>% 
   ggplot(aes(x=n_value)) +
   geom_density(fill="red3", color="red2", alpha=0.8) +
   theme(plot.title = element_text(size=11)) +
@@ -249,7 +248,7 @@ recipes_plot %>%
 
 ```
 
-# We notice that there are recipes with more than 44'000 grams of fat which are clearly outliers. We must then discard those values in order to continue with a meaningful analysis. By checking on the epicurious website recipes  with fat values above 1000, we also verified that the amount of proteins was not justified. We came to that conclusion by evaluating the average values of protein per 100grams of each ingredient in the specific recipe.
+We notice that there are recipes with more than 44'000 grams of fat which are clearly outliers. We must then discard those values in order to continue with a meaningful analysis. By checking on the epicurious website recipes  with fat values above 1000, we also verified that the amount of proteins was not justified. We came to that conclusion by evaluating the average values of protein per 100grams of each ingredient in the specific recipe.
 
 ```{r}
 recipes_plot %>% 
