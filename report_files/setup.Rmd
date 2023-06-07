@@ -2,6 +2,7 @@
 packages <- c(
   "knitr", "here", "tidyverse", "summarytools", "janitor", "viridis", "corrplot", "DataExplorer",
   "kableExtra", "gridExtra",
+  "FactoMineR","factoextra",
   "caret", "ROCit",#for modelling
   "kernlab", "e1071",#for SVM
   "rpart", "rpart.plot", "adabag",#for CART

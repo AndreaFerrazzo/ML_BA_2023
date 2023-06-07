@@ -562,7 +562,7 @@ ing_top10 <- df %>%
   summarise(total = sum(value)) %>% 
   ungroup() %>% 
   arrange(desc(total)) %>% 
-  slice(1:10)
+  dplyr::slice(1:10)
 
 ing_top10 %>% 
   # mutate(ingredient = fct_rev(ingredient)) %>% 
