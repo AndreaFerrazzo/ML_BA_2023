@@ -58,9 +58,8 @@ We notice that there are recipes with more than 30'000'000 calories which are cl
 boxplot_calories <- recipes_plot %>%
   filter(nutrition == "calories", n_value <= 7000) %>% 
   ggplot(aes(x=nutrition, y=n_value, fill=nutrition)) +
-    geom_boxplot() +
+    geom_boxplot()
     scale_fill_viridis(discrete = TRUE, alpha=0.6, option="A") +
-    theme_light() +
     theme(legend.position="none",
           plot.title = element_text(size=11)) +
   scale_y_continuous(breaks=seq(0,7000,500)) +
@@ -126,7 +125,6 @@ boxplot_protein <- recipes_plot %>%
   ggplot( aes(x=nutrition, y=n_value, fill=nutrition)) +
     geom_boxplot() +
     scale_fill_viridis(discrete = TRUE, alpha=0.6, option="A") +
-    theme_light() +
     theme(legend.position="none",
           plot.title = element_text(size=11)) +
   scale_y_continuous(breaks=seq(0,7000,25)) +
@@ -173,7 +171,6 @@ recipes_plot %>%
   ggplot(aes(x=nutrition, y=n_value, fill=nutrition)) +
     geom_boxplot() +
     scale_fill_viridis(discrete = TRUE, alpha=0.6, option="A") +
-    theme_light() +
     theme(legend.position="none",
           plot.title = element_text(size=11)) +
   ggtitle("Boxplot of sodium nutritional value") +
@@ -197,7 +194,6 @@ boxplot_sodium <- recipes_plot %>%
   ggplot(aes(x=nutrition, y=n_value, fill=nutrition)) +
     geom_boxplot() +
     scale_fill_viridis(discrete = TRUE, alpha=0.6, option="A") +
-    theme_light() +
     theme(legend.position="none",
           plot.title = element_text(size=11)) +
   scale_y_continuous(breaks=seq(0,30000,500)) +

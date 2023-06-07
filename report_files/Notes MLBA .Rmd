@@ -1,14 +1,15 @@
 # Notes MLBA
 
-Analysis Balanced
-
 - Engineered features - 7-level rating
  - Unbalanced
   - 2 versions of RF
 
+
 - Engineered features - binary rating
+
  - Unbalanced
   - What we already have 
+  
  - Balanced
   - 5 models
     - LogReg
@@ -22,6 +23,6 @@ Analysis Balanced
   - 3 models
     - RF, XGB, LogReg
   
-- PCA to determine automatically the best variables
+- PCA to determine automatically the best variables - NOT DOING
   - 3 models
     - RF, XGB, LogReg

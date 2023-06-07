@@ -1,5 +1,4 @@
 # Unsupervised Learning
-## PCA
 ## Clustering
 
 
