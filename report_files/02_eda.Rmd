@@ -298,7 +298,7 @@ It is hard to interpret the boxplot. There are certain recipes which could have 
 
 #### Scatterplots of Rating-Calories
 ```{r}
-#removing the outliers we discovered above from the recipes df
+#removing 41 outliers we discovered above from the recipes df
 recipes <- recipes %>% 
   filter(calories <= 7000, protein <= 1000, sodium <= 30000, fat <= 40000)
 
@@ -407,7 +407,7 @@ ingredients_df <- recipes %>%
 ```
 
 
-#### Creating binary ingredients columns
+#### Creating binary ingredients categories
 
 ```{r Adding binary columns for each category - Manual Working version}
 ingredients_df_bin <- ingredients_df %>%
@@ -447,7 +447,7 @@ The fact that both select the same number of rows makes having general categorie
 ```
 
 
-#### Adding total ingredients columns
+#### Creating total ingredients categories
 
 ```{r Adding total columns for each category}
 ingredients_df_total <- ingredients_df %>%
@@ -469,6 +469,7 @@ ingredients_df_total <- ingredients_df %>%
   select(ID, title, contains("total"), everything())
 ```
 
+#### Creating ingredients_df_full
 Creating "ingredients_df_full" which contains bin columns, total columns, and original ingredients columns
 ```{r creating df with bin and total columns}
 total_join <- ingredients_df_total %>% 
@@ -528,8 +529,6 @@ ingredients_df_bin %>%
 
 
 ##### Correlation plot
-We can see that no binary variable correlated to the rating in any way.
-
 We see some somewhat strong negative correlation between vegetables and dessert, and between vegetable and fruits. This makes sense, as these ingredients are rarely found together in recipes. As a side note, we chose to classify tomato as a vegetable and strongly stand by this opinion :)
 
 Concerning positive correlations, we see nuts and desert as highly correlated. This is probably because they go well together in sugary recipes. Additionally, egg and dairy are also slightly positively correlated. This most likely comes from patisserie recipes where eggs and dairy ingredients go hand in hand.
@@ -543,7 +542,7 @@ ingredients_df_bin %>%
   plot_correlation()
 ```
 
-```{r eval = false}
+```{r eval = FALSE}
 # # With rating as a factor
 # ingredients_df_bin %>% 
 #   select(contains("bin"), rating) %>% 
@@ -576,7 +575,6 @@ ingredients_df_bin %>%
   select(-rating) %>% 
   plot_correlation()
 ```
-
 
 ### "Total" engineered ingredients variables
 ```{r}
@@ -670,6 +668,7 @@ Based on this information, we decide to eliminate those 117 observations which d
 index_zero_ingredient <- ingredients_df_full %>% 
   filter(total_ingredients == 0) %>% pull(ID)
 
+#removing the 117 recipes with no ingredients listed from recipes and ingredients_df_full
 recipes <- recipes %>% 
   filter(!ID %in% index_zero_ingredient)
 
@@ -758,7 +757,7 @@ For instance we notice a positive correlation between proteins and meats_bin whi
 # Barplot
 barplot1 <- recipes_full %>% 
   ggplot(aes(x = factor(meats_bin), y = protein)) +
-  stat_summary(fun.y = mean, geom = "bar") +
+  stat_summary(fun = mean, geom = "bar") +
   ggtitle("Average amount of proteins per recipe with and without meat") +
   xlab("Presence of Meat or not") +
   ylab("Protein Content in grams")
@@ -801,7 +800,7 @@ It is very clear that among the recipes with meat, the average content of protei
 # Seafood and sodium
 barplot2 <- recipes_full %>% 
   ggplot(aes(x = factor(seafood_bin), y = sodium)) +
-  stat_summary(fun.y = mean, geom = "bar") +
+  stat_summary(fun = mean, geom = "bar") +
   ggtitle("Average amount of sodium per recipe with and without seafood")  +
   xlab("Presence of Seafood or not") +
   ylab("Sodium Content in milligrams")
@@ -841,7 +840,7 @@ In this case it is very clear that among the recipes with seafood, the average c
 # Carbs and calories
 barplot3 <- recipes_full %>% 
   ggplot(aes(x = factor(carbs_bin), y = calories)) +
-  stat_summary(fun.y = mean, geom = "bar") +
+  stat_summary(fun = mean, geom = "bar") +
   ggtitle("Average amount of calories per recipe with and without carbohydrates") +
   xlab("Presence of carbohydrates or not") +
   ylab("Calories content")
@@ -988,8 +987,103 @@ fviz_pca_biplot(recipes_pca2,
 
 ```
 
-## Seasons and Recipe Type EDA
+## Seasons, Recipe Type, and Countries EDA
+
+### Seasons
+```{r}
+#Create seasons df
+seasons_df <- recipes %>% 
+  select(ID, rating, all_of(seasons_vec)) %>% 
+  filter(if_any(all_of(seasons_vec)) == 1) %>% 
+  mutate(sum_season = rowSums(across(all_of(seasons_vec))))
+
+seasons_df %>% 
+ggplot(aes(x=sum_season)) +
+  geom_bar()
+
+seasons_df %>% 
+  filter(sum_season==3)
+
+seasons_df %>% 
+  filter(sum_season==4)
+#total of 29 recipes with either 3 or 4 --> let's discard them
+
+#let's look a bit more closely to those with 2 seasons to see if they are next to each other or not
+
+seasons_df %>% 
+  filter(sum_season==2)
+
+### should we keep those observations???
+```
+
+As we can see, there is again no correlation between seasons and recipe ratings.
 
 ```{r}
-#TO ADD WHEN COMPLETED
+seasons_df %>% 
+  select(-sum_season, -ID) %>% 
+  plot_correlation()
 ```
+
+CAN TRY TO feature engineer rating above 4
+
+Inconclusive result, again.
+
+```{r}
+seasons_df <-seasons_df %>% 
+  mutate(rating_above_4 = ifelse(rating > 4, 1, 0), rating_5 = ifelse(rating == 5, 1, 0), rating_1.25 = ifelse(rating == 1.25, 1, 0))
+
+seasons_df %>% 
+  select(rating, rating_above_4, all_of(seasons_vec))%>% 
+  plot_correlation()
+```
+
+```{r}
+seasons_df %>%
+  select(rating_5, rating_1.25, all_of(seasons_vec)) %>%
+  plot_correlation()
+```
+
+### Recipe Type
+
+```{r Recipe Type EDA}
+#TO ADD WHEN COMPLETED
+
+#taking into account only the "main" recipe types
+recipe_types_select <- c("breakfast", "brunch", "dessert", "dinner", "lunch")
+
+type_df <- recipes %>% 
+  select(ID, rating, all_of(recipe_types_select)) %>% 
+  filter(if_any(all_of(recipe_types_select)) == 1) %>% 
+  mutate(sum_type= rowSums(across(all_of(recipe_types_select))))
+
+type_df %>% 
+  ggplot(aes(x=sum_type)) +
+  geom_bar()
+
+type_df %>% 
+  filter(sum_type == 2)
+
+# left with 3333 obs after filtering
+type_df <- type_df %>% 
+  filter(!sum_type >1)
+```
+
+Once again very low correlation for recipe types, we will not included them in the analysis.
+```{r}
+type_df %>% 
+  select(-c(ID, sum_type)) %>% 
+  plot_correlation()
+```
+### Countries
+Only 54 recipes containing info about the country so we can't use it either for the analysis.
+```{r Countries EDA}
+countries_df <- recipes %>% 
+  select(ID, rating, all_of(countries)) %>% 
+  filter(if_any(all_of(countries)) == 1) %>% 
+  mutate(sum_type= rowSums(across(all_of(countries))))
+
+countries_df %>% 
+  ggplot(aes(x=sum_type)) +
+  geom_bar()
+```
+

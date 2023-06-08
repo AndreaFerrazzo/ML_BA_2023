@@ -10,7 +10,7 @@ nutritional_df <- recipes %>%
 ###### CAREFUL --> recipes_analysis should be of dim 10163 x 33
 recipes_analysis <- ingredients_df_full %>% 
   left_join(nutritional_df, by="ID") %>% 
-  mutate(across(all_of(contains("bin")), as.factor), ID = as.character(ID)) %>% 
+  mutate(across(all_of(contains("bin")), as.factor) , ID = as.character(ID)) %>% 
   select(rating, all_of(nutritional_values), contains("bin"), contains("total"))
 ```
 
@@ -1537,7 +1537,7 @@ confusionMatrix(reference = as.factor(numeric_te$rating_bin), data = xgb_down_pr
 #too long
 logreg_all_fit <- train(rating_bin~., 
                        data=downsamp_tr_all, 
-                       method="glmStepAIC", 
+                       method="glm", 
                        family = "binomial",
                        trControl=trCtrl_down,
                        trace = TRUE)
