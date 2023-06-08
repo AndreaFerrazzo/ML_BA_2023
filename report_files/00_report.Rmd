@@ -45,7 +45,7 @@ h1, h2, h3, h4, h5, h6, legend {
 }
 ```
 
-```{r child = c('setup.Rmd', '01_data.Rmd', '02_eda.Rmd')}
+```{r child = c('setup.Rmd', '01_data.Rmd', '02_eda.Rmd','03_supervised_learning.Rmd', '04_unsupervised_learning.Rmd')}
 
 ``` 
 
