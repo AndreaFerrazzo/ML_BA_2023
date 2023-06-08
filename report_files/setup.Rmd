@@ -38,5 +38,5 @@ opts_chunk$set(
   dpi = 300)
 
 opts_knit$set(width=75)
-opts_template$set(fig.large = list(fig.width=30, fig.height=12))
+#opts_template$set(fig.large = list(fig.width=30, fig.height=12))
 ```

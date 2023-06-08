@@ -843,8 +843,9 @@ svm_Linear_nutritional
 
 ```
 
-The validation accuracy stands at 42.8%, which is not satisfying considering that it is computed on the training set. The next step consists in creating a grid of values for the cost that we want to try and pass to the argugment tuneGrid.
+The validation accuracy stands at 42.8%, which is not satisfying considering that it is computed on the training set. The next step consists in creating a grid of values for the cost that we want to try and pass to the argument tuneGrid.
 
+##### Tuning the Hyperparameters - Linear basis SVM
 ```{r}
 
 grid <- expand.grid(C = c(0.01, 0.1, 1, 10, 100, 1000))
@@ -1491,6 +1492,7 @@ xgb_unbal_pred_threshold <- as.factor(ifelse(xgb_unbal_prob<0.5501, 0, 1))
 
 confusionMatrix(reference = as.factor(numeric_te$rating_bin), data = xgb_unbal_pred_threshold, positive = "1")
 ```
+
 ### XGBoost - Balanced
 
 **Accuracy metrics**
@@ -1567,7 +1569,7 @@ Best parameter CP is 0.0035
 #CART_grid <-  expand.grid(cp = c(0.001,0.005,0.01, 0.015, 0.02, 0.05, 0.1, 0.15, 0.2)) --> confirmed that highest kappa is at cp selected by caret
 set.seed(12)
 cart_all_fit <- train(rating_bin ~ .,
-                  data = downsamp_tr_all,
+                  data = train_all,
                   method = "rpart",
                   trControl = trCtrl_down,
                   tuneLength = 10)
@@ -1595,7 +1597,8 @@ CM
 summary_table_all <- cbind(summary_table_down, CART_all = summary_table_fun(CM))
 ```
 
-## 3.1 Variable Importance
+## 3.1 Model Selection
+## 3.2 Variable Importance
 ```{r VarImp XGBoost}
 #XGBoost variable importance
 xgb_importance_matrix <- xgb.importance(model = xgb_down_fit)
