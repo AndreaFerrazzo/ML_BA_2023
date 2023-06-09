@@ -185,7 +185,7 @@ summary_table_unbal <- tibble(metric = c("accuracy", "balanced_accuracy", "sensi
 ### Data preparation for analysis
 
 #### Creating new rating_bin variable
-and one with a engineered rating variable which we converted to binary "bad" or "good" (i.e., with a threshold at 4 to decide if the rating is bad or good).
+We transform the original 7-level rating variable into a binary `rating_bin` variable, "bad" or "good" (i.e., with a threshold at 4 to decide if the rating is bad or good).
 
 ```{r}
 #creating binary rating variable
@@ -208,9 +208,9 @@ set.seed(12)
 index_bin <- createDataPartition(recipes_analysis_bin$rating_bin, p=0.75, list = FALSE)
 ```
 
-We create a training set with the new `rating_bin` variable with only 2 levels. 
+We create a training and test set with the new `rating_bin` variable with only 2 levels. 
 
-Below we can see the binary rating training set is still slightly unbalanced throughout the classes.
+Below we can see the binary rating training set is still slightly unbalanced throughout the two classes.
 ```{r}
 #creating training and test set with multilevel rating variable
 train_bin <- recipes_analysis_bin[index_bin, ]
@@ -395,7 +395,7 @@ Best K if we look at both accuracy and Kappa is 135
 ```{r knn_NuTo_unbal_fit}
 set.seed(12)
 knn_NuTo_unbal_fit <- caret::train(rating_bin ~.,
-                data = train_bin_NuBi,
+                data = train_bin_NuTo,
                 method = "knn",
                 trControl = trCtrl,
                 tuneGrid= data.frame(k = seq(131, 141,by = 2))#initially checked on 1-151 range, best was 135
@@ -1335,6 +1335,7 @@ test_all <- analysis_all[-index_all, ]
 
 table(train_all$rating_bin)
 ```
+
 #### Balancing the binary training set through manual downsampling
 
 ```{r}
@@ -1421,7 +1422,7 @@ logreg_all_fit
 #predicting
 logreg_all_pred <- predict(logreg_all_fit, newdata = test_all)
 #creating confusion matrix
-CM <- confusionMatrix(reference = te$response, data = logreg_all_pred, positive="1")
+CM <- confusionMatrix(reference = test_all$rating_bin, data = logreg_all_pred)
 CM
 #adding results to the summary_table_unbal
 summary_table_all <- cbind(summary_table_unbal, LogReg_all = summary_table_fun(CM))
