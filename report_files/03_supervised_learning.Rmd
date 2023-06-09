@@ -59,20 +59,20 @@ te_multi_Nut <- test_multi %>%
 
 ### TrainControl Functions
 Here we create the train control functions we will use throughout the project.
-```{r}
+```{r trCtrl, cache=FALSE}
 #creating train control data for unbalanced data
 trCtrl <- trainControl(method = "cv",
                        number = 5)
 ```
 
-```{r}
+```{r trCtrl_down, cache=FALSE}
 #train control with downsampling
 trCtrl_down <- trainControl(method = "cv",
                        number = 5,
                        sampling = "down")
 ```
 
-```{r}
+```{r trCtrl_down_twoClass, cache = FALSE}
 #train control with downsampling twoclass summary
 trCtrl_down_twoClass <- trainControl(method = "cv",
                        summaryFunction = twoClassSummary,
@@ -167,7 +167,7 @@ After careful reflection, we believe that the 3rd options is our best bet. We th
 
 ## 1.1 33 Engineered variables - unbalanced
 
-```{r}
+```{r summary_fun, cache=FALSE}
 #function to create the summary tables from the confusion matrices
 summary_table_fun <- function(x){
   acc <- x[[3]][[1]]
@@ -252,6 +252,8 @@ test_bin_Bin <- test_bin %>%
 ### Logistic Regression - unbalanced - Nut
 
 #### Fitting
+We now fit a logreg model on unbalanced data with only the nutritional variables.
+
 ```{r logr_Nut_unbal_fit}
 set.seed(12)
 logr_Nut_unbal_fit <- caret::train(rating_bin ~.,
@@ -264,7 +266,7 @@ logr_Nut_unbal_fit
 
 #### Predictions
 
-We see that the relatively high accuracy is achieved by classifying most obs as good, resulting in a high sensitivity but a very poor specificity.
+We see that the relatively high accuracy is achieved by classifying all observations as good, resulting in a perfect sensitivity but a 0 specificity and a kappa of 0.
 
 ```{r logr_Nut_unbal_pred}
 logr_Nut_unbal_pred <- predict(logr_Nut_unbal_fit, newdata = test_bin_Nut, type = "raw")
@@ -278,6 +280,7 @@ summary_table_unbal <- cbind(summary_table_unbal, LogReg_Nut = summary_table_fun
 ### Logistic Regression - unbalanced - NuBi
 
 #### Fitting
+We now fit a logreg model on unbalanced data with the NuBi variable combination.
 
 ```{r logr_NuBi_unbal_fit}
 set.seed(12)
@@ -291,7 +294,7 @@ logr_NuBi_unbal_fit
 
 #### Predictions
 
-Once again most obs are classified as good.
+The accuracy here is slightly lower at 58.5%, however, the model now is a bit less biased towards the majority class and classifies at least some obs as bad. Kappa is still very low at 1.9%
 
 ```{r logr_NuBi_unbal_pred}
 logr_NuBi_unbal_pred <- predict(logr_NuBi_unbal_fit, newdata = test_bin_NuBi, type = "raw")
@@ -305,7 +308,7 @@ summary_table_unbal <- cbind(summary_table_unbal, LogReg_NuBi = summary_table_fu
 ### Logistic Regression - unbalanced - NuTo
 
 #### Fitting
-
+We now fit a logreg model on unbalanced data with the NuTo variable combination.
 ```{r logr_NuTo_unbal_fit}
 set.seed(12)
 logr_NuTo_unbal_fit <- train(rating_bin ~.,
@@ -317,9 +320,7 @@ logr_NuTo_unbal_fit
 ```
 
 #### Predictions
-
-Once again most obs are classified as good.
-
+Accuracy is slightly higher than with the NuBi combination, at 58.9%. The sensitivity is very similar and the kappa is slighty higher at 2.9%
 ```{r logr_NuTo_unbal_pred}
 logr_NuTo_unbal_pred <- predict(logr_NuTo_unbal_fit, newdata = test_bin_NuTo, type = "raw")
 
@@ -328,11 +329,11 @@ CM
 
 summary_table_unbal <- cbind(summary_table_unbal, LogReg_NuTo = summary_table_fun(CM))
 ```
-
+Out of the 3 LogReg models with unbalanced data, the NuTo model seems to perform the best.
 ### KNN - unbalanced - Nut
 
 #### Fitting
-Best K if we look at both accuracy and Kappa is 111.
+We fit a KNN model on unbalanced data with only the nutritional variables. The best hyperparameter K if we look at both accuracy and Kappa is 113.
 
 ```{r knn_Nut_unbal_fit}
 set.seed(12)
@@ -340,7 +341,7 @@ knn_Nut_unbal_fit <- caret::train(rating_bin ~.,
                 data = train_bin_Nut,
                 method = "knn",
                 trControl = trCtrl,
-                tuneGrid= data.frame(k = seq(105, 115,by = 2))#initially checked on 1-151 range, best was 111
+                tuneGrid= data.frame(k = seq(105, 115,by = 2))#initially checked on 1-151 range, best was 113
                 )
 knn_Nut_unbal_fit
 ```
@@ -527,7 +528,7 @@ summary_table_unbal <- cbind(summary_table_unbal, CART_NuTo = summary_table_fun(
 
 ## 1.2. 33 Engineered variables - balanced
 
-```{r}
+```{r summary_table_down_create, cache=FALSE}
 #creating empty summary table for balanced data
 summary_table_down <- tibble(metric = c("accuracy", "balanced_accuracy", "sensitivity", "kappa"))
 ```
@@ -738,14 +739,12 @@ We see that the 3 best performing models are: Nut, NuBi and NuTo. Which was expe
 #### Fitting
 
 ```{r logr_Nut_blncd}
-
 set.seed(12)
 logr_Nut_blncd <- caret::train(rating_bin ~.,
                 data = train_bin_Nut,
                 method = "glm",
                 family = "binomial",
-                trControl = trCtrl_down,
-                metric = "Accuracy")
+                trControl = trCtrl_down)
 logr_Nut_blncd
 ```
 We observe that the accuracy of training set is 49.6%.
@@ -755,7 +754,10 @@ We observe that the accuracy of training set is 49.6%.
 ```{r logr_Nut_pred_blncd}
 logr_Nut_pred_blncd <- predict(logr_Nut_blncd, newdata = test_bin_Nut, type = "raw")
 
-confusionMatrix(reference = test_bin_Nut$rating_bin, data = logr_Nut_pred_blncd, positive="good")
+CM <- confusionMatrix(reference = test_bin_Nut$rating_bin, data = logr_Nut_pred_blncd, positive="good")
+CM
+
+summary_table_down <- cbind(summary_table_down, LogReg_Nut = summary_table_fun(CM))
 ```
 Here we notice that the accuracy of the test set stands at 47.9%
 
@@ -771,8 +773,7 @@ logr_NuBi_blncd <- caret::train(rating_bin ~.,
                 data = train_bin_NuBi,
                 method = "glm",
                 family = "binomial",
-                trControl = trCtrl_down,
-                metric = "Accuracy")
+                trControl = trCtrl_down)
 logr_NuBi_blncd
 ```
 We observe that the accuracy of the training set stands at 53.9%.
@@ -782,7 +783,10 @@ We observe that the accuracy of the training set stands at 53.9%.
 ```{r logr_NuBi_pred_blncd}
 logr_NuBi_pred_blncd <- predict(logr_NuBi_blncd, newdata = test_bin_NuBi, type = "raw")
 
-confusionMatrix(reference = test_bin_NuBi$rating_bin, data = logr_NuBi_pred_blncd, positive="good")
+CM <- confusionMatrix(reference = test_bin_NuBi$rating_bin, data = logr_NuBi_pred_blncd, positive="good")
+CM
+#adding results to summary table
+summary_table_down <- cbind(summary_table_down, LogReg_NuBi = summary_table_fun(CM))
 ```
 We want to evaluate the quality of the model and we notice that the accuracy of the test set stands at 54.6%
 
@@ -798,8 +802,7 @@ logr_NuTo_blncd <- caret::train(rating_bin ~.,
                 data = train_bin_NuTo,
                 method = "glm",
                 family = "binomial",
-                trControl = trCtrl_down,
-                metric = "Accuracy")
+                trControl = trCtrl_down)
 logr_NuTo_blncd
 ```
 We observe that the accuracy of the training set stands at 54.1%.
@@ -809,7 +812,10 @@ We observe that the accuracy of the training set stands at 54.1%.
 ```{r logr_NuTo_pred_blncd}
 logr_NuTo_pred_blncd <- predict(logr_NuTo_blncd, newdata = test_bin_NuTo, type = "raw")
 
-confusionMatrix(reference = test_bin_NuTo$rating_bin, data = logr_NuTo_pred_blncd, positive="good")
+CM <- confusionMatrix(reference = test_bin_NuTo$rating_bin, data = logr_NuTo_pred_blncd, positive="good")
+CM
+#adding results to summary table
+summary_table_down <- cbind(summary_table_down, LogReg_NuTo = summary_table_fun(CM))
 ```
 We want to evaluate the quality of the model and we notice that the accuracy of the test set stands at 56.1%
 
@@ -828,7 +834,7 @@ svm_Linear_nutritional
 The validation accuracy stands at 42.8%, which is not satisfying considering that it is computed on the training set. The next step consists in creating a grid of values for the cost that we want to try and pass to the argument tuneGrid.
 
 ##### Tuning the Hyperparameters - Linear basis SVM
-```{r svm_Linear_Grid_nutritional}
+```{r svm_Linear_Grid_nutritional, eval=FALSE}
 
 grid <- expand.grid(C = c(0.01, 0.1, 1, 10, 100, 1000))
 grid
@@ -837,10 +843,6 @@ svm_Linear_Grid_nutritional <- train(rating_bin ~., data=train_bin_Nut, method =
 svm_Linear_Grid_nutritional
 
 plot(svm_Linear_Grid_nutritional)
-
-```
-
-```{r}
 
 svm_Linear_Grid_nutritional$bestTune
 
@@ -861,7 +863,7 @@ The validation accuracy stands at 54.8%, which is substantially better than the 
 
 ##### Tuning the Hyperparameters - Radial basis SVM
 
-```{r svm_Radial_Grid_nutritional}
+```{r svm_Radial_Grid_nutritional, eval=FALSE}
 
 grid_radial <- expand.grid(sigma = c(0.01, 0.02, 0.05, 0.1),
                            C = c(1, 10, 100, 500, 1000))
@@ -872,10 +874,6 @@ svm_Radial_Grid_nutritional
 
 plot(svm_Radial_Grid_nutritional)
 
-```
-
-```{r}
-
 svm_Radial_Grid_nutritional$bestTune
 
 ```
@@ -884,7 +882,7 @@ The optimal model from this search is with sigma = 0.1 and C = 1000 This optimal
 
 #### SVM Nut - Radial Kernel Best model
 
-```{r recipe_rb_tuned_nutritional, eval=FALSE}
+```{r recipe_rb_tuned_nutritional}
 # After finding the best hyperparameters, we re-train the model with the best hyperparameters on the entire training set. Afterwards we will evaluate the model on the test set.
 
 grid_radial_best <- expand.grid(sigma = 0.1, C = 1000)
@@ -895,9 +893,12 @@ recipe_rb_tuned_nutritional <- train(rating_bin ~., data=train_bin_Nut, method =
 
 
 ```{r recipe_rb_tuned_pred_nutritional}
-recipe_rb_tuned_pred_nutritional <- predict(svm_Radial_Grid_nutritional, newdata = test_bin_Nut)
+recipe_rb_tuned_pred_nutritional <- predict(recipe_rb_tuned_nutritional, newdata = test_bin_Nut)
 
-confusionMatrix(data=recipe_rb_tuned_pred_nutritional, reference = test_bin_Nut$rating_bin)
+CM <- confusionMatrix(data=recipe_rb_tuned_pred_nutritional, reference = test_bin_Nut$rating_bin)
+CM
+#adding results to summary table
+summary_table_down <- cbind(summary_table_down, SVM_Radial_Nut = summary_table_fun(CM))
 
 ```
 
@@ -916,7 +917,8 @@ svm_Linear_NuBi
 
 The validation accuracy stands at 56.1%. The next step consists in creating a grid of values for the cost that we want to try and pass to the argument tuneGrid.
 
-```{r svm_Linear_Grid_NuBi}
+##### Tuning the Hyperparameters - Linear basis SVM
+```{r svm_Linear_Grid_NuBi, eval=FALSE}
 
 grid <- expand.grid(C = c(0.01, 0.1, 1, 10, 100, 1000))
 grid
@@ -925,10 +927,6 @@ svm_Linear_Grid_NuBi <- train(rating_bin ~., data=train_bin_NuBi, method = "svmL
 svm_Linear_Grid_NuBi
 
 plot(svm_Linear_Grid_NuBi)
-
-```
-
-```{r}
 
 svm_Linear_Grid_NuBi$bestTune
 
@@ -950,7 +948,7 @@ The validation accuracy stands at 53.7%, which is worse than the SVM model with 
 
 ##### Tuning the Hyperparameters - Radial basis SVM
 
-```{r svm_Radial_Grid_NuBi}
+```{r svm_Radial_Grid_NuBi, eval=FALSE}
 
 grid_radial <- expand.grid(sigma = c(0.01, 0.02, 0.05, 0.1),
                            C = c(1, 10, 100, 500, 1000))
@@ -961,10 +959,6 @@ svm_Radial_Grid_NuBi
 
 plot(svm_Radial_Grid_NuBi)
 
-```
-
-```{r}
-
 svm_Radial_Grid_NuBi$bestTune
 
 ```
@@ -973,7 +967,7 @@ The optimal model from this search is with sigma = 0.01 and C = 1. This optimal 
 
 #### SVM NuBi - Radial Kernel Best model
 
-```{r recipe_rb_tuned_NuBi, eval=FALSE}
+```{r recipe_rb_tuned_NuBi}
 # After finding the best hyperparameters, we re-train the model with the best hyperparameters on the entire training set. Afterwards we will evaluate the model on the test set.
 
 grid_radial_best <- expand.grid(sigma = 0.01, C = 1)
@@ -984,9 +978,12 @@ recipe_rb_tuned_NuBi <- train(rating_bin ~., data=train_bin_NuBi, method = "svmR
 
 
 ```{r recipe_rb_tuned_pred_NuBi}
-recipe_rb_tuned_pred_NuBi <- predict(svm_Radial_Grid_NuBi, newdata = test_bin_NuBi)
+recipe_rb_tuned_pred_NuBi <- predict(recipe_rb_tuned_NuBi, newdata = test_bin_NuBi)
 
-confusionMatrix(data=recipe_rb_tuned_pred_NuBi, reference = test_bin_NuBi$rating_bin)
+CM <- confusionMatrix(data=recipe_rb_tuned_pred_NuBi, reference = test_bin_NuBi$rating_bin)
+CM
+#adding results to summary table
+summary_table_down <- cbind(summary_table_down, SVM_Radial_NuBi = summary_table_fun(CM))
 
 ```
 
@@ -1006,7 +1003,8 @@ svm_Linear_NuTo
 
 The validation accuracy stands at 42.8%, which is not satisfying considering that it is computed on the training set. The next step consists in creating a grid of values for the cost that we want to try and pass to the argument tuneGrid.
 
-```{r svm_Linear_Grid_NuTo}
+##### Tuning the Hyperparameters - Linear basis SVM
+```{r svm_Linear_Grid_NuTo, eval=FALSE}
 
 grid <- expand.grid(C = c(0.01, 0.1, 1, 10, 100, 1000))
 grid
@@ -1015,10 +1013,6 @@ svm_Linear_Grid_NuTo <- train(rating_bin ~., data=train_bin_NuTo, method = "svmL
 svm_Linear_Grid_NuTo
 
 plot(svm_Linear_Grid_NuTo)
-
-```
-
-```{r}
 
 svm_Linear_Grid_NuTo$bestTune
 
@@ -1039,7 +1033,7 @@ The validation accuracy stands at 53.6%, which is substantially better than the 
 
 ##### Tuning the Hyperparameters - Radial basis SVM
 
-```{r svm_Radial_Grid_NuTo}
+```{r svm_Radial_Grid_NuTo, eval=FALSE}
 
 grid_radial <- expand.grid(sigma = c(0.01, 0.02, 0.05, 0.1),
                            C = c(1, 10, 100, 500, 1000))
@@ -1050,10 +1044,6 @@ svm_Radial_Grid_NuTo
 
 plot(svm_Radial_Grid_NuTo)
 
-```
-
-```{r}
-
 svm_Radial_Grid_NuTo$bestTune
 
 ```
@@ -1063,7 +1053,7 @@ The optimal model from this search is with sigma = 0.01 and C = 1 This optimal m
 
 #### SVM NuTo - Radial Kernel Best model
 
-```{r eval=FALSE}
+```{r recipe_rb_tuned_NuTo}
 # After finding the best hyperparameters, we re-train the model with the best hyperparameters on the entire training set. Afterwards we will evaluate the model on the test set.
 
 grid_radial_best <- expand.grid(sigma = 0.01, C = 1)
@@ -1074,9 +1064,12 @@ recipe_rb_tuned_NuTo <- train(rating_bin ~., data=train_bin_NuTo, method = "svmR
 
 
 ```{r recipe_rb_tuned_pred_NuTo}
-recipe_rb_tuned_pred_NuTo <- predict(svm_Radial_Grid_NuTo, newdata = test_bin_NuTo)
+recipe_rb_tuned_pred_NuTo <- predict(recipe_rb_tuned_NuTo, newdata = test_bin_NuTo)
 
-confusionMatrix(data=recipe_rb_tuned_pred_NuTo, reference = test_bin_NuTo$rating_bin)
+CM <- confusionMatrix(data=recipe_rb_tuned_pred_NuTo, reference = test_bin_NuTo$rating_bin)
+CM
+#adding results to summary table
+summary_table_down <- cbind(summary_table_down, SVM_Radial_NuTo = summary_table_fun(CM))
 
 ```
 
@@ -1181,6 +1174,7 @@ cart_Nut_fit <- train(rating_bin ~ .,
                   tuneLength = 10)
 cart_Nut_fit
 ```
+
 It might seem like the CP chosen by caret is not optimal since the accuracy curve continues to go up, however, we confirmed by using a manual tuning grid that this CP was indeed the best when combining the accuracy with the Kappa metric.
 ```{r cart_nut_results}
 # Get the results for each CP step
@@ -1401,7 +1395,10 @@ set.seed(12)
 rf_all_pred <- predict(rf_all_fit, newdata = test_all)
 
 #confusion matrix 
-confusionMatrix(data = rf_all_pred, reference = test_all$rating_bin)
+CM <- confusionMatrix(data = rf_all_pred, reference = test_all$rating_bin)
+CM
+#adding results to summary table
+summary_table_down <- cbind(summary_table_down, RF_all = summary_table_fun(CM))
 ```
 
 ### Logistic Regression
@@ -1425,7 +1422,7 @@ logreg_all_pred <- predict(logreg_all_fit, newdata = test_all)
 CM <- confusionMatrix(reference = test_all$rating_bin, data = logreg_all_pred)
 CM
 #adding results to the summary_table_unbal
-summary_table_all <- cbind(summary_table_unbal, LogReg_all = summary_table_fun(CM))
+summary_table_down <- cbind(summary_table_down, LogReg_all = summary_table_fun(CM))
 ```
 
 ### CART
@@ -1468,11 +1465,11 @@ cart_all_pred <- predict(cart_all_fit, newdata = test_all)
 CM <- confusionMatrix(reference = test_bin_Nut$rating_bin, data = cart_all_pred)
 CM
 
-summary_table_all <- cbind(summary_table_down, CART_all = summary_table_fun(CM))
+summary_table_down <- cbind(summary_table_down, CART_all = summary_table_fun(CM))
 ```
 
 ### XGBoost - Unbalanced
-```{r xgb_all datasets}
+```{r xgb_all datasets, cache=FALSE}
 numeric_tr <- train_all %>% 
   mutate(rating_bin = ifelse(rating_bin == "good", 1, 0), across(everything(), as.character)) %>% 
   mutate(across(everything(), as.numeric))
@@ -1560,12 +1557,12 @@ confusionMatrix(reference = as.factor(numeric_te$rating_bin), data = xgb_unbal_p
 - Recall 76.4
 
 #### Fitting
-```{r xgb_all_down_fit}
+```{r xgb_all_down_fit, cache=FALSE}
 #set hyperparameters
 param_list <- list(
   objective = "binary:logistic",
   eta = 0.1,
-  gamma = 0,
+  gamma = 7,
   max_depth = 5,
   min_child_weight = 1,
   subsample = 0.6,
@@ -1576,21 +1573,120 @@ param_list <- list(
 set.seed(12)
 xgb_down_fit <- xgboost(data = xgb_downsamp_tr,
                      params = param_list,
-                     nrounds = 500,
+                     nrounds = 100,
                      verbose = FALSE)
 ```
 
+```{r}
+#testing on training set to control overfitting
+xgb_down_prob <- predict(xgb_down_fit, newdata = xgb_downsamp_tr)
+
+xgb_down_pred <- as.factor(ifelse(xgb_down_prob<0.5, 0, 1))
+
+CM <- confusionMatrix(reference = as.factor(numeric_downsamp_tr$rating_bin), data = xgb_down_pred, positive = "1")
+CM
+```
+
 #### Predictions
-```{r xgb_all_down_pred}
+```{r xgb_all_down_pred, cache=FALSE}
 xgb_down_prob <- predict(xgb_down_fit, newdata = xgb_te)
 
 xgb_down_pred <- as.factor(ifelse(xgb_down_prob<0.5, 0, 1))
 
-confusionMatrix(reference = as.factor(numeric_te$rating_bin), data = xgb_down_pred, positive = "1")
+CM <- confusionMatrix(reference = as.factor(numeric_te$rating_bin), data = xgb_down_pred, positive = "1")
+CM
+#adding results to summary table
+summary_table_down <- cbind(summary_table_down, XGB_all = summary_table_fun(CM))
 ```
 
 ## 3.1 Model Selection
+Here we can see the results for section 5.3 on the unbalanced data.
+```{r summary_table_unbal, cache=FALSE}
+summary_table_unbal %>% 
+  kbl() %>% 
+  kable_styling(position = "center")
+```
 
+Here we can see the results for section 5.4 on the downsampled data.
+```{r summary_table_down, cache=FALSE}
+summary_table_down %>% 
+  kbl() %>% 
+  kable_styling(position = "center")
+summary_table_down_store <- summary_table_down
+```
+
+```{r}
+#creating new df for model selection analysis plots
+summary_down_long <- summary_table_down %>% 
+  pivot_longer(-metric, names_to = "model", values_to = "value") %>% 
+  select(model, everything()) %>% 
+  mutate(value = value*100) %>% 
+  arrange(model)
+
+summary_down_wide <- summary_down_long %>% 
+  pivot_wider(names_from = "metric", values_from = "value")
+
+#selecting 3 models with highest balance accuracy
+bacc_select <- summary_down_wide %>% 
+  arrange(desc(balanced_accuracy)) %>% 
+  dplyr::slice(1:5) %>% pull(model)
+#selecting 3 models with highest sens
+sens_select <- summary_down_wide %>% 
+  arrange(desc(sensitivity)) %>% 
+  dplyr::slice(1:5) %>% pull(model)
+#selecting 3 models with highest kappa
+kappa_select <- summary_down_wide %>% 
+  arrange(desc(kappa)) %>% 
+  dplyr::slice(1:5) %>% pull(model)
+```
+
+We first look at the top-3 models with the highest balanced_accuracy
+```{r}
+summary_down_long %>% 
+  filter(model %in% bacc_select, metric=="balanced_accuracy") %>% 
+  ggplot(aes(x=model, y=value, fill = model))+
+  geom_bar(stat="identity", position = "dodge")+
+  coord_cartesian(ylim = c(50, 60)) + 
+  labs(y = "Balance accuracy (in %)", x = "Model", title = "Top 5 models with highest balanced accuracy")
+```
+
+We now plot the top-3 models with the highest sensitivity. 
+```{r}
+summary_down_long %>% 
+  filter(model %in% sens_select, metric=="sensitivity") %>% 
+  ggplot(aes(x=model, y=value, fill = model))+
+  geom_bar(stat="identity", position = "dodge")+
+  coord_cartesian(ylim = c(55, 65)) + 
+  labs(y = "Sensitivity (in %)", x = "Model", title = "Top 5 models with highest sensitivity")
+```
+
+We now plot the top-3 models with the highest kappa
+```{r}
+summary_down_long %>% 
+  filter(model %in% kappa_select, metric=="kappa") %>% 
+  ggplot(aes(x=model, y=value, fill = model))+
+  geom_bar(stat="identity", position = "dodge")+
+  coord_cartesian(ylim = c(5, 15)) + 
+  labs(y = "Kappa (in %)", x = "Model", title = "Top 5 models with highest Kappa")
+```
+```{r}
+summary_points <- summary_down_wide %>% 
+  mutate(points_bacc = rank(balanced_accuracy), points_sens = rank(sensitivity), total_points = (points_bacc + points_sens))
+
+summary_points %>% 
+  arrange(desc(total_points)) %>%
+  dplyr::slice(1:5) %>% 
+  select(model, points_bacc, points_sens, total_points)
+  
+summary_points %>% 
+  arrange(desc(total_points)) %>% 
+  dplyr::slice(1:5) %>%
+  ggplot(aes(x=model, y=total_points, fill = model))+
+  geom_bar(stat="identity", position = "dodge")+
+  coord_cartesian(ylim = c(30, 40)) + 
+  labs(y = "Total number of points", x = "Model", title = "Top 5 models with highest Number of Points")
+```
+Here we can see that XGB_all has the highest number of points based on the weighted ranking system combining the balanced accuracy and sensitivity metrics with a total of 40 points. Followed by the RF_NuTo and LogReg_NuTo sharing the second place with 36 points.
 ## 3.2 Variable Importance
 
 ```{r VarImp XGBoost}
