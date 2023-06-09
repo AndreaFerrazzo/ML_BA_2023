@@ -1060,8 +1060,8 @@ type_df %>%
   ggplot(aes(x=sum_type)) +
   geom_bar()
 
-type_df %>% 
-  filter(sum_type == 2)
+# type_df %>% 
+#   filter(sum_type == 2)
 
 # left with 3333 obs after filtering
 type_df <- type_df %>% 
@@ -1074,6 +1074,7 @@ type_df %>%
   select(-c(ID, sum_type)) %>% 
   plot_correlation()
 ```
+
 ### Countries
 Only 54 recipes containing info about the country so we can't use it either for the analysis.
 ```{r Countries EDA}
