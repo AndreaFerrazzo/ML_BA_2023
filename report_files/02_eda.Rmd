@@ -402,7 +402,7 @@ recipes_plot4 <- recipes %>%
 
 grid.arrange(recipes_plot1, recipes_plot2, recipes_plot3, recipes_plot4, ncol=2, nrow =2)
 ```
-We notice a positive correlation between fat and calories as well as between protein and calories. We also see a slightly positive correlation between fat and protein. We tried to understand to what extent the rating could have an impact on such relationships, but the number of rating above 3 is overwhelming and strongly determines the behavior of these relationships.
+We notice a positive correlation between fat and calories as well as between protein and calories. We also see a slightly positive correlation between fat and protein. We tried to understand to what extent the rating could have an impact on such relationships, but the number of ratings above 3 is overwhelming and strongly determines the behavior of these relationships.
 
 
 ## Ingredients EDA
@@ -764,6 +764,10 @@ For instance we notice a positive correlation between proteins and meats_bin whi
 ### Barplot and boxplot - Meat and Proteins
 ```{r fig.width=7}
 
+meat_average01 <- recipes_full %>% 
+  group_by(meats_bin) %>% 
+  summarise(avg_protein = mean(protein))
+
 # Barplot
 barplot1 <- recipes_full %>% 
   ggplot(aes(x = factor(meats_bin), y = protein)) +
@@ -791,6 +795,8 @@ multi_boxplot1 <- recipes_meat %>%
   filter(protein < 450) %>%
   ggplot(aes(x=meats, y=protein, fill=meats)) +
   geom_boxplot(alpha=0.3) +
+  theme(legend.position="none",
+          plot.title = element_text(size=11)) +
   scale_y_continuous(breaks=seq(0,7000,25)) +
   coord_flip() +
   ggtitle("Distribution of proteins per recipe according to different kinds of meat") +
@@ -806,6 +812,10 @@ It is very clear that among the recipes with meat, the average content of protei
 
 ### Barplot and boxplot - Seafood and Sodium
 ```{r fig.width=7}
+
+seafood_average01 <- recipes_full %>% 
+  group_by(seafood_bin) %>% 
+  summarise(avg_seafood = mean(sodium))
 
 # Seafood and sodium
 barplot2 <- recipes_full %>% 
@@ -831,6 +841,8 @@ multi_boxplot2 <- recipes_seafood %>%
   filter(sodium < 10000) %>%
   ggplot(aes(x=seafoods, y=sodium, fill=seafoods)) +
   geom_boxplot(alpha=0.3) +
+  theme(legend.position="none",
+          plot.title = element_text(size=11)) +
   scale_y_continuous(breaks=seq(0,30000,500)) +
   coord_flip() +
   ggtitle("Distribution of sodium per recipe according to different kinds of seafood") +
@@ -846,6 +858,10 @@ In this case it is very clear that among the recipes with seafood, the average c
 
 ### Barplot and boxplot - Carbs and Calories
 ```{r fig.width=7}
+
+carbs_average01 <- recipes_full %>% 
+  group_by(carbs_bin) %>% 
+  summarise(avg_carbs = mean(calories))
 
 # Carbs and calories
 barplot3 <- recipes_full %>% 
@@ -872,6 +888,8 @@ multi_boxplot3 <- recipes_carbs %>%
   filter(sodium < 10000) %>%
   ggplot(aes(x=carbs, y=calories, fill=carbs)) +
   geom_boxplot(alpha=0.3) +
+  theme(legend.position="none",
+          plot.title = element_text(size=11)) +
   scale_y_continuous(breaks=seq(0,7000,500)) +
   coord_flip() +
   ggtitle("Distribution of calories per recipe according to different kinds of food high in carbohydrates") +
@@ -882,120 +900,6 @@ multi_boxplot3 <- recipes_carbs %>%
 grid.arrange(barplot3, multi_boxplot3, ncol=2, nrow =1)
 ```
 Recipes which contain carbs register a higher average content of calories than recipes without carbs. Among those that have carbs we notice that pasta and chickpeas are the richest in calories.
-
-
-## Exploratory PCA Analysis
-- With all variables 680
-
-```{r}
-
-recipes_pca <- recipes %>% 
-  select(-ID, -title) %>% 
-  PCA(ncp = 679, graph = FALSE)
-
-recipes_pca
-
-fviz_pca_var(recipes_pca)
-```
-Hard to interpret this PCA output. The two dimensions explain together only 2.1% of the variability in the data.
-
-```{r}
-
-fviz_contrib(recipes_pca, choice = "var", axes = 1)
-fviz_contrib(recipes_pca, choice = "var", axes = 2)
-
-```
-Also in this case it difficult to understand which are contributing to each dimension since the dimension itself accounts for a little percentage of variability.
-
-
-```{r}
-
-fviz_pca_biplot(recipes_pca) ## biplot
-
-```
-
-```{r}
-
-fviz_eig(recipes_pca, addlabels = TRUE, ncp=11)
-
-```
-
-```{r eval = FALSE}
-
-recipe_hc <- hclust(dist(recipes[,-c(1,2)], method = "manhattan"))
-
-recipe_clust <- cutree(recipe_hc, k = 10)
-
-fviz_pca_biplot(recipes_pca,
-             col.ind = factor(recipe_clust))
-
-```
-
-### Exploratory PCA Analysis
-- With only the ones we believe could be useful
-```{r}
-nutritional_df <- recipes %>% 
-  select(ID, all_of(nutritional_values))
-
-###### CAREFUL --> recipes_analysis should be of dim 10163 x 33
-recipes_analysis <- ingredients_df_full %>% 
-  left_join(nutritional_df, by="ID") %>% 
-  mutate(across(all_of(contains("bin"))), ID = as.character(ID)) %>% 
-  select(rating, all_of(nutritional_values), contains("bin"), contains("total"))
-```
-
-```{r}
-
-recipes_pca2 <- PCA(recipes_analysis, ncp = 33, graph = FALSE)
-
-recipes_pca2
-
-fviz_pca_var(recipes_pca2)
-```
-
-
-```{r}
-
-fviz_contrib(recipes_pca2, choice = "var", axes = 1)
-fviz_contrib(recipes_pca2, choice = "var", axes = 2)
-
-```
-
-```{r}
-
-fviz_pca_biplot(recipes_pca2) ## biplot
-
-```
-
-```{r}
-
-fviz_eig(recipes_pca2, addlabels = TRUE, ncp=11)
-
-```
-
-```{r}
-
-p1 <- fviz_pca_biplot(recipes_pca2, axes = 1:2) 
-p2 <- fviz_pca_biplot(recipes_pca2, axes = 3:4) 
-p3 <- fviz_pca_biplot(recipes_pca2, axes = 5:6) 
-p4 <- fviz_pca_biplot(recipes_pca2, axes = 7:8) 
-p5 <- fviz_pca_biplot(recipes_pca2, axes = 9:10) 
-
-grid.arrange(p1, p2, p3, p4, p5, nrow = 3, ncol=2)
-
-```
-
-
-```{r eval=FALSE}
-
-recipe_hc2 <- hclust(dist(recipes_analysis, method = "manhattan"))
-
-recipe_clust2 <- cutree(recipe_hc2, k = 10)
-
-fviz_pca_biplot(recipes_pca2,
-             col.ind = factor(recipe_clust2))
-
-```
 
 ## Seasons, Recipe Type, and Countries EDA
 
@@ -1096,5 +1000,121 @@ countries_df <- recipes %>%
 countries_df %>% 
   ggplot(aes(x=sum_type)) +
   geom_bar()
+```
+
+
+
+## Exploratory PCA Analysis
+- With all variables 680
+
+```{r}
+
+recipes_pca <- recipes %>% 
+  select(-ID, -title) %>% 
+  PCA(ncp = 679, graph = FALSE)
+
+recipes_pca
+
+fviz_pca_var(recipes_pca)
+```
+Hard to interpret this PCA output. The two dimensions explain together only 2.1% of the variability in the data.
+
+```{r}
+
+fviz_contrib(recipes_pca, choice = "var", axes = 1)
+fviz_contrib(recipes_pca, choice = "var", axes = 2)
+
+```
+Also in this case it difficult to understand which are contributing to each dimension since the dimension itself accounts for a little percentage of variability.
+
+
+```{r}
+
+fviz_pca_biplot(recipes_pca) ## biplot
+
+```
+
+```{r}
+
+fviz_eig(recipes_pca, addlabels = TRUE, ncp=11)
+
+
+```
+
+
+```{r}
+
+ingredients_df_pca <- ingredients_df %>% 
+  select(-title, -ID)
+
+recipes_pca2 <- PCA(ingredients_df_pca, ncp = 33, graph = FALSE)
+fviz_eig(recipes_pca2, addlabels = TRUE, ncp=11)
+
+```
+
+
+### Exploratory PCA Analysis
+- With only the ones we believe could be useful
+```{r}
+nutritional_df <- recipes %>% 
+  select(ID, all_of(nutritional_values))
+
+recipes_analysis <- ingredients_df_full %>% 
+  left_join(nutritional_df, by="ID") %>% 
+  mutate(across(all_of(contains("bin"))), ID = as.character(ID)) %>% 
+  select(rating, all_of(nutritional_values), contains("bin"), contains("total"))
+```
+
+```{r}
+
+recipes_pca3 <- PCA(recipes_analysis, ncp = 33, graph = FALSE)
+
+recipes_pca3
+
+fviz_pca_var(recipes_pca3)
+```
+
+
+```{r}
+
+fviz_contrib(recipes_pca3, choice = "var", axes = 1)
+fviz_contrib(recipes_pca3, choice = "var", axes = 2)
+
+```
+
+```{r}
+
+fviz_pca_biplot(recipes_pca3) ## biplot
+
+```
+
+```{r}
+
+fviz_eig(recipes_pca3, addlabels = TRUE, ncp=11)
+
+```
+
+```{r}
+
+p1 <- fviz_pca_biplot(recipes_pca3, axes = 1:2) 
+p2 <- fviz_pca_biplot(recipes_pca3, axes = 3:4) 
+p3 <- fviz_pca_biplot(recipes_pca3, axes = 5:6) 
+p4 <- fviz_pca_biplot(recipes_pca3, axes = 7:8) 
+p5 <- fviz_pca_biplot(recipes_pca3, axes = 9:10) 
+
+grid.arrange(p1, p2, p3, p4, p5, nrow = 3, ncol=2)
+
+```
+
+
+```{r eval=FALSE}
+
+recipe_hc2 <- hclust(dist(recipes_analysis, method = "manhattan"))
+
+recipe_clust2 <- cutree(recipe_hc2, k = 10)
+
+fviz_pca_biplot(recipes_pca3,
+             col.ind = factor(recipe_clust2))
+
 ```
 
