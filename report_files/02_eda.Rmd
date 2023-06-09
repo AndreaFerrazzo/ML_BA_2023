@@ -1040,8 +1040,8 @@ fviz_eig(recipes_pca, addlabels = TRUE, ncp=11)
 
 
 ```
-
-
+## Exploratory PCA Analysis
+- All the variables unless "useless" ones such as us_cities or chef
 ```{r}
 
 ingredients_df_pca <- ingredients_df %>% 
@@ -1054,7 +1054,7 @@ fviz_eig(recipes_pca2, addlabels = TRUE, ncp=11)
 
 
 ### Exploratory PCA Analysis
-- With only the ones we believe could be useful
+- Only with nutritional variables, total and bin variables
 ```{r}
 nutritional_df <- recipes %>% 
   select(ID, all_of(nutritional_values))
