@@ -109,9 +109,9 @@ recipes_plot %>%
   ylab("Value")
   
 ```
-We notice that there are recipes with more than 50'000 grams of protein which are clearly outliers. We must then discard those values in order to continue with a meaningful analysis. Otherwise from a visual point of view we could not extract any relevant information. By checking on the epicurious website recipes  with protein values above 1000, we also verified that the amount of proteins was not justified. We came to that conclusion by evaluating the average values of protein per 100grams of each ingredient in the specific recipe.
+We notice that there are recipes with more than 50'000 grams of protein which are clearly outliers. We must then discard those values in order to continue with a meaningful analysis. Also from a visual point of view we could not extract any relevant information. By checking on the epicurious website the recipes with protein values above 1000, we verified that such amount of proteins was not justified. We came to that conclusion by evaluating the average values of protein per 100grams of each ingredient in the specific recipe.
 
-```{r}
+```{r fig.height=5}
 recipes_plot %>%
   filter(nutrition == "protein") %>% 
   select(title, nutrition, n_value) %>% 
@@ -125,9 +125,9 @@ boxplot_protein <- recipes_plot %>%
     geom_boxplot() +
     scale_fill_viridis(discrete = TRUE, alpha=0.6, option="A") +
     theme(legend.position="none",
-          plot.title = element_text(size=11)) +
+          plot.title = element_text(size=16)) +
   scale_y_continuous(breaks=seq(0,7000,25)) +
-  ggtitle("Boxplot of protein nutritional value filtered") +
+  labs(title="Boxplot of protein nutritional value filtered") +
   xlab("") +
   ylab("Proteins") 
 
@@ -137,10 +137,11 @@ histogram_protein <- recipes_plot %>%
   filter(nutrition == "protein", n_value <= 1000) %>% 
   ggplot(aes(x=n_value)) +
   geom_histogram(binwidth=7, fill="red3", color="red3", alpha=0.9) +
-  theme(plot.title = element_text(size=15)) +
   scale_x_continuous(breaks=seq(0,1000,50)) +
   scale_y_continuous(breaks=seq(0,7000,250)) +
-  ggtitle("Distribution of proteins across all recipes") +
+  theme(legend.position="none",
+          plot.title = element_text(size=16)) +
+  labs(title="Distribution of proteins across all recipes") +
   xlab("Proteins") +
   ylab("Count") 
 
@@ -151,10 +152,12 @@ density_protein <- recipes_plot %>%
   ggplot(aes(x=n_value)) +
   geom_density(fill="red3", color="red2", alpha=0.8) +
   scale_x_continuous(breaks=seq(0,1000,50)) +
-  ggtitle("Distribution of proteins across all recipes") +
+  theme(legend.position="none",
+          plot.title = element_text(size=16)) +
+  labs(title="Distribution of proteins across all recipes") +
   xlab("Proteins")
 
-grid.arrange(boxplot_protein, histogram_protein, density_protein, ncol=2, nrow =3)
+grid.arrange(boxplot_protein, histogram_protein, density_protein, ncol=2, nrow =2)
 
 ```
 
@@ -172,14 +175,14 @@ recipes_plot %>%
     scale_fill_viridis(discrete = TRUE, alpha=0.6, option="A") +
     theme(legend.position="none",
           plot.title = element_text(size=11)) +
-  ggtitle("Boxplot of sodium nutritional value") +
+  labs(title="Boxplot of sodium nutritional value") +
   xlab("") +
   ylab("Value")
 ```
   
 We notice that there are recipes with more than 100'000 milligrams of sodium which are clearly outliers. We must then discard those values in order to continue with a meaningful analysis. By conducting further research, we realize that sodium values above 30'000 are highly suspicious.  
 
-```{r}
+```{r fig.height=7}
 
 recipes_plot %>% 
   filter(nutrition == "sodium") %>%
@@ -194,9 +197,9 @@ boxplot_sodium <- recipes_plot %>%
     geom_boxplot() +
     scale_fill_viridis(discrete = TRUE, alpha=0.6, option="A") +
     theme(legend.position="none",
-          plot.title = element_text(size=11)) +
+          plot.title = element_text(size=17)) +
   scale_y_continuous(breaks=seq(0,30000,500)) +
-  ggtitle("Boxplot of sodium nutritional value") +
+  labs(title="Boxplot of sodium nutritional value") +
   xlab("") +
   ylab("Sodium") 
 
@@ -209,7 +212,9 @@ histogram_sodium <- recipes_plot %>%
   theme(plot.title = element_text(size=15)) +
   scale_x_continuous(breaks=seq(0,30000,1000)) +
   scale_y_continuous(breaks=seq(0,1750,250)) +
-  ggtitle("Distribution of sodium across all recipes") +
+  theme(legend.position="none",
+          plot.title = element_text(size=17)) +
+  labs(title="Distribution of sodium across all recipes") +
   xlab("Sodium") +
   ylab("Count") 
 
@@ -220,11 +225,13 @@ density_sodium <- recipes_plot %>%
   ggplot(aes(x=n_value)) +
   geom_density(fill="red3", color="red2", alpha=0.8) +
   scale_x_continuous(breaks=seq(0,30000,1000)) +
-  ggtitle("Distribution of sodium across all recipes") +
+  theme(legend.position="none",
+          plot.title = element_text(size=17)) +
+  labs(title="Distribution of sodium across all recipes") +
   xlab("Sodium") 
 
 
-grid.arrange(boxplot_sodium, histogram_sodium, density_sodium, ncol=1, nrow =3)
+grid.arrange(boxplot_sodium, histogram_sodium, density_sodium, ncol=2, nrow =2)
 ```
 
 From the boxplot we observe that most recipes have sodium values below 750 milligrams. The histogram informs us that most of recipes have indeed less than 750 milligrams of sodium, even though we cannot exclude the presence of a good amount of recipes with sodium between 750 and 2000 milligrams.
@@ -241,14 +248,14 @@ recipes_plot %>%
     theme_light() +
     theme(legend.position="none",
           plot.title = element_text(size=11)) +
-  ggtitle("Boxplot of fat nutritional value") +
+  labs(title="Boxplot of fat nutritional value") +
   xlab("") +
   ylab("Value")
 ```
 
 We notice that there are recipes with more than 44'000 grams of fat which are clearly outliers. We must then discard those values in order to continue with a meaningful analysis. By checking on the epicurious website recipes  with fat values above 1000, we also verified that the amount of proteins was not justified. We came to that conclusion by evaluating the average values of protein per 100grams of each ingredient in the specific recipe.
 
-```{r}
+```{r fig.height=5}
 recipes_plot %>% 
   filter(nutrition == "fat") %>% 
   select(title, nutrition, n_value) %>% 
@@ -262,9 +269,9 @@ boxplot_fat <- recipes_plot %>%
     scale_fill_viridis(discrete = TRUE, alpha=0.6, option="A") +
     theme_light() +
     theme(legend.position="none",
-          plot.title = element_text(size=11)) +
+          plot.title = element_text(size=16)) +
   scale_y_continuous(breaks=seq(0,3000,100)) +
-  ggtitle("Boxplot of fat nutritional value filtered") +
+  labs(title="Boxplot of fat nutritional value filtered") +
   xlab("") +
   ylab("Fat") 
 
@@ -274,8 +281,9 @@ histogram_fat <- recipes_plot %>%
   filter(nutrition == "fat", n_value <= 40000) %>% 
   ggplot(aes(x=n_value)) +
   geom_histogram(binwidth=7, fill="red3", color="red3", alpha=0.9) +
-  theme(plot.title = element_text(size=15)) +
-  ggtitle("Distribution of fat across all recipes") +
+  labs(title="Distribution of fat across all recipes") +
+  theme(legend.position="none",
+          plot.title = element_text(size=16)) +
   scale_x_continuous(breaks=seq(0,3000,100)) +
   scale_y_continuous(breaks=seq(0,7000,250)) +
   xlab("Fat") +
@@ -287,17 +295,19 @@ density_fat<- recipes_plot %>%
   ggplot(aes(x=n_value)) +
   geom_density(fill="red3", color="red2", alpha=0.8) +
   scale_x_continuous(breaks=seq(0,3000,100)) +
+  theme(legend.position="none",
+          plot.title = element_text(size=16)) +
   ggtitle("Distribution of sodium across all recipes") +
   xlab("Fat") 
 
-grid.arrange(boxplot_fat, histogram_fat, density_fat, ncol=3)
+grid.arrange(boxplot_fat, histogram_fat, density_fat, ncol=2)
 ```
 It is hard to interpret the boxplot. There are certain recipes which could have potentially more than 1000 or even 2000 grams of fat because of the high quantity of servings and the use of ingredients such as lamb, duck and bacon. We must then analyse the histogram to have a better overview and we notice that most recipes have fat values below 100 grams.
 
 ### Visual exploration - Multivariate Analysis
 
 #### Scatterplots of Rating-Calories
-```{r}
+```{r fig.height=5}
 #removing 41 outliers we discovered above from the recipes df
 recipes <- recipes %>% 
   filter(calories <= 7000, protein <= 1000, sodium <= 30000, fat <= 40000)
@@ -565,7 +575,7 @@ We now have only 2 categories: recipes with rating above 4 and recipes with rati
 
 If we look at vegetables for example, we can see that the proportion of recipes with ratings above 4 is higher for recipes containing no vegetables, when compared to recipes containing at least one vegetable.
 
-We once again plot the correlation, but this time with the binary rating variable. The results are very similar to the 7-level rating variable, with very weak correlations.
+We once again plot the correlation, but this time with the binary rating variable. The results are very similar to the 7-level rating # variable, with very weak correlations.
 
 ```{r}
 #corr plot
