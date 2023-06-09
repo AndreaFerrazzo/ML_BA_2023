@@ -21,6 +21,27 @@ recipes %>%
 The data available provide ratings which are separated in 7 distinct categories, which span from 1.25 to 5. We do not forget that we decided to exclude recipes with rating equal to zero.
 As we can see, most of the ratings have value equal or above 3.75, more in particular we notice that most of the recipes have ratings of 4.375.
 
+```{r}
+
+#histograms + density for age, amount and duration
+
+ggplot(credit_data, aes(age)) +
+  geom_histogram(aes(y = ..density..), color = "#000000", fill = "#0099F8") +
+  geom_density(color = "#000000", fill = "#F85700", alpha = 0.6)+
+  labs(x = "Age", y = "Density", title = "Distribution of age")
+
+ggplot(credit_data, aes(amount)) +
+  geom_histogram(aes(y = ..density..), color = "#000000", fill = "#0099F8") +
+  geom_density(color = "#000000", fill = "#F85700", alpha = 0.6)+
+  labs(x = "Amount", y = "Density", title = "Distribution of amount")
+
+ggplot(credit_data, aes(duration)) +
+  geom_histogram(aes(y = ..density..), color = "#000000", fill = "#0099F8") +
+  geom_density(color = "#000000", fill = "#F85700", alpha = 0.6) +
+  labs(x = "Duration", y = "Density", title = "Distribution of duration")
+
+```
+
 #### Calories - Boxplot and Histogram
 
 ```{r}
