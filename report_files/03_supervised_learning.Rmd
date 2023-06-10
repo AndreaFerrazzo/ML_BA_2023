@@ -173,8 +173,8 @@ summary_table_fun <- function(x){
   acc <- x[[3]][[1]]
   kap <- x[[3]][[2]]
   bacc <- x[[4]][[11]]
-  spec <- x[[4]][[1]]
-  vec <- c(acc, bacc, spec, kap)
+  sens <- x[[4]][[1]]
+  vec <- c(acc, bacc, sens, kap)
   return(vec)
 }
 
@@ -1284,7 +1284,7 @@ CM
 
 summary_table_down <- cbind(summary_table_down, CART_NuTo = summary_table_fun(CM))
 ```
-
+### XGBoost - balanced - Nut
 
 ## 2.1 All variables (Nut + 293 ingredients)
 
@@ -1410,7 +1410,7 @@ logreg_all_fit <- train(rating_bin~.,
                        method="glm", 
                        family = "binomial",
                        trControl=trCtrl_down,
-                       trace = TRUE)
+                       trace = FALSE)
 logreg_all_fit
 ```
 
@@ -1468,12 +1468,11 @@ CM
 summary_table_down <- cbind(summary_table_down, CART_all = summary_table_fun(CM))
 ```
 
-### XGBoost - Unbalanced
-```{r xgb_all datasets, cache=FALSE}
-numeric_tr <- train_all %>% 
-  mutate(rating_bin = ifelse(rating_bin == "good", 1, 0), across(everything(), as.character)) %>% 
-  mutate(across(everything(), as.numeric))
+### XGBoost
+Here we decided to try the XGBoost model for the first time to see if it would magically work better than the others we have tested so far with other variable combinations.
 
+```{r xgb_all datasets, cache=FALSE}
+#creating datasets for xgboost
 numeric_downsamp_tr <- downsamp_tr_all %>% 
   mutate(rating_bin = ifelse(rating_bin == "good", 1, 0), across(everything(), as.character)) %>% 
   mutate(across(everything(), as.numeric))
@@ -1483,9 +1482,6 @@ numeric_te <- test_all %>%
   mutate(across(everything(), as.numeric))
 
 #creating datasets which don't include the labels, for inputs in the xgb Matrix
-explan_tr <- numeric_tr %>% 
-  select(-rating_bin)
-
 explan_downsamp_tr <- numeric_downsamp_tr %>% 
   select(-rating_bin)
 
@@ -1493,61 +1489,13 @@ explan_te <- numeric_te %>%
   select(-rating_bin)
 
 #prepare data for XGBoost by creating xgb matrix
-xgb_tr <- xgb.DMatrix(data = as.matrix(explan_tr), label = numeric_tr$rating_bin)
 xgb_downsamp_tr <- xgb.DMatrix(data = as.matrix(explan_downsamp_tr), label = numeric_downsamp_tr$rating_bin)
+
 xgb_te <- xgb.DMatrix(data = as.matrix(explan_te), label = numeric_te$rating_bin)
 ```
 
-**Accuracy metrics**
-
-- ACC 59.4
-- BACC 55.7
-- Kappa 11.9
-- Recall 76.4
 
 #### Fitting
-```{r xgb_all_unbal_fit}
-#set hyperparameters
-param_list <- list(
-  objective = "binary:logistic",
-  eta = 0.1,
-  gamma = 0,
-  max_depth = 5,
-  min_child_weight = 1,
-  subsample = 0.6,
-  colsample_bytree = 0.6
-)
-
-#train the model
-set.seed(12)
-xgb_unbal_fit <- xgboost(data = xgb_tr,
-                     params = param_list,
-                     nrounds = 500,
-                     verbose = FALSE)
-```
-
-#### Predictions
-```{r xgb_all_unbal_pred}
-xgb_unbal_prob <- predict(xgb_unbal_fit, newdata = xgb_te)
-
-xgb_unbal_pred <- as.factor(ifelse(xgb_unbal_prob<0.5, 0, 1))
-
-confusionMatrix(reference = as.factor(numeric_te$rating_bin), data = xgb_unbal_pred, positive = "1")
-```
-
-Only marginally improves accuracy, but greatly improves balanced accuracy and Kappa.
-```{r xgb_all_unbal threshold}
-rocit_emp <- rocit(score = xgb_unbal_prob, class = numeric_te$rating_bin, method = "emp")
-plot(rocit_emp, col = c(1,"gray50"),legend = TRUE, YIndex = TRUE)
-
-#best value is 0.5501
-
-xgb_unbal_pred_threshold <- as.factor(ifelse(xgb_unbal_prob<0.5501, 0, 1))
-
-confusionMatrix(reference = as.factor(numeric_te$rating_bin), data = xgb_unbal_pred_threshold, positive = "1")
-```
-
-### XGBoost - Balanced
 
 **Accuracy metrics**
 
@@ -1555,8 +1503,6 @@ confusionMatrix(reference = as.factor(numeric_te$rating_bin), data = xgb_unbal_p
 - BACC 55.7
 - Kappa 11.9
 - Recall 76.4
-
-#### Fitting
 ```{r xgb_all_down_fit, cache=FALSE}
 #set hyperparameters
 param_list <- list(
@@ -1577,17 +1523,19 @@ xgb_down_fit <- xgboost(data = xgb_downsamp_tr,
                      verbose = FALSE)
 ```
 
-```{r}
+Here we control for overfitting by checking the balanced accuracy on the training set, which stands at a 61.3%. We have found a great balance between performance and overfitting by setting the gamma parameter at 7 and the nrounds at 100.
+```{r xgb_down_prob_train}
 #testing on training set to control overfitting
-xgb_down_prob <- predict(xgb_down_fit, newdata = xgb_downsamp_tr)
+xgb_down_prob_train <- predict(xgb_down_fit, newdata = xgb_downsamp_tr)
 
-xgb_down_pred <- as.factor(ifelse(xgb_down_prob<0.5, 0, 1))
+xgb_down_pred_train <- as.factor(ifelse(xgb_down_prob_train<0.5, 0, 1))
 
-CM <- confusionMatrix(reference = as.factor(numeric_downsamp_tr$rating_bin), data = xgb_down_pred, positive = "1")
+CM <- confusionMatrix(reference = as.factor(numeric_downsamp_tr$rating_bin), data = xgb_down_pred_train, positive = "1")
 CM
 ```
 
 #### Predictions
+We now check the actual balanced accuracy on the testing set. We see that the accuracy is at 56.0%. While this is slightly lower than what we found on the training set, it does not signal significant overfitting.
 ```{r xgb_all_down_pred, cache=FALSE}
 xgb_down_prob <- predict(xgb_down_fit, newdata = xgb_te)
 
@@ -1600,18 +1548,25 @@ summary_table_down <- cbind(summary_table_down, XGB_all = summary_table_fun(CM))
 ```
 
 ## 3.1 Model Selection
-Here we can see the results for section 5.3 on the unbalanced data.
+We decide to select models only withing the models that we fitted with the binary rating variable. This leaves us with both the balanced and unbalanced sections.
+
+### Unbalanced data
+Here we can see the results for section 5.3 on the unbalanced data. We observe that the balanced accuracy is rarely too far from 50% which indicates a pretty bad classification. The sensitivity is also very high for most models due to the bias towards the majority class "good" due to the class imbalance. Given this poor performance, we decide to focus on the models with balanced data to perform our selection of the best model.
 ```{r summary_table_unbal, cache=FALSE}
 summary_table_unbal %>% 
   kbl() %>% 
   kable_styling(position = "center")
+summary_table_unbal
 ```
 
-Here we can see the results for section 5.4 on the downsampled data.
+### Balanced data
+Here we can see the results for section 5.4 on the downsampled data, with a total of 21 models that we fitted with various combinations of explanatory variables. We see that the balanced accuracy is already higher, and the sensitivity is more reasonable. Below, we investigate various aspects of these metrics and select the top-performing models. We decide to use balanced accuracy and sensitivity as the two metrics to quantitatively rank the best models.
 ```{r summary_table_down, cache=FALSE}
 summary_table_down %>% 
   kbl() %>% 
-  kable_styling(position = "center")
+  kable_styling(position = "center") %>% 
+  as_image()
+
 summary_table_down_store <- summary_table_down
 ```
 
@@ -1640,7 +1595,7 @@ kappa_select <- summary_down_wide %>%
   dplyr::slice(1:5) %>% pull(model)
 ```
 
-We first look at the top-3 models with the highest balanced_accuracy
+We first look at the top-5 models with the highest balanced_accuracy
 ```{r}
 summary_down_long %>% 
   filter(model %in% bacc_select, metric=="balanced_accuracy") %>% 
@@ -1650,7 +1605,7 @@ summary_down_long %>%
   labs(y = "Balance accuracy (in %)", x = "Model", title = "Top 5 models with highest balanced accuracy")
 ```
 
-We now plot the top-3 models with the highest sensitivity. 
+We now plot the top-5 models with the highest sensitivity. 
 ```{r}
 summary_down_long %>% 
   filter(model %in% sens_select, metric=="sensitivity") %>% 
@@ -1660,15 +1615,7 @@ summary_down_long %>%
   labs(y = "Sensitivity (in %)", x = "Model", title = "Top 5 models with highest sensitivity")
 ```
 
-We now plot the top-3 models with the highest kappa
-```{r}
-summary_down_long %>% 
-  filter(model %in% kappa_select, metric=="kappa") %>% 
-  ggplot(aes(x=model, y=value, fill = model))+
-  geom_bar(stat="identity", position = "dodge")+
-  coord_cartesian(ylim = c(5, 15)) + 
-  labs(y = "Kappa (in %)", x = "Model", title = "Top 5 models with highest Kappa")
-```
+
 ```{r}
 summary_points <- summary_down_wide %>% 
   mutate(points_bacc = rank(balanced_accuracy), points_sens = rank(sensitivity), total_points = (points_bacc + points_sens))
@@ -1676,7 +1623,8 @@ summary_points <- summary_down_wide %>%
 summary_points %>% 
   arrange(desc(total_points)) %>%
   dplyr::slice(1:5) %>% 
-  select(model, points_bacc, points_sens, total_points)
+  select(model, points_bacc, points_sens, total_points) %>% 
+  kbl()
   
 summary_points %>% 
   arrange(desc(total_points)) %>% 
@@ -1687,14 +1635,65 @@ summary_points %>%
   labs(y = "Total number of points", x = "Model", title = "Top 5 models with highest Number of Points")
 ```
 Here we can see that XGB_all has the highest number of points based on the weighted ranking system combining the balanced accuracy and sensitivity metrics with a total of 40 points. Followed by the RF_NuTo and LogReg_NuTo sharing the second place with 36 points.
-## 3.2 Variable Importance
 
-```{r VarImp XGBoost}
+### Showcasing the best model - XGBoost_all
+Here we show 4 metrics for the best model we select. We can see that the accuracy and the balanced accuracy are very close to each other around 56%. The sensitivity is the highest at around 59.5%. Kappa is at 11.85% which is pretty low but still in the top values compared to other models we compared.
+```{r}
+summary_down_long %>% 
+  filter(model =="XGB_all") %>% 
+  ggplot(aes(x=model, y=value, fill = metric))+
+  geom_bar(stat="identity", position = "dodge")+
+  coord_cartesian(ylim = c(10, 60)) + 
+  labs(y = "Value (in %)", x = "", title = "Showcasing 4 metrics for the XGB_all model")+
+  scale_fill_viridis(discrete = TRUE)
+```
+#### Prediction robustness and plotting ROC curve of XGBoost_all
+We can clearly see even the best model has a lot of trouble clearly classifying the results by attributing probabilities to each class. There is some severe overlap in probabilites around the threshold at 0.5. The median probability for each class is barely above and below the threshold for "good" and "bad" respectively. This indicates very low robustness of the model and confirms the poor classification performance.
+
+```{r}
+#predicting on the testing set
+roc_df <- test_all %>% 
+  mutate(prob_test = predict(xgb_down_fit, newdata = xgb_te))
+
+#plotting histogram
+roc_df %>%
+  ggplot(aes(x = prob_test, fill = rating_bin)) +
+  geom_histogram(bins = 20) +
+  labs(x = "Probability", y = "Count", title = "Distribution of predicted probabilities on the test set - XGB_all")
+
+#plotting boxplot
+roc_df %>%
+  ggplot(aes(x = rating_bin, y = prob_test)) +
+  geom_boxplot() + 
+  labs(x = "Response", y = "Probability", title = "Boxplot of probability for each response value on the test set - XGB_all")
+```
+Here we can see the ROC curve relating to the test set probabilities of the XGB_all model. This shows us that is is better than the random model, but not great peformance either as the AUC is clearly quite small.
+```{r}
+rocit_emp <- rocit(score = xgb_down_prob, class = numeric_te$rating_bin, method = "emp")
+plot(rocit_emp, col = c(1,"gray50"),legend = TRUE, YIndex = FALSE)
+```
+## 3.2 Variable Importance and PDP
+
+### VarImp
+Below we show the first 50 most important variables from the top model we selected, XGB_all.
+```{r VarImp XGBoost, fig.height=12, fig.width=8}
 #XGBoost variable importance
 xgb_importance_matrix <- xgb.importance(model = xgb_down_fit)
 xgb_importance_matrix
 
-xgb.ggplot.importance(importance_matrix = xgb_importance_matrix) +
+xgb.ggplot.importance(importance_matrix = xgb_importance_matrix %>% head(50)) +
   labs(title = "XGBoost Feature Importance")
+```
+
+### PDP
+Doesn't work for xgboost
+```{r eval = FALSE}
+partial(xgb_down_fit, pred.var = "sodium", plot = TRUE)
+```
+
+### LIME
+```{r eval=FALSE}
+lime_xgb_explainer <- lime((explan_downsamp_tr), xgb_down_fit, bin_continuous = TRUE, quantile_bins = FALSE)
+expl_xgb <- lime::explain(explan_te %>% select(sodium), lime_xgb_explainer, n_labels = 1, n_features = 1)
 ```
 

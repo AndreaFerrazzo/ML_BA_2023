@@ -6,7 +6,8 @@ packages <- c(
   "caret", "ROCit",#for modelling
   "kernlab", "e1071",#for SVM
   "rpart", "rpart.plot", "adabag",#for CART
-  "xgboost"
+  "xgboost",
+  "pdp", "lime"#model interpretation
 )
 purrr::walk(packages, library, character.only = TRUE)
 ```
