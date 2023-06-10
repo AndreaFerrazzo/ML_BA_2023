@@ -23,20 +23,25 @@ As we can see, most of the ratings have value equal or above 3.75, more in parti
 
 ```{r}
 
-#histograms + density for age, amount and duration
+#histograms and density plots for nutritional values
 
-ggplot(credit_data, aes(age)) +
-  geom_histogram(aes(y = ..density..), color = "#000000", fill = "#0099F8") +
+ggplot(recipes, aes(protein)) +
+  geom_histogram(aes(y = ..density..), bins = 50,color = "#000000", fill = "#0099F8") +
   geom_density(color = "#000000", fill = "#F85700", alpha = 0.6)+
   labs(x = "Age", y = "Density", title = "Distribution of age")
 
-ggplot(credit_data, aes(amount)) +
-  geom_histogram(aes(y = ..density..), color = "#000000", fill = "#0099F8") +
+ggplot(recipes, aes(fat)) +
+  geom_histogram(aes(y = ..density..), bins = 50, color = "#000000", fill = "#0099F8") +
   geom_density(color = "#000000", fill = "#F85700", alpha = 0.6)+
   labs(x = "Amount", y = "Density", title = "Distribution of amount")
 
-ggplot(credit_data, aes(duration)) +
-  geom_histogram(aes(y = ..density..), color = "#000000", fill = "#0099F8") +
+ggplot(recipes, aes(sodium)) +
+  geom_histogram(aes(y = ..density..), bins = 50, color = "#000000", fill = "#0099F8") +
+  geom_density(color = "#000000", fill = "#F85700", alpha = 0.6) +
+  labs(x = "Duration", y = "Density", title = "Distribution of duration")
+
+ggplot(recipes, aes(calories)) +
+  geom_histogram(aes(y = ..density..), bins = 50, color = "#000000", fill = "#0099F8") +
   geom_density(color = "#000000", fill = "#F85700", alpha = 0.6) +
   labs(x = "Duration", y = "Density", title = "Distribution of duration")
 
