@@ -572,7 +572,8 @@ Given this low correlation between the "binary" ingredients categories and the 7
 ```{r}
 #corr plot
 ingredients_df_bin %>% 
-  select(contains("bin"), rating) %>%
+  mutate(rating_bin = ifelse(rating>4, 1, 0)) %>% 
+  select(rating, rating_bin, contains("bin")) %>%
   plot_correlation()
 ```
 
@@ -620,8 +621,8 @@ As we can observe, many recipes contain milk cream, onion, tomato, salad, egg an
 
 ```{r}
 ingredients_df_total %>% 
-  select(contains("total"), rating) %>% 
   mutate(rating_bin = ifelse(rating>4, 1, 0)) %>% 
+  select(rating, rating_bin, contains("total")) %>% 
   plot_correlation()
 ```
 We notice a negative relationship between the number of fruits and number of vegetables which makes sense these two kinds of ingredients are rarely combined in a recipe. The same is true for the number of vegetables related to the number of desserts. The results are similar to the previous correlogram with the binary columns. In this case we do not notice any significant relationship between the multilevel rating rating and the other variables.
