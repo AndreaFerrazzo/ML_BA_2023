@@ -3,7 +3,8 @@ packages <- c(
   "knitr", "here", "tidyverse", "summarytools", "janitor", "viridis", "corrplot", "DataExplorer", "kableExtra", "gridExtra",
   "caret",
   "FactoMineR", "factoextra", #for PCA
-  "kernlab",#for SVM
+  "reshape2", #for Clustering
+  "e1071", "kernlab",#for SVM
   "rpart", "rpart.plot", "adabag"#for CART
 )
 purrr::walk(packages, library, character.only = TRUE)

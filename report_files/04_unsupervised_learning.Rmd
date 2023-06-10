@@ -1,17 +1,18 @@
 # Unsupervised Learning
-## Clustering
+## Clustering - ALL
 
-Let us try to apply unsupervised learning to the data set with all 680 variables.
+Let us try to apply the clustering techniques to the data set with all 680 variables.
 First we have to scale all the numerical features except the variable rating.
 ```{r}
 
 recipes_clust <- ingredients_df %>% 
-  select(-ID, -title)
+  select(-ID, -title) %>%
+  filter(row_number() <= n() / 2)
 
 recipes_clust[,-294] <- scale(recipes_clust[,-294])
 
 ```
-
+Due to high number of values in our dataset, R was unable to run the hierarchical clustering. Hence, we had to consider only half of the dataset to obtain results in a reasonable amount of time. We acknowledge that this could have a negative impact on the quality of the results.
 
 ### Hierarchical Clustering
 We apply agglomerative hierarchical clustering
@@ -27,7 +28,7 @@ ggplot(data = recipes_melt, aes(x=Var1, y=Var2, fill=value)) +
   geom_tile()
 
 ```
-We can see that ...
+It is impossible to extract any information from such a graph.
 
 ### Dendrogram
 We build a dendrogram using the complete linkage
@@ -39,80 +40,148 @@ plot(recipes_hc, hang=-1)
 plot(recipes_hc, hang=-1)
 rect.hclust(recipes_hc, k=8) # we cut the tree to 8 clusters
 
-recipes_clust <- cutree(recipes_hc, k=8)
-recipes_clust
+recipes_clust_cut <- cutree(recipes_hc, k=8)
+recipes_clust_cut
 
 
 ```
-
+We cut the tree to 8 clusters, and represent the result. We also extract the cluster assignment of each recipe.
 
 ### Interpretation of the clusters
 Here we analyze the clusters by looking at the distribution of the features within each cluster
-```{r}
+```{r fig.height=10, fig.width=10}
 
-recipes_comp <- data.frame(recipes_clust[,-1], Clust=factor(recipes_clust), Id=row.names(recipes))
+recipes_comp <- data.frame(recipes_clust[,-294], Clust=factor(recipes_clust_cut), Id=row.names(recipes_clust))
 recipes_clust_df <- melt(recipes_comp, id=c("Id", "Clust"))
 head(recipes_clust_df)
 
 ggplot(recipes_clust_df, aes(y=value, group=Clust, fill=Clust)) +
   geom_boxplot() +
-  facet_wrap(~variable, ncol=4, nrow=3)
+  facet_wrap(~variable)
 
 
 ```
-We can see that ...
+Again very hard to interpret such results. There are some clusters that show high presence of certain variables. For instance the 5th cluster indicates higher values of tapioca, granola, oat and pie compares to all the rest. The 7th cluster also shows higher values for meatball and turkey with respect to all the other variables.
+
+
+### Choice of the number of clusters
+To choose the number of clusters we can inspect the dendrogram or rely on statistics such as sum-of-squares, the GAP statistics, and the silhouette. In our case we choose the silhouette method.
+```{r}
+
+fviz_nbclust(recipes_clust[,-294],
+             hcut, hc_method="complete",
+             hc_metric="manhattan",
+             method = "silhouette", 
+             k.max = 25, verbose = FALSE)
+
+```
+These methods are not easy to interpret. The silhouette method chooses 2 clusters while the sum-of-squares and gap method did not provide any clear information in this regard.
+
+
+## Clustering - NuTo
+
+Let us try to apply unsupervised learning to the data set with only numerical variables. We want to avoid making the clustering on binary variables.
+As already did before we have to scale all the numerical features except the variable rating.
+```{r}
+
+recipes_clust2 <- ingredients_df_full %>% 
+  left_join(nutritional_df, by="ID") %>% 
+  mutate(across(all_of(contains("bin")), as.factor) , ID = as.character(ID)) %>% 
+  select(rating, -ID, -title, all_of(nutritional_values), contains("total")) %>%
+  filter(row_number() <= n() / 2)
+
+recipes_clust2[,-1] <- scale(recipes_clust2[,-1])
+
+```
+
+
+### Hierarchical Clustering
+We apply agglomerative hierarchical clustering
+```{r}
+
+recipes_d2 <- dist(recipes_clust2[,-1], method = "manhattan") # matrix of Manhattan distances 
+
+recipes_melt2 <- melt(as.matrix(recipes_d2)) # create a data frame of the distances in long format
+head(recipes_melt2)
+
+
+# ggplot(data = recipes_melt2, aes(x=Var1, y=Var2, fill=value)) + 
+#  geom_tile()
+
+```
+It is impossible to extract any information from such a graph.
+
+### Dendrogram
+We build a dendrogram using the complete linkage
+```{r}
+
+recipes_hc2 <- hclust(recipes_d2, method = "complete")
+plot(recipes_hc2, hang=-1)
+
+plot(recipes_hc2, hang=-1)
+rect.hclust(recipes_hc2, k=8) # we cut the tree to 8 clusters
+
+recipes_clust_cut2 <- cutree(recipes_hc2, k=8)
+recipes_clust_cut2
+
+
+```
+We cut the tree to 8 clusters, and represent the result. We also extract the cluster assignment of each recipe.
+
+### Interpretation of the clusters
+Here we analyze the clusters by looking at the distribution of the features within each cluster
+```{r fig.height=10, fig.width=10}
+
+recipes_comp2 <- data.frame(recipes_clust2[,-1], Clust=factor(recipes_clust_cut2), Id=row.names(recipes_clust2))
+recipes_clust_df2 <- melt(recipes_comp2, id=c("Id", "Clust"))
+head(recipes_clust_df2)
+
+ggplot(recipes_clust_df2, aes(y=value, group=Clust, fill=Clust)) +
+  geom_boxplot() +
+  facet_wrap(~variable)
+
+```
+Again very hard to interpret such results. There are some clusters that show high presence of certain variables. For instance the 2nd cluster indicates higher values of total_nuts, total_fruits, total_dairy and total_dessert, hence this cluster should represent dessert recipes. The 8th cluster contains high values of protein, sodium, total_seafood, total_spices and total_carbs. This might be associated with recipes containing seafood which are high in sodium and protein.
 
 
 ### Choice of the number of clusters
 To choose the number of clusters we can inspect the dendrogram or rely on statistics such as sum-of-squares, the GAP statistics, and the silhouette.
 ```{r}
 
-fviz_nbclust(recipes_clust[,-1],
+fviz_nbclust(recipes_clust2[,-1],
              hcut, hc_method="complete",
              hc_metric="manhattan",
              method = "wss", 
              k.max = 25, verbose = FALSE)
 
-fviz_nbclust(recipes_clust[,-1],
+fviz_nbclust(recipes_clust2[,-1],
              hcut, hc_method="complete",
              hc_metric="manhattan",
              method = "silhouette", 
              k.max = 25, verbose = FALSE)
 
-fviz_nbclust(recipes_clust[,-1],
-             hcut, hc_method="complete",
-             hc_metric="manhattan",
-             method = "gap", 
-             k.max = 25, verbose = FALSE)
-
 ```
+These methods are not easy to interpret. The silhouette method chooses 2 clusters while the sum-of-squares and gap method did not provide any clear information in this regard.
 
-
-## K-Means
+## K-Means NuTo
 
 ```{r}
 
-fviz_nbclust(recipes_clust[,-1],
+fviz_nbclust(recipes_clust2[,-1],
              kmeans,
              method = "wss", 
              k.max = 25, verbose = FALSE)
 
-fviz_nbclust(recipes_clust[,-1],
+fviz_nbclust(recipes_clust2[,-1],
              kmeans, 
              method = "silhouette", 
              k.max = 25, verbose = FALSE)
 
-fviz_nbclust(recipes_clust[,-1],
-             kmeans,
-             method = "gap", 
-             k.max = 25, verbose = FALSE)
 
-recipes_km <- kmeans(recipes_clust[,-1], centers=2)
-recipes_km$cluster
-
+recipes_km2 <- kmeans(recipes_clust2[,-1], centers=5)
+recipes_km2$cluster
 
 ```
-The clusters can be inspected through their features exactly the same way as before...
+Sum-of-squares indicated 18 clusters as the optimal number since an improvement in terms of total within sum of square is not visible after this threshold. Silhouette on the other hand indicated 2 clusters. 
 
-With recipes_km we can find more information about the clustering obtained ...
 
