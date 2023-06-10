@@ -547,44 +547,39 @@ ingredients_df_bin %>%
   plot_bar(order_bar = FALSE)
 ```
 
-#### Relationship between binary ingredients categories and 7-level rating variable
+#### Relationship between binary ingredients categories and ratings
 
-##### Barplots
-We now want to check the relationship between our `rating` variable and all the binary ingredients variables. We first plot this relationships with multilevel barplots
+##### Barplots - 7-level rating variable
+We now want to check the relationship between our `rating` variable and all the binary ingredients variables. We first plot this relationships with multilevel barplots.
+
+It is not so straightforward to analyse but we can see that for example recipes with no fish have a higher chance of getting a rating of 5 when compared to recipes with fish in them. Recipes with carbs seem to have the lowest frequency of rating at 5 out of all the binary categories.
 ```{r}
 ingredients_df_bin %>% 
   select(contains("bin"), rating) %>%
   mutate(across(everything(), as.factor)) %>% 
   plot_bar(by = "rating", order_bar = FALSE)
 ```
-
-
 ##### Correlation plot
 We see some somewhat strong negative correlation between vegetables and dessert, and between vegetable and fruits. This makes sense, as these ingredients are rarely found together in recipes. As a side note, we chose to classify tomato as a vegetable and strongly stand by this opinion :)
 
 Concerning positive correlations, we see nuts and desert as highly correlated. This is probably because they go well together in sugary recipes. Additionally, egg and dairy are also slightly positively correlated. This most likely comes from patisserie recipes where eggs and dairy ingredients go hand in hand.
 
-When looking at the correlation of the binary ingredients variables with the rating, we see that the highest negative correlation is between rating and `carbs_bin` which could sound a bit surprising given the assumed high popularity of pasta for example. The highest positive correlation is with `fruit_bin` at 0.04. We note however that all correlations between binary ingredients variables and rating are disappointingly weak.
+When looking at the correlation of the binary ingredients variables with the 7-level rating (i.e., `rating`), we see that the highest negative correlation is between rating and `carbs_bin` which could sound a bit surprising given the assumed high popularity of pasta for example. The highest positive correlation is with `fruit_bin` at 0.04. We note however that all correlations between binary ingredients variables and rating are disappointingly weak.
+
+Given this low correlation between the "binary" ingredients categories and the 7-level rating, we decided to investigate if we could find a higher correlation by transforming the variable to a binary rating. We decide to put the threshold for a "bad" or "good" rating at 4. Unfortunately, the results are very similar to the 7-level rating variable, with very weak correlations.
+
 
 ```{r}
 #corr plot
 ingredients_df_bin %>% 
-  select(contains("bin"), rating) %>%
+  mutate(rating_bin = ifelse(rating>4, 1, 0)) %>% 
+  select(rating, rating_bin, contains("bin")) %>%
   plot_correlation()
 ```
 
-```{r eval = FALSE}
-# # With rating as a factor
-# ingredients_df_bin %>% 
-#   select(contains("bin"), rating) %>% 
-#   mutate(across(rating, as.factor)) %>% 
-#   plot_correlation()
-# 
-# #From this graph we also notice that recipes with rating at 3.75 have slightly positive relationship with carbs and vegetables, whereas recipes with rating at 5 have slightly negative relationship with the same features. We assume then that recipes containing vegetables and carbs tend to be less appreciated.
-```
+##### Barplots - binary rating variable
+Despite the low correlation with the binary rating, we still want to visualise it like we did above for the multilevel rating.
 
-#### Relationship between binary ingredients categories and binary rating variable
-Given the low correlation between the "binary" ingredients categories and the 7-level rating, we decided to investigate if we could find a higher correlation by transforming the variable to a binary rating. We decide to put the threshold for a "bad" or "good" rating at 4.
 ```{r}
 ingredients_df_bin %>% 
   select(contains("bin"), rating) %>%
@@ -592,20 +587,10 @@ ingredients_df_bin %>%
   select(-rating) %>% 
   plot_bar(by = "rating_bin", order_bar = FALSE)
 ```
-We now have only 2 categories: recipes with rating above 4 and recipes with ratings below 4. There is no clear relationship in those graphs either, and this confirms the correlation results that we have found above for the 7-level rating variable..
 
-If we look at vegetables for example, we can see that the proportion of recipes with ratings above 4 is higher for recipes containing no vegetables, when compared to recipes containing at least one vegetable.
+We now have only 2 categories: recipes with rating above 4 and recipes with ratings below 4. There is no clear relationship in those graphs either, and this confirms the correlation results that we have found above in the correlation plot.
 
-We once again plot the correlation, but this time with the binary rating variable. The results are very similar to the 7-level rating # variable, with very weak correlations.
-
-```{r}
-#corr plot
-ingredients_df_bin %>% 
-  select(contains("bin"), rating) %>%
-  mutate(rating_bin = ifelse(rating>4, 1, 0)) %>% 
-  select(-rating) %>% 
-  plot_correlation()
-```
+As far as interpretation goes, if we look at vegetables for example, we can see that the proportion of recipes with ratings above 4 is higher for recipes containing no vegetables, when compared to recipes containing at least one vegetable.
 
 ### "Total" engineered ingredients variables
 ```{r}
@@ -632,25 +617,17 @@ ing_top10 %>%
 ```
 As we can observe, many recipes contain milk cream, onion, tomato, salad, egg and garlic. Some of these are versatile as they can be used for many different kinds of recipes. Onion and garlic are widely used for giving flavour to many dishes, whereas egg and milk cream can be used to cook salty and sweet recipes.
 
-#### Correlation between total number of ingredients per category and 7-level rating variable
+#### Correlation between total number of ingredients per category and rating variable
 
 ```{r}
 ingredients_df_total %>% 
-  select(contains("total"), rating) %>% 
-  plot_correlation()
-```
-We notice a negative relationship between the number of fruits and number of vegetables which makes sense these two kinds of ingredients are rarely combined in a recipe. The same is true for the number of vegetables related to the number of desserts. The results are similar to the previous correlogram with the binary columns. In this case we do not notice any significant relationship between rating and the other variables.
-
-#### Correlation between total number of ingredients per category and binary rating variable
-Results are disapointing again and in line with what we found so far. Correlations between total number of ingredients and the binary rating variable are also very weak.
-```{r}
-#corr plot
-ingredients_df_total %>% 
-  select(contains("total"), rating) %>%
   mutate(rating_bin = ifelse(rating>4, 1, 0)) %>% 
-  select(-rating) %>% 
+  select(rating, rating_bin, contains("total")) %>% 
   plot_correlation()
 ```
+We notice a negative relationship between the number of fruits and number of vegetables which makes sense these two kinds of ingredients are rarely combined in a recipe. The same is true for the number of vegetables related to the number of desserts. The results are similar to the previous correlogram with the binary columns. In this case we do not notice any significant relationship between the multilevel rating rating and the other variables.
+
+Results are disappointing again for the `rating_bin` variable, and remain in line with what we found so far. Correlations between total number of ingredients and both rating variable are very weak.
 
 #### Amount of ingredients per recipe
 
@@ -930,66 +907,49 @@ Recipes which contain carbs register a higher average content of calories than r
 seasons_df <- recipes %>% 
   select(ID, rating, all_of(seasons_vec)) %>% 
   filter(if_any(all_of(seasons_vec)) == 1) %>% 
-  mutate(sum_season = rowSums(across(all_of(seasons_vec))))
+  mutate(sum_season = rowSums(across(all_of(seasons_vec))), rating_bin = ifelse(rating>4, 1, 0)) %>% 
+  relocate(rating_bin, .after = rating)
 
-seasons_df %>% 
+seasons_df %>%
 ggplot(aes(x=sum_season)) +
   geom_bar()
 
-seasons_df %>% 
-  filter(sum_season==3)
-
-seasons_df %>% 
-  filter(sum_season==4)
+# seasons_df %>% 
+#   filter(sum_season==3)
+# 
+# seasons_df %>% 
+#   filter(sum_season==4)
 #total of 29 recipes with either 3 or 4 --> let's discard them
 
 #let's look a bit more closely to those with 2 seasons to see if they are next to each other or not
 
-seasons_df %>% 
-  filter(sum_season==2)
+# seasons_df %>% 
+#   filter(sum_season==2)
 
-### should we keep those observations???
+### should we keep those observations??? no
+#removing obs with more than one season
+seasons_df <- seasons_df %>% 
+  filter(sum_season==1)
 ```
 
-As we can see, there is again no correlation between seasons and recipe ratings.
+As we can see, there is again no correlation between seasons and recipe ratings, be it the 7-level rating or the binary rating.
 
 ```{r}
 seasons_df %>% 
   select(-sum_season, -ID) %>% 
   plot_correlation()
 ```
-
-CAN TRY TO feature engineer rating above 4
-
-Inconclusive result, again.
-
-```{r}
-seasons_df <-seasons_df %>% 
-  mutate(rating_above_4 = ifelse(rating > 4, 1, 0), rating_5 = ifelse(rating == 5, 1, 0), rating_1.25 = ifelse(rating == 1.25, 1, 0))
-
-seasons_df %>% 
-  select(rating, rating_above_4, all_of(seasons_vec))%>% 
-  plot_correlation()
-```
-
-```{r}
-seasons_df %>%
-  select(rating_5, rating_1.25, all_of(seasons_vec)) %>%
-  plot_correlation()
-```
-
 ### Recipe Type
 
 ```{r Recipe Type EDA}
-#TO ADD WHEN COMPLETED
-
 #taking into account only the "main" recipe types
 recipe_types_select <- c("breakfast", "brunch", "dessert", "dinner", "lunch")
 
 type_df <- recipes %>% 
   select(ID, rating, all_of(recipe_types_select)) %>% 
   filter(if_any(all_of(recipe_types_select)) == 1) %>% 
-  mutate(sum_type= rowSums(across(all_of(recipe_types_select))))
+  mutate(sum_type = rowSums(across(all_of(recipe_types_select))), rating_bin = ifelse(rating>4, 1, 0)) %>% 
+  relocate(rating_bin, .after = rating)
 
 type_df %>% 
   ggplot(aes(x=sum_type)) +
@@ -1003,7 +963,7 @@ type_df <- type_df %>%
   filter(!sum_type >1)
 ```
 
-Once again very low correlation for recipe types, we will not included them in the analysis.
+Once again very low correlation for recipe types relative to either rating variables, we will not included them in the analysis.
 ```{r}
 type_df %>% 
   select(-c(ID, sum_type)) %>% 
@@ -1011,7 +971,7 @@ type_df %>%
 ```
 
 ### Countries
-Only 54 recipes containing info about the country so we can't use it either for the analysis.
+Only 54 recipes containing info about the country so we cannot use it either for the analysis.
 ```{r Countries EDA}
 countries_df <- recipes %>% 
   select(ID, rating, all_of(countries)) %>% 

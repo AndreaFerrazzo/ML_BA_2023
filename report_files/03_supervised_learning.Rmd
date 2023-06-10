@@ -338,11 +338,11 @@ We fit a KNN model on unbalanced data with only the nutritional variables. The b
 ```{r knn_Nut_unbal_fit}
 set.seed(12)
 knn_Nut_unbal_fit <- caret::train(rating_bin ~.,
-                data = train_bin_Nut,
-                method = "knn",
-                trControl = trCtrl,
-                tuneGrid= data.frame(k = seq(105, 115,by = 2))#initially checked on 1-151 range, best was 113
-                )
+                                  data = train_bin_Nut,
+                                  method = "knn",
+                                  trControl = trCtrl,
+                                  tuneGrid= data.frame(k = seq(105, 115,by = 2))#initially checked on 1-151 range, best was 113
+                                  )
 knn_Nut_unbal_fit
 ```
 
