@@ -1560,12 +1560,11 @@ summary_table_unbal
 ```
 
 ### Balanced data
-Here we can see the results for section 5.4 on the downsampled data, with a total of 21 models that we fitted with various combinations of explanatory variables. We see that the balanced accuracy is already higher, and the sensitivity is more reasonable. Below, we investigate various aspects of these metrics and select the top-performing models. We decide to use balanced accuracy and sensitivity as the two metrics to quantitatively rank the best models.
+Here we can see the results for section 5.4 on the downsampled data, with a total of 21 models that we fitted with various combinations of explanatory variables. We see that the balanced accuracy is already higher, and the sensitivity is more reasonable. Below, we investigate various aspects of these metrics and select the top-performing models. We decide to use balanced accuracy and sensitivity as the two core metrics to quantitatively rank the best models.
 ```{r summary_table_down, cache=FALSE}
 summary_table_down %>% 
   kbl() %>% 
-  kable_styling(position = "center") %>% 
-  as_image()
+  kable_styling(position = "center")
 
 summary_table_down_store <- summary_table_down
 ```
@@ -1597,6 +1596,9 @@ kappa_select <- summary_down_wide %>%
 
 We first look at the top-5 models with the highest balanced_accuracy
 ```{r}
+mean_bacc <- summary_down_wide %>% 
+  summarise(mean_bacc = mean(balanced_accuracy)) %>% pull() %>% round(., 2)
+            
 summary_down_long %>% 
   filter(model %in% bacc_select, metric=="balanced_accuracy") %>% 
   ggplot(aes(x=model, y=value, fill = model))+
@@ -1607,6 +1609,9 @@ summary_down_long %>%
 
 We now plot the top-5 models with the highest sensitivity. 
 ```{r}
+mean_sens<- summary_down_wide %>% 
+  summarise(mean_sens = mean(sensitivity)) %>% pull() %>% round(., 2)
+
 summary_down_long %>% 
   filter(model %in% sens_select, metric=="sensitivity") %>% 
   ggplot(aes(x=model, y=value, fill = model))+
@@ -1618,13 +1623,14 @@ summary_down_long %>%
 
 ```{r}
 summary_points <- summary_down_wide %>% 
-  mutate(points_bacc = rank(balanced_accuracy), points_sens = rank(sensitivity), total_points = (points_bacc + points_sens))
+  mutate(rank_bacc = 22-rank(balanced_accuracy), points_bacc = rank(balanced_accuracy), rank_sens = 22-rank(sensitivity), points_sens = rank(sensitivity), total_points = (points_bacc + points_sens))
 
 summary_points %>% 
   arrange(desc(total_points)) %>%
   dplyr::slice(1:5) %>% 
   select(model, points_bacc, points_sens, total_points) %>% 
-  kbl()
+  kbl() %>% 
+  kable_styling(position = "center")
   
 summary_points %>% 
   arrange(desc(total_points)) %>% 
@@ -1632,7 +1638,8 @@ summary_points %>%
   ggplot(aes(x=model, y=total_points, fill = model))+
   geom_bar(stat="identity", position = "dodge")+
   coord_cartesian(ylim = c(30, 40)) + 
-  labs(y = "Total number of points", x = "Model", title = "Top 5 models with highest Number of Points")
+  scale_y_continuous(breaks = seq(30, 40, by = 1))+
+  labs(y = "Total number of points", x = "Model", title = "Top 5 models with highest number of points")
 ```
 Here we can see that XGB_all has the highest number of points based on the weighted ranking system combining the balanced accuracy and sensitivity metrics with a total of 40 points. Followed by the RF_NuTo and LogReg_NuTo sharing the second place with 36 points.
 
@@ -1665,23 +1672,26 @@ roc_df %>%
 roc_df %>%
   ggplot(aes(x = rating_bin, y = prob_test)) +
   geom_boxplot() + 
-  labs(x = "Response", y = "Probability", title = "Boxplot of probability for each response value on the test set - XGB_all")
+  labs(x = "Response", y = "Probability", title = "Boxplot of predicted probabilities on the test - XGB_all")
+
 ```
 Here we can see the ROC curve relating to the test set probabilities of the XGB_all model. This shows us that is is better than the random model, but not great peformance either as the AUC is clearly quite small.
 ```{r}
 rocit_emp <- rocit(score = xgb_down_prob, class = numeric_te$rating_bin, method = "emp")
-plot(rocit_emp, col = c(1,"gray50"),legend = TRUE, YIndex = FALSE)
+
+plot(rocit_emp, col = c(1,"gray50"), legend = TRUE, YIndex = FALSE)
+
 ```
 ## 3.2 Variable Importance and PDP
 
 ### VarImp
 Below we show the first 50 most important variables from the top model we selected, XGB_all.
-```{r VarImp XGBoost, fig.height=12, fig.width=8}
+```{r VarImp XGBoost, fig.height=10, fig.width=8}
 #XGBoost variable importance
 xgb_importance_matrix <- xgb.importance(model = xgb_down_fit)
 xgb_importance_matrix
 
-xgb.ggplot.importance(importance_matrix = xgb_importance_matrix %>% head(50)) +
+xgb.ggplot.importance(importance_matrix = xgb_importance_matrix) +
   labs(title = "XGBoost Feature Importance")
 ```
 
