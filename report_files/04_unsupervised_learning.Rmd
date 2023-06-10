@@ -1,4 +1,118 @@
 # Unsupervised Learning
 ## Clustering
 
+Let us try to apply unsupervised learning to the data set with all 680 variables.
+First we have to scale all the numerical features except the variable rating.
+```{r}
+
+recipes_clust <- ingredients_df %>% 
+  select(-ID, -title)
+
+recipes_clust[,-294] <- scale(recipes_clust[,-294])
+
+```
+
+
+### Hierarchical Clustering
+We apply agglomerative hierarchical clustering
+```{r}
+
+recipes_d <- dist(recipes_clust[,-294], method = "manhattan") # matrix of Manhattan distances 
+
+recipes_melt <- melt(as.matrix(recipes_d)) # create a data frame of the distances in long format
+head(recipes_melt)
+
+
+ggplot(data = recipes_melt, aes(x=Var1, y=Var2, fill=value)) + 
+  geom_tile()
+
+```
+We can see that ...
+
+### Dendrogram
+We build a dendrogram using the complete linkage
+```{r}
+
+recipes_hc <- hclust(recipes_d, method = "complete")
+plot(recipes_hc, hang=-1)
+
+plot(recipes_hc, hang=-1)
+rect.hclust(recipes_hc, k=8) # we cut the tree to 8 clusters
+
+recipes_clust <- cutree(recipes_hc, k=8)
+recipes_clust
+
+
+```
+
+
+### Interpretation of the clusters
+Here we analyze the clusters by looking at the distribution of the features within each cluster
+```{r}
+
+recipes_comp <- data.frame(recipes_clust[,-1], Clust=factor(recipes_clust), Id=row.names(recipes))
+recipes_clust_df <- melt(recipes_comp, id=c("Id", "Clust"))
+head(recipes_clust_df)
+
+ggplot(recipes_clust_df, aes(y=value, group=Clust, fill=Clust)) +
+  geom_boxplot() +
+  facet_wrap(~variable, ncol=4, nrow=3)
+
+
+```
+We can see that ...
+
+
+### Choice of the number of clusters
+To choose the number of clusters we can inspect the dendrogram or rely on statistics such as sum-of-squares, the GAP statistics, and the silhouette.
+```{r}
+
+fviz_nbclust(recipes_clust[,-1],
+             hcut, hc_method="complete",
+             hc_metric="manhattan",
+             method = "wss", 
+             k.max = 25, verbose = FALSE)
+
+fviz_nbclust(recipes_clust[,-1],
+             hcut, hc_method="complete",
+             hc_metric="manhattan",
+             method = "silhouette", 
+             k.max = 25, verbose = FALSE)
+
+fviz_nbclust(recipes_clust[,-1],
+             hcut, hc_method="complete",
+             hc_metric="manhattan",
+             method = "gap", 
+             k.max = 25, verbose = FALSE)
+
+```
+
+
+## K-Means
+
+```{r}
+
+fviz_nbclust(recipes_clust[,-1],
+             kmeans,
+             method = "wss", 
+             k.max = 25, verbose = FALSE)
+
+fviz_nbclust(recipes_clust[,-1],
+             kmeans, 
+             method = "silhouette", 
+             k.max = 25, verbose = FALSE)
+
+fviz_nbclust(recipes_clust[,-1],
+             kmeans,
+             method = "gap", 
+             k.max = 25, verbose = FALSE)
+
+recipes_km <- kmeans(recipes_clust[,-1], centers=2)
+recipes_km$cluster
+
+
+```
+The clusters can be inspected through their features exactly the same way as before...
+
+With recipes_km we can find more information about the clustering obtained ...
 
