@@ -1,6 +1,6 @@
 ####### Load the required packages
 packages <- c(
-  "knitr", "here", "tidyverse", "summarytools", "janitor", "viridis", "corrplot", "DataExplorer", "kableExtra", "gridExtra",
+  "knitr", "here", "tidyverse", "summarytools", "janitor", "viridis", "corrplot", "DataExplorer", "kableExtra", "gridExtra", "ggpubr", "cowplot",
   "caret",
   "FactoMineR", "factoextra", #for PCA
   "reshape2", #for Clustering

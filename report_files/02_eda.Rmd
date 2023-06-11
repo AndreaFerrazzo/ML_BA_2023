@@ -21,32 +21,6 @@ recipes %>%
 The data available provide ratings which are separated in 7 distinct categories, which span from 1.25 to 5. We do not forget that we decided to exclude recipes with rating equal to zero.
 As we can see, most of the ratings have value equal or above 3.75, more in particular we notice that most of the recipes have ratings of 4.375.
 
-```{r}
-
-#histograms and density plots for nutritional values
-
-ggplot(recipes, aes(protein)) +
-  geom_histogram(aes(y = ..density..), bins = 50,color = "#000000", fill = "#0099F8") +
-  geom_density(color = "#000000", fill = "#F85700", alpha = 0.6)+
-  labs(x = "Age", y = "Density", title = "Distribution of age")
-
-ggplot(recipes, aes(fat)) +
-  geom_histogram(aes(y = ..density..), bins = 50, color = "#000000", fill = "#0099F8") +
-  geom_density(color = "#000000", fill = "#F85700", alpha = 0.6)+
-  labs(x = "Amount", y = "Density", title = "Distribution of amount")
-
-ggplot(recipes, aes(sodium)) +
-  geom_histogram(aes(y = ..density..), bins = 50, color = "#000000", fill = "#0099F8") +
-  geom_density(color = "#000000", fill = "#F85700", alpha = 0.6) +
-  labs(x = "Duration", y = "Density", title = "Distribution of duration")
-
-ggplot(recipes, aes(calories)) +
-  geom_histogram(aes(y = ..density..), bins = 50, color = "#000000", fill = "#0099F8") +
-  geom_density(color = "#000000", fill = "#F85700", alpha = 0.6) +
-  labs(x = "Duration", y = "Density", title = "Distribution of duration")
-
-```
-
 #### Calories - Boxplot and Histogram
 
 ```{r}
@@ -69,16 +43,18 @@ recipes_plot %>%
   xlab("") +
   ylab("Value")
 
-
-recipes_plot %>% 
-  filter(nutrition == "calories") %>% 
-  select(title, nutrition, n_value) %>% 
-  arrange(desc(n_value)) 
 ```
 
 We notice that there are recipes with more than 30'000'000 calories which are clearly outliers. It is also hard to interpret these values from the boxplot and even with a density plot we cannot extract any insight. We must then discard those values in order to continue with a meaningful analysis. There are 28 recipes which have more than 7000 calories. We consider those as extreme values which represents 0.27% of the data available. Why do they exist? It could be due to a miscalculation or to an excessive number of servings per recipe. By evaluating the usual number of calories per recipe, we decided to keep those that have a reasonable quantity, i.e., below 7000.
 
 ```{r fig.height=5}
+
+recipes_plot %>% 
+  filter(nutrition == "calories") %>% 
+  select(title, nutrition, n_value) %>% 
+  arrange(desc(n_value)) 
+
+
 # Calories boxplot
 df <- recipes_plot %>%
   filter(nutrition == "calories", n_value <= 7000)
@@ -92,30 +68,40 @@ boxplot_calories <- df %>%
   scale_y_continuous(breaks=seq(0,7000,500)) +
   labs(x = " ", y = "Calories", title = "Boxplot of calories nutritional value filtered")
 
+boxplot_calories
 
-# Calories histogram
-histogram_calories <- df %>% 
-  ggplot(aes(x=n_value)) +
-  geom_histogram(binwidth=50, fill="red3", color="red3", alpha=0.9) +
-  theme(plot.title = element_text(size=11)) +
-  scale_x_continuous(breaks=seq(0,10000,1000)) +
-  scale_y_continuous(breaks=seq(0,1750,250)) +
-  labs(x = "Count", y = "Calories", title = "Distribution of calories across all recipes")
+# 1. Create the histogram plot
+phist <- gghistogram(
+  df, x = "n_value", 
+  add = "mean", rug = TRUE, color = "red3"
+) +
+  labs(title="Distribution of calories across all recipes", x="Calories", y="Count") +
+  theme(plot.title = element_text(size=20)) +
+  scale_x_continuous(breaks=seq(0,7000,500))
 
+# 2. Create the density plot with y-axis on the right
+# Remove x axis elements
+pdensity <- ggdensity(
+  df, x = "n_value", color = "blue",
+  alpha = 0
+) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.05)), position = "right")  +
+  theme_half_open(11, rel_small = 1) +
+  rremove("x.axis")+
+  rremove("xlab") +
+  rremove("x.text") +
+  rremove("x.ticks") +
+  rremove("legend")
 
-# Calories density plot
-density_calories <- df %>% 
-  ggplot(aes(x=n_value)) +
-  geom_density(fill="red3", color="red2", alpha=0.8) +
-  theme(plot.title = element_text(size=11)) +
-  scale_x_continuous(breaks=seq(0,10000,1000)) +
-  ggtitle("Distribution of calories across all recipes") +
-  xlab("Calories")
+# 3. Align the two plots and then overlay them.
+aligned_plots <- align_plots(phist, pdensity, align="hv", axis="tblr")
 
-grid.arrange(boxplot_calories, histogram_calories, density_calories, ncol=3, nrow =1)
+ggdraw(aligned_plots[[1]]) +
+  draw_plot(aligned_plots[[2]])
+
 ```
 
-After filtering extreme values we can observe that most of the recipes have between 200 and 600 calories. By checking with the histogram the distribution of calories, we observe that indeed most of the recipes have less than 1000 calories.
+After filtering extreme values we can observe that most of the recipes have between 200 and 600 calories. By checking with the histogram and density plot the distribution of calories, we observe that indeed most of the recipes have less than 1000 calories.
 
 
 #### Protein - Boxplot and Histogram
@@ -138,56 +124,61 @@ recipes_plot %>%
 We notice that there are recipes with more than 50'000 grams of protein which are clearly outliers. We must then discard those values in order to continue with a meaningful analysis. Also from a visual point of view we could not extract any relevant information. By checking on the epicurious website the recipes with protein values above 1000, we verified that such amount of proteins was not justified. We came to that conclusion by evaluating the average values of protein per 100grams of each ingredient in the specific recipe.
 
 ```{r fig.height=5}
+
 recipes_plot %>%
   filter(nutrition == "protein") %>% 
   select(title, nutrition, n_value) %>% 
   arrange(desc(n_value)) 
 
+df <- recipes_plot %>%
+  filter(nutrition == "protein", n_value <= 1000)
 
 # Proteins boxplot
-boxplot_protein <- recipes_plot %>%
-  filter(nutrition == "protein", n_value <= 1000) %>% 
+boxplot_protein <- df %>% 
   ggplot( aes(x=nutrition, y=n_value, fill=nutrition)) +
     geom_boxplot() +
     scale_fill_viridis(discrete = TRUE, alpha=0.6, option="A") +
     theme(legend.position="none",
           plot.title = element_text(size=16)) +
-  scale_y_continuous(breaks=seq(0,7000,25)) +
+  scale_y_continuous(breaks=seq(0,1000,25)) +
   labs(title="Boxplot of protein nutritional value filtered") +
   xlab("") +
   ylab("Proteins") 
 
+boxplot_protein
 
-# Proteins histogram
-histogram_protein <- recipes_plot %>% 
-  filter(nutrition == "protein", n_value <= 1000) %>% 
-  ggplot(aes(x=n_value)) +
-  geom_histogram(binwidth=7, fill="red3", color="red3", alpha=0.9) +
-  scale_x_continuous(breaks=seq(0,1000,50)) +
-  scale_y_continuous(breaks=seq(0,7000,250)) +
-  theme(legend.position="none",
-          plot.title = element_text(size=16)) +
-  labs(title="Distribution of proteins across all recipes") +
-  xlab("Proteins") +
-  ylab("Count") 
+# 1. Create the histogram plot
+phist <- gghistogram(
+  df, x = "n_value", 
+  add = "mean", rug = TRUE, color = "red3"
+) +
+  labs(title="Distribution of proteins across all recipes", x="Proteins", y="Count") +
+  theme(plot.title = element_text(size=20)) +
+  scale_x_continuous(breaks=seq(0,1000,25))
 
+# 2. Create the density plot with y-axis on the right
+# Remove x axis elements
+pdensity <- ggdensity(
+  df, x = "n_value", color = "blue",
+  alpha = 0
+) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.05)), position = "right")  +
+  theme_half_open(11, rel_small = 1) +
+  rremove("x.axis")+
+  rremove("xlab") +
+  rremove("x.text") +
+  rremove("x.ticks") +
+  rremove("legend")
 
-# Protein density plot
-density_protein <- recipes_plot %>% 
-  filter(nutrition == "protein", n_value <= 1000) %>% 
-  ggplot(aes(x=n_value)) +
-  geom_density(fill="red3", color="red2", alpha=0.8) +
-  scale_x_continuous(breaks=seq(0,1000,50)) +
-  theme(legend.position="none",
-          plot.title = element_text(size=16)) +
-  labs(title="Distribution of proteins across all recipes") +
-  xlab("Proteins")
+# 3. Align the two plots and then overlay them.
+aligned_plots <- align_plots(phist, pdensity, align="hv", axis="tblr")
 
-grid.arrange(boxplot_protein, histogram_protein, density_protein, ncol=2, nrow =2)
+ggdraw(aligned_plots[[1]]) +
+  draw_plot(aligned_plots[[2]])
 
 ```
 
-From the boxplot, we observe that most recipes have less than 30 grams of proteins. By plotting the histogram, we verify that this information is correct. We could even extend the range to 100 proteins per recipe. We assume that recipes with values above this threshold contain ingredients like meat, tuna, salmon or shrimps.
+From the boxplot, we observe that most recipes have less than 30 grams of proteins. By plotting the histogram and density plot, we verify that this information is correct. We could even extend the range to 100 proteins per recipe. We assume that recipes with values above this threshold contain ingredients like meat, tuna, salmon or shrimps.
 
 
 #### Sodium - Boxplot and Histogram
@@ -215,10 +206,11 @@ recipes_plot %>%
   select(title, nutrition, n_value) %>% 
   arrange(desc(n_value)) 
 
+df <- recipes_plot %>%
+  filter(nutrition == "sodium", n_value <= 30000)
 
 # Sodium boxplot
-boxplot_sodium <- recipes_plot %>%
-  filter(nutrition == "sodium", n_value <= 30000) %>% 
+boxplot_sodium <- df %>% 
   ggplot(aes(x=nutrition, y=n_value, fill=nutrition)) +
     geom_boxplot() +
     scale_fill_viridis(discrete = TRUE, alpha=0.6, option="A") +
@@ -229,35 +221,36 @@ boxplot_sodium <- recipes_plot %>%
   xlab("") +
   ylab("Sodium") 
 
+boxplot_sodium
 
-# Sodium histogram
-histogram_sodium <- recipes_plot %>%
-  filter(nutrition == "sodium", n_value <= 30000) %>% 
-  ggplot(aes(x=n_value)) +
-  geom_histogram(binwidth=50, fill="red3", color="red3", alpha=0.9) +
-  theme(plot.title = element_text(size=15)) +
-  scale_x_continuous(breaks=seq(0,30000,1000)) +
-  scale_y_continuous(breaks=seq(0,1750,250)) +
-  theme(legend.position="none",
-          plot.title = element_text(size=17)) +
-  labs(title="Distribution of sodium across all recipes") +
-  xlab("Sodium") +
-  ylab("Count") 
+# 1. Create the histogram plot
+phist <- gghistogram(
+  df, x = "n_value", 
+  add = "mean", rug = TRUE, color = "red3"
+) +
+  labs(title="Distribution of sodium across all recipes", x="Sodium", y="Count") +
+  theme(plot.title = element_text(size=20)) +
+  scale_x_continuous(breaks=seq(0,30000,1000))
 
+# 2. Create the density plot with y-axis on the right
+# Remove x axis elements
+pdensity <- ggdensity(
+  df, x = "n_value", color = "blue",
+  alpha = 0
+) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.05)), position = "right")  +
+  theme_half_open(11, rel_small = 1) +
+  rremove("x.axis")+
+  rremove("xlab") +
+  rremove("x.text") +
+  rremove("x.ticks") +
+  rremove("legend")
 
-# Sodium density plot
-density_sodium <- recipes_plot %>%
-  filter(nutrition == "sodium", n_value <= 30000) %>% 
-  ggplot(aes(x=n_value)) +
-  geom_density(fill="red3", color="red2", alpha=0.8) +
-  scale_x_continuous(breaks=seq(0,30000,1000)) +
-  theme(legend.position="none",
-          plot.title = element_text(size=17)) +
-  labs(title="Distribution of sodium across all recipes") +
-  xlab("Sodium") 
+# 3. Align the two plots and then overlay them.
+aligned_plots <- align_plots(phist, pdensity, align="hv", axis="tblr")
 
-
-grid.arrange(boxplot_sodium, histogram_sodium, density_sodium, ncol=2, nrow =2)
+ggdraw(aligned_plots[[1]]) +
+  draw_plot(aligned_plots[[2]])
 ```
 
 From the boxplot we observe that most recipes have sodium values below 750 milligrams. The histogram informs us that most of recipes have indeed less than 750 milligrams of sodium, even though we cannot exclude the presence of a good amount of recipes with sodium between 750 and 2000 milligrams.
@@ -287,9 +280,11 @@ recipes_plot %>%
   select(title, nutrition, n_value) %>% 
   arrange(desc(n_value)) 
 
+df <- recipes_plot %>%
+  filter(nutrition == "fat", n_value <= 40000)
+
 # Fat boxplot
-boxplot_fat <- recipes_plot %>%
-  filter(nutrition == "fat", n_value <= 40000) %>% 
+boxplot_fat <- df %>% 
   ggplot( aes(x=nutrition, y=n_value, fill=nutrition)) +
     geom_boxplot() +
     scale_fill_viridis(discrete = TRUE, alpha=0.6, option="A") +
@@ -301,32 +296,36 @@ boxplot_fat <- recipes_plot %>%
   xlab("") +
   ylab("Fat") 
 
+boxplot_fat
 
-# Fat histogram
-histogram_fat <- recipes_plot %>% 
-  filter(nutrition == "fat", n_value <= 40000) %>% 
-  ggplot(aes(x=n_value)) +
-  geom_histogram(binwidth=7, fill="red3", color="red3", alpha=0.9) +
-  labs(title="Distribution of fat across all recipes") +
-  theme(legend.position="none",
-          plot.title = element_text(size=16)) +
-  scale_x_continuous(breaks=seq(0,3000,100)) +
-  scale_y_continuous(breaks=seq(0,7000,250)) +
-  xlab("Fat") +
-  ylab("Count") 
+# 1. Create the histogram plot
+phist <- gghistogram(
+  df, x = "n_value", 
+  add = "mean", rug = TRUE, color = "red3"
+) +
+  labs(title="Distribution of fat across all recipes", x="Fat", y="Count") +
+  theme(plot.title = element_text(size=20)) +
+  scale_x_continuous(breaks=seq(0,3000,100))
 
-# Sodium density plot
-density_fat<- recipes_plot %>%
-  filter(nutrition == "fat", n_value <= 40000) %>% 
-  ggplot(aes(x=n_value)) +
-  geom_density(fill="red3", color="red2", alpha=0.8) +
-  scale_x_continuous(breaks=seq(0,3000,100)) +
-  theme(legend.position="none",
-          plot.title = element_text(size=16)) +
-  ggtitle("Distribution of sodium across all recipes") +
-  xlab("Fat") 
+# 2. Create the density plot with y-axis on the right
+# Remove x axis elements
+pdensity <- ggdensity(
+  df, x = "n_value", color = "blue",
+  alpha = 0
+) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.05)), position = "right")  +
+  theme_half_open(11, rel_small = 1) +
+  rremove("x.axis")+
+  rremove("xlab") +
+  rremove("x.text") +
+  rremove("x.ticks") +
+  rremove("legend")
 
-grid.arrange(boxplot_fat, histogram_fat, density_fat, ncol=2)
+# 3. Align the two plots and then overlay them.
+aligned_plots <- align_plots(phist, pdensity, align="hv", axis="tblr")
+
+ggdraw(aligned_plots[[1]]) +
+  draw_plot(aligned_plots[[2]])
 ```
 It is hard to interpret the boxplot. There are certain recipes which could have potentially more than 1000 or even 2000 grams of fat because of the high quantity of servings and the use of ingredients such as lamb, duck and bacon. We must then analyse the histogram to have a better overview and we notice that most recipes have fat values below 100 grams.
 
@@ -989,8 +988,9 @@ countries_df %>%
 ```
 
 
+# Unsupervised Learning
 
-## Exploratory PCA Analysis
+## Exploratory PCA Analysis - ALL
 - With all variables 680
 
 ```{r}
@@ -1027,7 +1027,7 @@ fviz_eig(recipes_pca, addlabels = TRUE, ncp=11)
 
 ```
 
-## Exploratory PCA Analysis
+## Exploratory PCA Analysis - Selected
 - All the variables unless "useless" ones such as us_cities or chef
 ```{r}
 
@@ -1040,7 +1040,7 @@ fviz_eig(recipes_pca2, addlabels = TRUE, ncp=11)
 ```
 The results do not substantially differ from the analysis with 680 variables.
 
-### Exploratory PCA Analysis
+## Exploratory PCA Analysis - Nut + Total + Bin
 - Only with nutritional variables, total and bin variables
 ```{r}
 nutritional_df <- recipes %>% 
@@ -1099,3 +1099,203 @@ grid.arrange(p1, p2, p3, p4, p5, nrow = 3, ncol=2)
 ```
 This is an overview of the 10 selected dimensions. However, it is hard to detect clear patterns.
 
+## Clustering - ALL
+
+Let us try to apply the clustering techniques to the data set with all 680 variables.
+First we have to scale all the numerical features except the variable rating.
+```{r}
+
+recipes_clust <- ingredients_df %>% 
+  select(-ID, -title) %>%
+  filter(row_number() <= n() / 2)
+
+recipes_clust[,-294] <- scale(recipes_clust[,-294])
+
+```
+Due to high number of values in our dataset, R was unable to run the hierarchical clustering. Hence, we had to consider only half of the dataset to obtain results in a reasonable amount of time. We acknowledge that this could have a negative impact on the quality of the results.
+
+### Hierarchical Clustering
+We apply agglomerative hierarchical clustering
+```{r}
+
+recipes_d <- dist(recipes_clust[,-294], method = "manhattan") # matrix of Manhattan distances 
+
+recipes_melt <- melt(as.matrix(recipes_d)) # create a data frame of the distances in long format
+head(recipes_melt)
+
+```
+It is impossible to extract any information from such a graph.
+
+### Dendrogram
+We build a dendrogram using the complete linkage
+```{r}
+
+recipes_hc <- hclust(recipes_d, method = "complete")
+plot(recipes_hc, hang=-1)
+
+plot(recipes_hc, hang=-1)
+rect.hclust(recipes_hc, k=8) # we cut the tree to 8 clusters
+
+recipes_clust_cut <- cutree(recipes_hc, k=8)
+
+```
+We cut the tree to 8 clusters, and represent the result. We also extract the cluster assignment of each recipe.
+
+### Interpretation of the clusters
+Here we analyze the clusters by looking at the distribution of the features within each cluster
+```{r fig.height=10, fig.width=10}
+
+recipes_comp <- data.frame(recipes_clust[,-294], Clust=factor(recipes_clust_cut), Id=row.names(recipes_clust))
+recipes_clust_df <- melt(recipes_comp, id=c("Id", "Clust"))
+head(recipes_clust_df)
+
+ggplot(recipes_clust_df, aes(y=value, group=Clust, fill=Clust)) +
+  geom_boxplot() +
+  facet_wrap(~variable)
+
+```
+Again very hard to interpret such results. There are some clusters that show high presence of certain variables. For instance the 5th cluster indicates higher values of tapioca, granola, oat and pie compares to all the rest. The 7th cluster also shows higher values for meatball and turkey with respect to all the other variables.
+
+
+### Choice of the number of clusters
+To choose the number of clusters we can inspect the dendrogram or rely on statistics such as sum-of-squares, the GAP statistics, and the silhouette. In our case we choose the silhouette method.
+```{r}
+
+fviz_nbclust(recipes_clust[,-294],
+             hcut, hc_method="complete",
+             hc_metric="manhattan",
+             method = "silhouette", 
+             k.max = 25, verbose = FALSE)
+
+```
+These methods are not easy to interpret. The silhouette method chooses 2 clusters while the sum-of-squares and gap method did not provide any clear information in this regard.
+
+
+## Clustering - NuTo
+
+Let us try to apply unsupervised learning to the data set with only numerical variables. We want to avoid making the clustering on binary variables.
+As already did before we have to scale all the numerical features except the variable rating.
+```{r}
+
+recipes_clust2 <- ingredients_df_full %>% 
+  left_join(nutritional_df, by="ID") %>% 
+  mutate(across(all_of(contains("bin")), as.factor) , ID = as.character(ID)) %>% 
+  select(rating, -ID, -title, all_of(nutritional_values), contains("total")) %>%
+  filter(row_number() <= n() / 2)
+
+recipes_clust2[,-1] <- scale(recipes_clust2[,-1])
+
+```
+
+
+### Hierarchical Clustering
+We apply agglomerative hierarchical clustering
+```{r}
+
+recipes_d2 <- dist(recipes_clust2[,-1], method = "manhattan") # matrix of Manhattan distances 
+
+recipes_melt2 <- melt(as.matrix(recipes_d2)) # create a data frame of the distances in long format
+head(recipes_melt2)
+
+```
+It is impossible to extract any information from such a graph.
+
+### Dendrogram
+We build a dendrogram using the complete linkage
+```{r}
+
+recipes_hc2 <- hclust(recipes_d2, method = "complete")
+plot(recipes_hc2, hang=-1)
+
+plot(recipes_hc2, hang=-1)
+rect.hclust(recipes_hc2, k=8) # we cut the tree to 8 clusters
+
+recipes_clust_cut2 <- cutree(recipes_hc2, k=8)
+
+```
+We cut the tree to 8 clusters, and represent the result. We also extract the cluster assignment of each recipe.
+
+### Interpretation of the clusters
+Here we analyze the clusters by looking at the distribution of the features within each cluster
+```{r fig.height=10, fig.width=10}
+
+recipes_comp2 <- data.frame(recipes_clust2[,-1], Clust=factor(recipes_clust_cut2), Id=row.names(recipes_clust2))
+recipes_clust_df2 <- melt(recipes_comp2, id=c("Id", "Clust"))
+head(recipes_clust_df2)
+
+ggplot(recipes_clust_df2, aes(y=value, group=Clust, fill=Clust)) +
+  geom_boxplot() +
+  facet_wrap(~variable)
+
+```
+Again very hard to interpret such results. There are some clusters that show high presence of certain variables. For instance the 2nd cluster indicates higher values of total_nuts, total_fruits, total_dairy and total_dessert, hence this cluster should represent dessert recipes. The 8th cluster contains high values of protein, sodium, total_seafood, total_spices and total_carbs. This might be associated with recipes containing seafood which are high in sodium and protein.
+
+
+### Choice of the number of clusters
+To choose the number of clusters we can inspect the dendrogram or rely on statistics such as sum-of-squares, the GAP statistics, and the silhouette.
+```{r}
+
+fviz_nbclust(recipes_clust2[,-1],
+             hcut, hc_method="complete",
+             hc_metric="manhattan",
+             method = "wss", 
+             k.max = 25, verbose = FALSE)
+
+fviz_nbclust(recipes_clust2[,-1],
+             hcut, hc_method="complete",
+             hc_metric="manhattan",
+             method = "silhouette", 
+             k.max = 25, verbose = FALSE)
+
+```
+These methods are not easy to interpret. The silhouette method chooses 2 clusters while the sum-of-squares method did not provide any clear information in this regard. There seems to be an elbow at the 5th, 10th and 16th cluster.
+
+
+### Dendrogram
+We build a dendrogram using the complete linkage
+```{r}
+
+plot(recipes_hc2, hang=-1)
+rect.hclust(recipes_hc2, k=10) # we cut the tree to 10 clusters
+
+recipes_clust_cut3 <- cutree(recipes_hc2, k=10)
+
+```
+Now we want to focus on 10 clusters.
+
+### Interpretation of the clusters
+Here we analyze the clusters by looking at the distribution of the features within each cluster
+```{r fig.height=7, fig.width=10}
+
+recipes_comp3 <- data.frame(recipes_clust2[,-1], Clust=factor(recipes_clust_cut3), Id=row.names(recipes_clust2))
+recipes_clust_df3 <- melt(recipes_comp3, id=c("Id", "Clust"))
+head(recipes_clust_df3)
+
+ggplot(recipes_clust_df3, aes(y=value, group=Clust, fill=Clust)) +
+  geom_boxplot() +
+  facet_wrap(~variable) +
+  ggtitle("Interpretation of 10 clusters according to 19 variables")
+
+```
+
+
+## K-Means NuTo
+
+```{r}
+
+fviz_nbclust(recipes_clust2[,-1],
+             kmeans,
+             method = "wss", 
+             k.max = 25, verbose = FALSE)
+
+fviz_nbclust(recipes_clust2[,-1],
+             kmeans, 
+             method = "silhouette", 
+             k.max = 25, verbose = FALSE)
+
+
+recipes_km2 <- kmeans(recipes_clust2[,-1], centers=10)
+recipes_km2$cluster
+
+```
+There seems to be an elbow at the 16th cluster. Silhouette on the other hand indicates 2 clusters. 
