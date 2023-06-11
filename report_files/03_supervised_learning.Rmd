@@ -1371,16 +1371,6 @@ analysis_all <- analysis_all %>%
   mutate(across(where(is.numeric), my_normalise))
 ```
 
-```{r}
-#we noticed that 5 ingredients appear in none of the recipes
-ingredients_to_remove <- analysis_all %>%
-  select_if(~nlevels(.) == 1) %>% colnames()
-
-#removing those 5 ingredients
-analysis_all <- analysis_all %>% 
-  select(-all_of(ingredients_to_remove))
-```
-
 We create a training set with the new `rating_bin` variable with only 2 levels, including the nutritional and all ingredients dummies, instead of the engineered variables used in the sub-section above.
 
 ```{r}

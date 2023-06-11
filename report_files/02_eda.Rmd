@@ -698,6 +698,19 @@ ingredients_df_full <- ingredients_df_full %>%
   filter(!total_ingredients == 0)
 ```
 
+We also noticed that 5 ingredients variables are actually present in none of the recipes we have. We therefore remove those 5 ingredient variables, leaving us with 288 binary ingredient variables.
+```{r}
+#we noticed that 5 ingredients appear in none of the recipes
+ingredients_to_remove <- recipes %>%
+  select(all_of(all_ingredients)) %>% 
+  mutate(across(all_of(all_ingredients), as.factor)) %>% 
+  select_if(~nlevels(.) == 1) %>% colnames()
+
+#removing those 5 ingredients
+recipes <- recipes %>% 
+  select(-all_of(ingredients_to_remove))
+```
+
 
 Besides the total amount of ingredients, let's check the amount of ingredients per recipe for the top 3 categories in terms of ingredients frequency (i.e., vegetables, fruits, meats)
 
