@@ -1,0 +1,1485 @@
+# Supervised Learning
+
+## 0. Data Normalisation, splitting and balancing
+Creating a new dataframe for analysis purposes, which includes all nutrition-related features, as well as all ingredient-related features. We name it `recipes_analysis`.
+
+```{r}
+nutritional_df <- recipes %>% 
+  select(ID, all_of(nutritional_values))
+  
+###### CAREFUL --> recipes_analysis should be of dim 10163 x 33
+recipes_analysis <- ingredients_df_full %>% 
+  left_join(nutritional_df, by="ID") %>% 
+  mutate(across(all_of(contains("bin")), as.factor), ID = as.character(ID)) %>% 
+  select(rating, all_of(nutritional_values), contains("bin"), contains("total"))
+```
+
+Creating a normalized version of `recipes_analysis` where the continuous numerical values are normalised, to remain consistent across all models for our analysis.
+
+```{r}
+my_normalise <- function(x) {
+  (x - min(x)) / (max(x) - min(x))
+}
+
+recipes_analysis_normd <- recipes_analysis %>% 
+  mutate(rating = as.factor(rating), across(where(is.numeric), my_normalise))
+```
+
+Creating training and test set. We chose a 75/25 split
+
+```{r}
+#creating training and test sets
+set.seed(12)
+index <- createDataPartition(recipes_analysis_normd$rating, p=0.75, list = FALSE)
+```
+
+We create a training set with the original `rating` variable with 7 levels. 
+
+Below we can see the multilevel rating training set is really unbalanced throughout the classes.
+```{r}
+#creating training and test set with multilevel rating variable
+train_multi <- recipes_analysis_normd[index, ]
+test_multi <- recipes_analysis_normd[-index, ]
+
+table(train_multi$rating)
+```
+
+
+### Creating train and test sets for each variable combination
+```{r}
+#for train multi
+tr_multi_all <- train_multi
+te_multi_all <- test_multi
+
+tr_multi_Nut <- train_multi %>% 
+  select(rating, all_of(nutritional_values))
+te_multi_Nut <- test_multi %>% 
+  select(rating, all_of(nutritional_values))
+```
+
+### TrainControl Functions
+```{r}
+#creating train control data for unbalanced data
+trCtrl <- trainControl(method = "cv",
+                       number = 5)
+```
+
+```{r}
+#train control with downsampling
+trCtrl_down <- trainControl(method = "cv",
+                       number = 5,
+                       sampling = "down")
+```
+
+```{r}
+#train control with downsampling twoclass summary
+trCtrl_down_twoClass <- trainControl(method = "cv",
+                       summaryFunction = twoClassSummary,
+                       classProbs = TRUE,
+                       number = 5,
+                       sampling = "down"
+                       )
+```
+
+```{r}
+#train control with upsampling
+trCtrl_up <- trainControl(method = "cv",
+                       number = 5,
+                       sampling = "up")
+```
+
+```{r}
+#train control for with upsampling twoclass summary
+trCtrl_up_twoClass <- trainControl(method = "cv",
+                       summaryFunction = twoClassSummary,
+                       classProbs = TRUE,
+                       number = 5,
+                       sampling = "up"
+                       )
+```
+
+## 1.0 Testing performance on 7-level rating classification with RF
+
+Given our correlation results in EDA, we anticipated that a classification with 7 levels will basically be equivalent to randomly classifying each observation in one of the 7 rating levels. However, to make sure this is the case, we try running a random forest on the nutritional values, as well as both the "total" and "bin" ingredients-related features we created during the EDA.
+We use a random forest for this testing phase because, being an ensemble method, it should give us reasonable results if such results are possible with the data we have. If the results are bad, we can assume that other models will not magically classify everything perfectly.
+
+### Fitting RF - multi_all
+
+**Hyperparameters**
+
+Best tune: mtry = 2
+
+**Accuracy metrics**
+
+- ACC 45.6
+```{r}
+set.seed(12)
+rf_multi_all_fit <- caret::train(rating ~ .,
+                     data = tr_multi_all,
+                     method = "rf",
+                     preProcess = NULL,
+                     trControl = trCtrl,
+                     tuneLength = 3)
+#show the random forest with cv 
+rf_multi_all_fit
+plot(rf_multi_all_fit, main = "Plot of CV Accuracy relative to Mtry parameter")
+```
+
+### Predictions RF - multi_all
+As can be seen by the predictions below, our assumptions were valid. The model does a really bad job at classifying the test set into the correct rating categories. It is equivalent to a random model with a very strong bias towards the majority class at 4.375 (due to the data imbalance present in the `rating` variable.)
+```{r}
+#make predictions
+rf_multi_all_pred <- predict(rf_multi_all_fit, newdata = test_multi)
+
+#confusion matrix 
+confusionMatrix(data = rf_multi_all_pred, reference = test_multi$rating)
+```
+
+### Fitting - RF multi_Nut
+We now try another RF but only with the nutritional values as explanatory variables to see if it changes something.
+
+**Hyperparameters**
+
+Best tune: mtry = 2
+
+**Accuracy metrics**
+
+- ACC 41.6
+
+```{r}
+set.seed(12)
+rf_multi_Nut_fit <- train(rating ~ .,
+                     data = tr_multi_Nut,
+                     method = "rf",
+                     preProcess = NULL,
+                     trControl = trCtrl,
+                     tuneLength = 3)
+#show the random forest with cv 
+rf_multi_Nut_fit
+plot(rf_multi_Nut_fit, main = "Plot of CV Accuracy relative to Mtry parameter")
+```
+
+### Predictions - RF multi_Nut
+
+As can be seen by the predictions below, our assumptions were valid. The model does a really bad job at classifying the test set into the correct rating categories. It is equivalent to a random model with a very strong bias towards the majority class at 4.375 (due to the data imbalance present in the `rating` variable.)
+```{r}
+#make predictions
+rf_multi_Nut_pred <- predict(rf_multi_Nut_fit, newdata = te_multi_all)
+
+#confusion matrix 
+confusionMatrix(data = rf_multi_Nut_pred, reference = te_multi_Nut$rating)
+```
+
+### Evaluation and decision for rest of analysis
+Since we see a huge bias towards the majority class in unbalanced data (which we expected), we have to take a decision between 3 options:
+
+- We could try balancing the 7 levels, either up or down. Due to the very large disparity in observation counts per level (min at 32 and max at 3481), we believe than neither up- nor downsampling would be ideal. Indeed, upsampling would mean creating a massive amount of artificial observations through replacement for the minority classes, while downsampling would leave us with an insufficient total amount of observations.
+- We could try to aggregate the minority classes into one single class (i.e., putting  1.25, 1.875, 2.5, and 3.125 together), leaving us with 4 final classes. There would still be a significant imbalance however, and given the near-random classification that we observed above, we do not believe aggregating those classes is the solution.
+- We could transform the 7 levels into a binary classification problem. This would help both with class imbalance and would hopefully also lead to higher accuracy metrics by simplifying the classification task.
+
+After careful reflection, we believe that the 3rd options is our best bet. We therefore transform the 7-level rating variable into a binary rating variable, with the threshold at 4. This means that all ratings below 4 are now considered as "bad" and all ratings above 4 are considered as "good".
+
+## 1.1 33 Engineered variables - unbalanced
+
+### Methodology 
+
+### Creating new rating_bin variable
+and one with a engineered rating variable which we converted to binary "bad" or "good" (i.e., with a threshold at 4 to decide if the rating is bad or good).
+
+```{r}
+#creating binary rating variable
+recipes_analysis_bin <- recipes_analysis%>% 
+  mutate(rating_bin = as.factor(ifelse(rating<4, "bad", "good"))) %>% 
+  select(-rating)
+
+#reversing rating_bin factor order
+recipes_analysis_bin$rating_bin <- factor(recipes_analysis_bin$rating_bin, levels=rev(levels(recipes_analysis_bin$rating_bin )))
+
+#normalising newly created df
+recipes_analysis_bin <- recipes_analysis_bin %>% 
+  mutate(across(where(is.numeric), my_normalise))
+```
+
+```{r}
+#creating training and test sets
+set.seed(12)
+index_bin <- createDataPartition(recipes_analysis_bin$rating_bin, p=0.75, list = FALSE)
+```
+
+We create a training set with the new `rating_bin` variable with only 2 levels. 
+
+Below we can see the binary rating training set is still slightly unbalanced throughout the classes.
+```{r}
+#creating training and test set with multilevel rating variable
+train_bin <- recipes_analysis_bin[index_bin, ]
+test_bin <- recipes_analysis_bin[-index_bin, ]
+
+table(train_bin$rating_bin)
+```
+
+```{r}
+#creating train and test set for all combinations of variables, for binary rating df
+train_bin_Nut <- train_bin %>% 
+  select(rating_bin, all_of(nutritional_values))
+test_bin_Nut <- test_bin %>% 
+  select(rating_bin, all_of(nutritional_values))
+
+train_bin_NuTo <- train_bin %>% 
+  select(rating_bin, all_of(nutritional_values), all_of(contains("total")))
+test_bin_NuTo <- test_bin %>% 
+  select(rating_bin, all_of(nutritional_values), all_of(contains("total")))
+
+train_bin_NuBi <- train_bin %>% 
+  select(rating_bin, all_of(nutritional_values), all_of(contains("bin")))
+test_bin_NuBi <- test_bin %>% 
+  select(rating_bin, all_of(nutritional_values), all_of(contains("bin")))
+
+train_bin_Tot <- train_bin %>% 
+  select(rating_bin, all_of(contains("total")))
+test_bin_Tot <- test_bin %>% 
+  select(rating_bin, all_of(contains("total")))
+
+train_bin_Bin <- train_bin %>% 
+  select(rating_bin, all_of(contains("bin")))
+test_bin_Bin <- test_bin %>% 
+  select(rating_bin, all_of(contains("bin")))
+```
+
+Balancing the binary training set through manual upsampling
+
+```{r}
+#filtering by rating class
+set.seed(12)
+tr_good <- train_bin %>%  filter(rating_bin == "good")
+tr_bad <- train_bin %>%  filter(rating_bin == "bad")
+
+#indexing "bad" and creating new resampled training set
+index_bad <- sample(x = 1:nrow(tr_bad), size = nrow(tr_good), replace = TRUE)
+upsamp_tr_bin <- tibble(rbind(tr_good, tr_bad[index_bad,]))
+
+#checking that we have the correct number of good and bad
+table(upsamp_tr_bin$rating_bin)
+```
+```{r}
+#function to create the summary tables from the confusion matrices
+summary_table_fun <- function(x){
+  acc <- x[[3]][[1]]
+  bacc <- x[[4]][[11]]
+  spec <- x[[4]][[2]]
+  vec <- c(acc, bacc, spec)
+  return(vec)
+}
+
+#creating empty summary table for balanced data
+summary_table_down <- tibble(metric = c("accuracy", "balanced_accuracy", "specificity"))
+```
+
+### Logistic Regression - unbalanced - Nutritional Values Only
+
+#### Fitting
+```{r}
+train_temp <- train_bin %>% 
+  select(rating_bin, all_of(nutritional_values))
+
+test_temp <- test_bin %>% 
+  select(rating_bin, all_of(nutritional_values))
+```
+
+
+```{r}
+
+trCtrl <- trainControl(method = "cv",
+                       #summaryFunction = defaultSummary,
+                       #classProbs = TRUE,
+                       number = 10
+                       )
+set.seed(12)
+logr_Nu <- caret::train(rating_bin ~.,
+                data = train_temp,
+                method = "glm",
+                family = "binomial",
+                trControl = trCtrl,
+                metric = "Accuracy")
+logr_Nu
+```
+
+#### Predictions
+
+We see that the relatively high accuracy is achieved by classifying most obs as good, resulting in a high sensitivity but a very poor specificity.
+
+```{r}
+logr_Nu_pred <- predict(logr_Nu, newdata = test_temp, type = "raw")
+
+confusionMatrix(reference = test_temp$rating_bin, data = logr_Nu_pred, positive="good")
+```
+
+### Logistic Regression - unbalanced - NuBi
+
+```{r}
+train_temp <- train_bin %>% 
+  select(rating_bin, all_of(nutritional_values), all_of(contains("bin")))
+test_temp <- test_bin %>% 
+  select(rating_bin, all_of(nutritional_values), all_of(contains("bin")))
+```
+
+#### Fitting
+
+```{r}
+
+trCtrl <- trainControl(method = "cv",
+                       #summaryFunction = defaultSummary,
+                       #classProbs = TRUE,
+                       number = 10
+                       )
+set.seed(12)
+logr_NuBi <- caret::train(rating_bin ~.,
+                data = train_temp,
+                method = "glm",
+                family = "binomial",
+                trControl = trCtrl,
+                metric = "Accuracy")
+logr_NuBi
+```
+
+#### Predictions
+
+Once again most obs are classified as good.
+
+```{r}
+logr_NuBi_pred <- predict(logr_NuBi, newdata = test_temp, type = "raw")
+
+confusionMatrix(reference = test_temp$rating_bin, data = logr_NuBi_pred, positive="good")
+```
+
+
+### SVM - unbalanced - Nutritional Values Only
+
+#### Fitting
+
+```{r}
+
+# with the svm() function of the e1071 package we can fit SVM to the data with several possible kernels 
+# here we start with the linear kernel
+
+# unbalanced data
+
+recipe_svm_nutritional <- svm(rating_bin ~. , data=train_bin_Nut, kernel="linear") # we fit the linear kernel
+recipe_svm_nutritional
+
+```
+
+#### Predictions
+Let us make predictions and check the accuracy
+
+```{r}
+
+recipe_svm_pred_nutritional <- predict(recipe_svm_nutritional, newdata = test_bin_Nut)
+
+table(Pred=recipe_svm_pred_nutritional, obs=test_bin_Nut$rating_bin) # we check predictions on the test set
+
+# with the function confusionMatrix() of the library caret we get the accuracy measure which shows the proportion of correct predictions
+confusionMatrix(data=recipe_svm_pred_nutritional, reference = test_bin_Nut$rating_bin)
+
+```
+
+In this case the accuracy stands at 59.1%, but we observe that the model is poorly predicting "bad" ratings. Before going too much further with the analysis of SVM, we will try to use balanced data to improve the accuracy.
+
+### SVM - unbalanced - NuBi
+
+#### Fitting
+
+```{r}
+
+recipe_svm_NuBi <- svm(rating_bin ~ ., data=train_bin_NuBi, kernel="linear") # we fit the linear kernel
+recipe_svm_NuBi
+
+```
+
+
+#### Predictions
+Let us make predictions and check the accuracy
+
+```{r}
+
+recipe_svm_pred_NuBi <- predict(recipe_svm_NuBi, newdata = test_bin_NuBi)
+
+table(Pred=recipe_svm_pred_NuBi, obs=test_bin_NuBi$rating_bin) # we check predictions on the test set
+
+# with the function confusionMatrix() of the library caret we get the accuracy measure which shows the proportion of correct predictions
+confusionMatrix(data=recipe_svm_pred_NuBi, reference = test_bin_NuBi$rating_bin)
+
+```
+
+In this case the accuracy stands at 59%, but we observe that the model is poorly predicting "bad" ratings. Before going too much further with the analysis of SVM, we will try to use balanced data to improve the quality of our analysis.
+
+### KNN - unbalanced - Nut
+
+#### Fitting
+```{r}
+train_temp <- train_bin %>% 
+  select(rating_bin, all_of(nutritional_values))
+
+test_temp <- test_bin %>% 
+  select(rating_bin, all_of(nutritional_values))
+```
+
+
+Best K if we look at both accuracy and Kappa is 111.
+
+```{r}
+#tuning k, using upsampled data
+trCtrl <- trainControl(method = "cv",
+                       #summaryFunction = defaultSummary,
+                       #classProbs = TRUE,
+                       number = 10
+                       )
+set.seed(12)
+knn_Nu <- caret::train(rating_bin ~.,
+                data = train_temp,
+                method = "knn",
+                trControl = trCtrl,
+                metric = "Accuracy",
+                tuneGrid= data.frame(k = seq(105, 115,by = 2))#initially checked on 1-151 range, best was 111
+                )
+knn_Nu
+```
+
+#### Predictions
+
+We see that the relatively high accuracy is achieved by classifying most obs as good, resulting in a high sensitivity but a very poor specificity.
+
+```{r}
+knn_Nu_pred <- predict(knn_Nu, newdata = test_temp, type = "raw")
+
+confusionMatrix(reference = test_temp$rating_bin, data = knn_Nu_pred, positive="good")
+```
+
+### KNN - unbalanced - NuBi
+
+```{r}
+train_temp <- train_bin %>% 
+  select(rating_bin, all_of(nutritional_values), all_of(contains("bin")))
+test_temp <- test_bin %>% 
+  select(rating_bin, all_of(nutritional_values), all_of(contains("bin")))
+```
+
+#### Fitting
+Best K if we look at both accuracy and Kappa is 135
+
+```{r}
+#tuning k, using upsampled data
+trCtrl <- trainControl(method = "cv",
+                       #summaryFunction = defaultSummary,
+                       #classProbs = TRUE,
+                       number = 10
+                       )
+set.seed(12)
+knn_NuBi <- caret::train(rating_bin ~.,
+                data = train_temp,
+                method = "knn",
+                trControl = trCtrl,
+                metric = "Accuracy",
+                tuneGrid= data.frame(k = seq(131, 141,by = 2))#initially checked on 1-151 range, best was 135
+                )
+knn_NuBi
+```
+
+#### Predictions
+
+Once again most obs are classified as good. Not better than NIR.
+
+```{r}
+knn_Bi_pred <- predict(knn_NuBi, newdata = test_temp, type = "raw")
+
+confusionMatrix(reference = test_temp$rating_bin, data = knn_Bi_pred, positive="good")
+```
+
+### CART - unbalanced - Nut
+
+```{r}
+#using all features
+train_temp <- train_bin %>% 
+  select(all_of(nutritional_values), contains("bin"))
+
+test_temp <- test_bin %>% 
+  select(all_of(nutritional_values), contains("bin"))
+```
+
+#### Plotting initial tree
+
+```{r}
+cart_all <- rpart(rating_bin ~ ., data = train_temp)
+
+rpart.plot(cart_all)
+```
+
+#### Pruning the tree
+
+We decided to use the package "adabag" to automatically prune the tree, using the 1-SE rule. The CP evaluation relies on a cross-validation procedure, which is why we need to set the seed before using the function.
+
+```{r eval=FALSE}
+set.seed(12)
+cart_all_pruned <- autoprune(rating_bin ~ ., data = train_temp)
+
+rpart.plot(cart_all_pruned, roundint=FALSE)
+```
+
+#### Making predictions
+
+```{r eval=FALSE}
+#predicting the test set
+cart_all_pruned_pred <- predict(cart_all_pruned, newdata=test_temp, type="class")
+
+#confusion matrix
+confusionMatrix(data=cart_all_pruned_pred, reference = test_temp$rating_bin, positive="good")
+```
+
+### CART - unbalanced - NuBi
+
+```{r}
+#using all features
+train_temp <- train_bin %>% 
+  select(all_of(nutritional_values), contains("bin"))
+
+test_temp <- test_bin %>% 
+  select(all_of(nutritional_values), contains("bin"))
+```
+
+#### Plotting initial tree
+
+```{r}
+cart_NuBi <- rpart(rating_bin ~ ., data = train_temp)
+
+rpart.plot(cart_NuBi)
+```
+
+#### Pruning the tree
+
+We decided to use the package "adabag" to automatically prune the tree, using the 1-SE rule. The CP evaluation relies on a cross-validation procedure, which is why we need to set the seed before using the function.
+
+```{r eval=FALSE}
+set.seed(12)
+cart_NuBi_pruned <- autoprune(rating_bin ~ ., data = train_temp)
+
+rpart.plot(cart_NuBi_pruned, roundint=FALSE)
+```
+
+#### Making predictions
+
+```{r eval=FALSE}
+#predicting the test set
+cart_NuBi_pruned_pred <- predict(cart_NuBi_pruned, newdata=test_temp, type="class")
+
+#confusion matrix
+confusionMatrix(data=cart_NuBi_pruned_pred, reference = test_temp$rating_bin, positive="good")
+```
+
+## 1.2. 33 Engineered variables - balanced
+
+### Logistic Regression - balanced - Nut
+
+#### Fitting
+
+```{r}
+
+set.seed(12)
+logr_Nut_blncd <- caret::train(rating_bin ~.,
+                data = train_bin_Nut,
+                method = "glm",
+                family = "binomial",
+                trControl = trCtrl_down,
+                metric = "Accuracy")
+logr_Nut_blncd
+```
+We observe that the accuracy of training set is 49.6%.
+
+#### Predictions
+
+```{r}
+logr_Nut_pred_blncd <- predict(logr_Nut_blncd, newdata = test_bin_Nut, type = "raw")
+
+confusionMatrix(reference = test_bin_Nut$rating_bin, data = logr_Nut_pred_blncd, positive="good")
+```
+Here we notice that the accuracy of the test set stands at 47.9%
+
+
+### Logistic Regression - balanced - NuBi
+
+#### Fitting
+
+```{r}
+
+set.seed(12)
+logr_NuBi_blncd <- caret::train(rating_bin ~.,
+                data = train_bin_NuBi,
+                method = "glm",
+                family = "binomial",
+                trControl = trCtrl_down,
+                metric = "Accuracy")
+logr_NuBi_blncd
+```
+We observe that the accuracy of the training set stands at 53.9%.
+
+#### Predictions
+
+```{r}
+logr_NuBi_pred_blncd <- predict(logr_NuBi_blncd, newdata = test_bin_NuBi, type = "raw")
+
+confusionMatrix(reference = test_bin_NuBi$rating_bin, data = logr_NuBi_pred_blncd, positive="good")
+```
+We want to evaluate the quality of the model and we notice that the accuracy of the test set stands at 54.6%
+
+
+### Logistic Regression - balanced - NuTo
+
+#### Fitting
+
+```{r}
+
+set.seed(12)
+logr_NuTo_blncd <- caret::train(rating_bin ~.,
+                data = train_bin_NuTo,
+                method = "glm",
+                family = "binomial",
+                trControl = trCtrl_down,
+                metric = "Accuracy")
+logr_NuTo_blncd
+```
+We observe that the accuracy of the training set stands at 54.1%.
+
+#### Predictions
+
+```{r}
+logr_NuTo_pred_blncd <- predict(logr_NuTo_blncd, newdata = test_bin_NuTo, type = "raw")
+
+confusionMatrix(reference = test_bin_NuTo$rating_bin, data = logr_NuTo_pred_blncd, positive="good")
+```
+We want to evaluate the quality of the model and we notice that the accuracy of the test set stands at 56.1%
+
+
+### SVM - balanced - Nut
+
+#### Linear SVM - balanced - Nutri
+
+```{r}
+
+svm_Linear_nutritional <- train(rating_bin ~ calories + protein + fat + sodium, data=train_bin_Nut, method = "svmLinear", trControl=trCtrl_down)
+svm_Linear_nutritional
+
+```
+
+The validation accuracy stands at 42.8%, which is not satisfying considering that it is computed on the training set. The next step consists in creating a grid of values for the cost that we want to try and pass to the argugment tuneGrid.
+
+```{r}
+
+grid <- expand.grid(C = c(0.01, 0.1, 1, 10, 100, 1000))
+grid
+
+svm_Linear_Grid_nutritional <- train(rating_bin ~., data=train_bin_Nut, method = "svmLinear", trControl=trCtrl_down, tuneGrid = grid)
+svm_Linear_Grid_nutritional
+
+plot(svm_Linear_Grid_nutritional)
+
+```
+
+```{r}
+
+svm_Linear_Grid_nutritional$bestTune
+
+```
+
+The result indicates that setting the cost to C=10 provides the best model with accuracy=42.9%. The accuracy apparently reaches a plateau at this value. There is no sensible improvement compared to the previous linear SVM with default parameter cost C=1.
+
+#### Radial SVM - balanced - Nutri
+
+```{r}
+
+svm_Radial_nutritional <- train(rating_bin ~., data=train_bin_Nut, method = "svmRadial", trControl=trCtrl_down)
+svm_Radial_nutritional
+
+```
+The validation accuracy stands at 54.8%, which is substantially better than the SVM model with the linear kernel. The next step consists in creating a grid of values for the cost that we want to try and pass to the argument tuneGrid.
+
+
+##### Tuning the Hyperparameters - Radial basis SVM
+
+```{r}
+
+grid_radial <- expand.grid(sigma = c(0.01, 0.02, 0.05, 0.1),
+                           C = c(1, 10, 100, 500, 1000))
+grid_radial
+
+svm_Radial_Grid_nutritional <- train(rating_bin ~., data=train_bin_Nut, method = "svmRadial", trControl=trCtrl_down, tuneGrid = grid_radial)
+svm_Radial_Grid_nutritional
+
+plot(svm_Radial_Grid_nutritional)
+
+```
+
+```{r}
+
+svm_Radial_Grid_nutritional$bestTune
+
+```
+
+The optimal model from this search is with sigma = 0.1 and C = 1000 This optimal model would then reach accuracy=52.6%.
+
+#### SVM Nutri - Best model selection
+
+```{r}
+# After finding the best hyperparameters, we re-train the model with the best hyperparameters on the entire training set. Afterwards we will evaluate the model on the test set.
+
+grid_radial_best <- expand.grid(sigma = 0.1, C = 1000)
+
+
+recipe_rb_tuned_nutritional <- train(rating_bin ~., data=train_bin_Nut, method = "svmRadial", trControl=trCtrl_down, tuneGrid = grid_radial_best)
+
+
+recipe_rb_tuned_pred_nutritional <- predict(recipe_rb_tuned_nutritional, newdata = test_bin_Nut)
+
+confusionMatrix(data=recipe_rb_tuned_pred_nutritional, reference = test_bin_Nut$rating_bin)
+
+```
+
+The result indicates that with the tuned hyperparameters on the radial basis SVM model we achieve an accuracy of 52.9% on the test set. We can conclude that among all the models, the radial basis kernel SVM with C=1000 and sigma=0.01 is the best model.
+
+### SVM - balanced - NuBi
+#### Linear SVM - balanced - NuBi
+
+```{r}
+
+svm_Linear_NuBi <- train(rating_bin ~., data=train_bin_NuBi, method = "svmLinear", trControl=trCtrl_down)
+svm_Linear_NuBi
+
+```
+
+The validation accuracy stands at 56.1%. The next step consists in creating a grid of values for the cost that we want to try and pass to the argument tuneGrid.
+
+```{r}
+
+grid <- expand.grid(C = c(0.01, 0.1, 1, 10, 100, 1000))
+grid
+
+svm_Linear_Grid_NuBi <- train(rating_bin ~., data=train_bin_NuBi, method = "svmLinear", trControl=trCtrl_down, tuneGrid = grid)
+svm_Linear_Grid_NuBi
+
+plot(svm_Linear_Grid_NuBi)
+
+```
+
+```{r}
+
+svm_Linear_Grid_NuBi$bestTune
+
+```
+
+The result indicates that setting the cost to C=0.01 provides the best model with accuracy=57.6%. There is a sensible improvement compared to the previous linear SVM with default parameter cost C=1.
+
+
+#### Radial SVM - balanced - NuBi
+
+```{r}
+
+svm_Radial_NuBi <- train(rating_bin ~., data=train_bin_NuBi, method = "svmRadial", trControl=trCtrl_down)
+svm_Radial_NuBi
+
+```
+The validation accuracy stands at 53.7%, which is worse than the SVM model with the linear kernel. The next step consists in creating a grid of values for the cost that we want to try and pass to the argument tuneGrid.
+
+
+##### Tuning the Hyperparameters - Radial basis SVM
+
+```{r}
+
+grid_radial <- expand.grid(sigma = c(0.01, 0.02, 0.05, 0.1),
+                           C = c(1, 10, 100, 500, 1000))
+grid_radial
+
+svm_Radial_Grid_NuBi <- train(rating_bin ~., data=train_bin_NuBi, method = "svmRadial", trControl=trCtrl_down, tuneGrid = grid_radial)
+svm_Radial_Grid_NuBi
+
+plot(svm_Radial_Grid_NuBi)
+
+```
+
+```{r}
+
+svm_Radial_Grid_NuBi$bestTune
+
+```
+
+The optimal model from this search is with sigma = 0.01 and C = 1. This optimal model would then reach accuracy=54.8%.
+
+#### SVM NuBi - Radial Kernel Best model
+
+```{r}
+# After finding the best hyperparameters, we re-train the model with the best hyperparameters on the entire training set. Afterwards we will evaluate the model on the test set.
+
+grid_radial_best <- expand.grid(sigma = 0.01, C = 1)
+
+
+recipe_rb_tuned_NuBi <- train(rating_bin ~., data=train_bin_NuBi, method = "svmRadial", trControl=trCtrl_down, tuneGrid = grid_radial_best)
+
+
+recipe_rb_tuned_pred_NuBi <- predict(recipe_rb_tuned_NuBi, newdata = test_bin_NuBi)
+
+confusionMatrix(data=recipe_rb_tuned_pred_NuBi, reference = test_bin_NuBi$rating_bin)
+
+```
+
+The result indicates that with the tuned hyperparameters on the radial basis SVM model we achieve an accuracy of 54.1% on the test set. We can conclude that among all the models, the radial basis kernel SVM with C=1 and sigma=0.01 is the best model.
+
+
+### SVM - balanced - NuTo
+
+#### Linear SVM - balanced - Nutritional Values and Total Bin
+
+```{r}
+
+svm_Linear_NuTo <- train(rating_bin ~ calories + protein + fat + sodium, data=train_bin_NuTo, method = "svmLinear", trControl=trCtrl_down)
+svm_Linear_NuTo
+
+```
+
+The validation accuracy stands at 42.8%, which is not satisfying considering that it is computed on the training set. The next step consists in creating a grid of values for the cost that we want to try and pass to the argument tuneGrid.
+
+```{r}
+
+grid <- expand.grid(C = c(0.01, 0.1, 1, 10, 100, 1000))
+grid
+
+svm_Linear_Grid_NuTo <- train(rating_bin ~., data=train_bin_NuTo, method = "svmLinear", trControl=trCtrl_down, tuneGrid = grid)
+svm_Linear_Grid_NuTo
+
+plot(svm_Linear_Grid_NuTo)
+
+```
+
+```{r}
+
+svm_Linear_Grid_NuTo$bestTune
+
+```
+
+The result indicates that setting the cost to C=1000 provides the best model with accuracy=54%. There is a considerable improvement with respect to the previous linear SVM with default parameter cost C=1.
+
+#### Radial SVM - balanced - Nutritional Values and Total Bin
+
+```{r}
+
+svm_Radial_NuTo <- train(rating_bin ~., data=train_bin_NuTo, method = "svmRadial", trControl=trCtrl_down)
+svm_Radial_NuTo
+
+```
+The validation accuracy stands at 53.6%, which is substantially better than the SVM model with the linear kernel and default parameters. The next step consists in creating a grid of values for the cost that we want to try and pass to the argument tuneGrid.
+
+
+##### Tuning the Hyperparameters - Radial basis SVM
+
+```{r}
+
+grid_radial <- expand.grid(sigma = c(0.01, 0.02, 0.05, 0.1),
+                           C = c(1, 10, 100, 500, 1000))
+grid_radial
+
+svm_Radial_Grid_NuTo <- train(rating_bin ~., data=train_bin_NuTo, method = "svmRadial", trControl=trCtrl_down, tuneGrid = grid_radial)
+svm_Radial_Grid_NuTo
+
+plot(svm_Radial_Grid_NuTo)
+
+```
+
+```{r}
+
+svm_Radial_Grid_NuTo$bestTune
+
+```
+
+The optimal model from this search is with sigma = 0.01 and C = 1 This optimal model would then reach accuracy=53.7% .
+
+
+#### SVM NuTo - Best model selection
+
+```{r}
+# After finding the best hyperparameters, we re-train the model with the best hyperparameters on the entire training set. Afterwards we will evaluate the model on the test set.
+
+grid_radial_best <- expand.grid(sigma = 0.01, C = 1)
+
+
+recipe_rb_tuned_NuTo <- train(rating_bin ~., data=train_bin_NuTo, method = "svmRadial", trControl=trCtrl_down, tuneGrid = grid_radial_best)
+
+
+recipe_rb_tuned_pred_NuTo <- predict(recipe_rb_tuned_NuTo, newdata = test_bin_NuTo)
+
+confusionMatrix(data=recipe_rb_tuned_pred_NuTo, reference = test_bin_NuTo$rating_bin)
+
+```
+
+The result indicates that with the tuned hyperparameters on the radial basis SVM model we achieve an accuracy of 55.4% on the test set. We can conclude that among all the models, the radial basis kernel SVM with C=1 and sigma=0.01 is the best model.
+
+
+### KNN - balanced - all
+
+#### Fitting
+
+Best K if we look at both accuracy is 81
+
+```{r}
+set.seed(12)
+knn_all_up <- caret::train(rating_bin ~.,
+                data = train_bin,
+                method = "knn",
+                trControl = trCtrl_down,
+                metric = "Accuracy",
+                tuneGrid= data.frame(k = seq(1, 150,by = 5))
+                )
+knn_all_up
+```
+
+#### Predictions
+
+We see that the relatively high accuracy is achieved by classifying most obs as good, resulting in a high sensitivity but a very poor specificity.
+
+```{r}
+knn_all_up_pred <- predict(knn_all_up, newdata = test_bin, type = "raw")
+
+confusionMatrix(reference = test_bin$rating_bin, data = knn_all_up_pred)
+```
+
+### KNN - balanced - Nut
+
+```{r}
+train_temp <- train_bin_Nut
+
+test_temp <- test_bin_Nut
+```
+
+#### Fitting
+
+Best K if we look at both accuracy and Kappa is 111.
+
+```{r}
+set.seed(12)
+knn_Nu_up <- caret::train(rating_bin ~.,
+                data = train_bin_Nut,
+                method = "knn",
+                trControl = trCtrl_down,
+                tuneGrid= data.frame(k = seq(1, 150,by = 5))#initially checked on 1-151 range, best was 111
+                )
+knn_Nu_up
+```
+
+#### Predictions
+
+We see that the relatively high accuracy is achieved by classifying most obs as good, resulting in a high sensitivity but a very poor specificity.
+
+```{r}
+knn_Nu_up_pred <- predict(knn_Nu_up, newdata = test_bin_Nut, type = "raw")
+
+confusionMatrix(reference = test_bin_Nut$rating_bin, data = knn_Nu_up_pred)
+```
+
+### KNN - balanced - NuTo
+
+```{r}
+train_temp <- train_bin_NuTo
+
+test_temp <- test_bin_NuTo
+```
+
+#### Fitting
+
+Best K if we look at both accuracy and Kappa is 139
+
+```{r}
+set.seed(12)
+knn_NuTo_up <- caret::train(rating_bin ~.,
+                data = train_bin_NuTo,
+                method = "knn",
+                trControl = trCtrl_down,
+                tuneGrid= data.frame(k = seq(1, 150,by = 5))#initially checked on 1-151 range, best was 139
+                )
+knn_NuTo_up
+```
+
+#### Predictions
+
+Once again most obs are classified as good. Not better than NIR.
+
+```{r}
+knn_NuTo_up_pred <- predict(knn_NuTo_up, newdata = test_bin_NuTo, type = "raw")
+
+confusionMatrix(reference = test_bin_NuTo$rating_bin, data = knn_NuTo_up_pred, positive="good")
+```
+
+### KNN - balanced - NuBi
+
+#### Fitting
+
+Best K if we look at both accuracy and Kappa is 135
+
+```{r}
+set.seed(12)
+knn_NuBi_up <- caret::train(rating_bin ~.,
+                data = train_bin_NuBi,
+                method = "knn",
+                trControl = trCtrl_down,
+                metric = "Accuracy",
+                tuneGrid= data.frame(k = seq(1, 150,by = 5))#initially checked on 1-151 range, best was 37
+                )
+knn_NuBi_up
+```
+
+#### Predictions
+
+Once again most obs are classified as good. Not better than NIR.
+
+```{r}
+knn_Bi_up_pred <- predict(knn_NuBi_up, newdata = test_bin_NuBi, type = "raw")
+
+confusionMatrix(reference = test_bin_NuBi$rating_bin, data = knn_Bi_up_pred, positive="good")
+```
+
+### CART - balanced -  Nut
+
+**Hyperparameters**
+
+Best parameter CP is 0.0035
+
+**Accuracy Metrics**
+
+- ACC 54.80
+
+#### Fitting
+```{r}
+#CART_grid <-  expand.grid(cp = c(0.001,0.005,0.01, 0.015, 0.02, 0.05, 0.1, 0.15, 0.2)) --> confirmed that highest kappa is at cp selected by caret
+set.seed(12)
+cart_Nut_fit <- train(rating_bin ~ .,
+                  data = train_bin_Nut,
+                  method = "rpart",
+                  trControl = trCtrl_down,
+                  tuneLength = 10)
+cart_Nut_fit
+```
+It might seem like the CP chosen by caret is not optimal since the accuracy curve continues to go up, however, we confirmed by using a manual tuning grid that this CP was indeed the best when combining the accuracy with the Kappa metric.
+```{r}
+# Get the results for each CP step
+cart_Nut_results <- cart_Nut_fit$results
+
+cart_Nut_results %>% 
+  ggplot(aes(x=cp, y=Accuracy)) +
+  geom_line()+
+  labs(x = "CP Parameter", y = "Accuracy", title = "CP Plot")
+```
+
+#### Predictions
+```{r}
+#Now using the cv to predict test set
+cart_Nut_pred <- predict(cart_Nut_fit, newdata = test_bin_Nut)
+#And looking at the confusion matrix for the predictions using the cv 
+CM <- confusionMatrix(reference = test_bin_Nut$rating_bin, data = cart_Nut_pred)
+CM
+
+summary_table_down <- cbind(summary_table_down, CART_Nut = summary_table_fun(CM))
+```
+
+### CART - balanced - NuBi
+
+**Hyperparameters**
+
+Best parameter CP is 0.00546
+
+**Accuracy Metrics**
+
+- ACC 53.7
+
+#### Fitting
+```{r}
+#CART_grid <-  expand.grid(cp = c(0.001,0.005,0.01, 0.015, 0.02, 0.05, 0.1, 0.15, 0.2)) --> confirmed that highest kappa is at cp selected by caret
+set.seed(12)
+cart_NuBi_fit <- train(rating_bin ~ .,
+                  data = train_bin_NuBi,
+                  method = "rpart",
+                  trControl = trCtrl_down,
+                  tuneLength = 10)
+cart_NuBi_fit
+```
+
+It might seem like the CP chosen by caret is not optimal since the accuracy curve continues to go up, however, we confirmed by using a manual tuning grid that this CP was indeed the best when combining the accuracy with the Kappa metric.
+```{r}
+# Get the results for each CP step
+cart_NuBi_results <- cart_NuBi_fit$results
+
+cart_NuBi_results %>% 
+  ggplot(aes(x=cp, y=Accuracy)) +
+  geom_line()+
+  labs(x = "CP Parameter", y = "Accuracy", title = "CP Plot")
+```
+
+#### Predictions
+```{r}
+#Now using the cv to predict test set
+cart_NuBi_pred <- predict(cart_NuBi_fit, newdata = test_bin_NuBi)
+#And looking at the confusion matrix for the predictions using the cv 
+CM <- confusionMatrix(reference = test_bin_Nut$rating_bin, data = cart_NuBi_pred)
+CM
+
+summary_table_down <- cbind(summary_table_down, CART_NuBi = summary_table_fun(CM))
+```
+
+### CART - balanced - NuTo
+
+**Hyperparameters**
+
+Best parameter CP is 0.00257
+
+**Accuracy Metrics**
+
+- ACC 53.7
+
+#### Fitting
+```{r}
+#CART_grid <-  expand.grid(cp = c(0.001,0.005,0.01, 0.015, 0.02, 0.05, 0.1, 0.15, 0.2)) --> confirmed that highest kappa is at cp selected by caret
+set.seed(12)
+cart_NuTo_fit <- train(rating_bin ~ .,
+                  data = train_bin_NuTo,
+                  method = "rpart",
+                  trControl = trCtrl_down,
+                  tuneLength = 10)
+cart_NuTo_fit
+```
+
+It might seem like the CP chosen by caret is not optimal since the accuracy curve continues to go up, however, we confirmed by using a manual tuning grid that this CP was indeed the best when combining the accuracy with the Kappa metric.
+```{r}
+# Get the results for each CP step
+cart_NuTo_results <- cart_NuTo_fit$results
+
+cart_NuTo_results %>% 
+  ggplot(aes(x=cp, y=Accuracy)) +
+  geom_line()+
+  labs(x = "CP Parameter", y = "Accuracy", title = "CP Plot")
+```
+
+#### Predictions
+```{r}
+#Now using the cv to predict test set
+cart_NuTo_pred <- predict(cart_NuTo_fit, newdata = test_bin_NuTo)
+#And looking at the confusion matrix for the predictions using the cv 
+CM <- confusionMatrix(reference = test_bin_Nut$rating_bin, data = cart_NuTo_pred)
+CM
+
+summary_table_down <- cbind(summary_table_down, CART_NuTo = summary_table_fun(CM))
+```
+
+
+### Random Forest - balanced - Nut
+
+###
+**Hyperparameters**
+
+Best tune: mtry = 2
+
+**Accuracy metrics**
+
+- ACC 53.8
+- BACC 53.8
+
+#### Fitting
+```{r}
+set.seed(12)
+rf_Nut_fit <- caret::train(rating_bin ~ .,
+                     data = train_bin_Nut,
+                     method = "rf",
+                     preProcess = NULL,
+                     trControl = trCtrl_down,
+                     tuneLength = 10)
+#show the random forest with cv 
+rf_Nut_fit
+plot(rf_Nut_fit, main = "Plot of CV Accuracy relative to Mtry parameter")
+```
+
+#### Predictions
+As can be seen by the predictions below, our assumptions were valid. The model does a really bad job at classifying the test set into the correct rating categories. It is equivalent to a random model with a very strong bias towards the majority class at 4.375 (due to the data imbalance present in the `rating` variable.)
+```{r}
+#make predictions
+rf_Nut_pred <- predict(rf_Nut_fit, newdata = test_bin_Nut)
+
+#confusion matrix 
+confusionMatrix(data = rf_Nut_pred, reference = test_bin_Nut$rating)
+```
+### Random Forest - balanced - NuBi
+
+**Hyperparameters**
+
+Best tune: mtry = 2
+
+**Accuracy metrics**
+
+- ACC 54.7
+- BACC 54.0
+
+#### Fitting
+```{r}
+set.seed(12)
+rf_NuBi_fit <- caret::train(rating_bin ~ .,
+                     data = train_bin_NuBi,
+                     method = "rf",
+                     preProcess = NULL,
+                     trControl = trCtrl_down,
+                     tuneLength = 10)
+#show the random forest with cv 
+rf_NuBi_fit
+plot(rf_NuBi_fit, main = "Plot of CV Accuracy relative to Mtry parameter")
+```
+
+#### Predictions
+```{r}
+#make predictions
+rf_NuBi_pred <- predict(rf_NuBi_fit, newdata = test_bin_NuBi)
+
+#confusion matrix 
+confusionMatrix(data = rf_NuBi_pred, reference = test_bin_NuBi$rating)
+```
+
+### Random Forest - balanced - NuTo
+
+**Hyperparameters**
+
+Best tune: mtry = 2
+
+**Accuracy metrics**
+
+- ACC 56.4
+- BACC 55.8
+
+#### Fitting
+```{r}
+set.seed(12)
+rf_NuTo_fit <- caret::train(rating_bin ~ .,
+                     data = train_bin_NuTo,
+                     method = "rf",
+                     preProcess = NULL,
+                     trControl = trCtrl_down,
+                     tuneLength = 10)
+#show the random forest with cv 
+rf_NuTo_fit
+plot(rf_NuTo_fit, main = "Plot of CV Accuracy relative to Mtry parameter")
+```
+
+#### Predictions
+```{r}
+#make predictions
+rf_NuTo_pred <- predict(rf_NuTo_fit, newdata = test_bin_NuTo)
+
+#confusion matrix 
+confusionMatrix(data = rf_NuTo_pred, reference = test_bin_NuTo$rating)
+```
+### Random Forest - balanced - Tot
+
+**Hyperparameters**
+
+Best tune: mtry = 2
+
+**Accuracy metrics**
+
+- ACC 52.5
+- BACC 52.4
+
+#### Fitting
+```{r}
+set.seed(12)
+rf_Tot_fit <- caret::train(rating_bin ~ .,
+                     data = train_bin_Tot,
+                     method = "rf",
+                     preProcess = NULL,
+                     trControl = trCtrl_down,
+                     tuneLength = 10)
+#show the random forest with cv 
+rf_Tot_fit
+plot(rf_Tot_fit, main = "Plot of CV Accuracy relative to Mtry parameter")
+```
+
+#### Predictions
+```{r}
+#make predictions
+rf_Tot_pred <- predict(rf_Tot_fit, newdata = test_bin_Tot)
+
+#confusion matrix 
+confusionMatrix(data = rf_Tot_pred, reference = test_bin_Tot$rating)
+```
+### Random Forest - balanced - Bin
+
+**Hyperparameters**
+
+Best tune: mtry = 2
+
+**Accuracy metrics**
+
+- ACC 52.5
+- BACC 52.4
+
+#### Fitting
+```{r}
+set.seed(12)
+rf_Bin_fit <- caret::train(rating_bin ~ .,
+                     data = train_bin_Bin,
+                     method = "rf",
+                     preProcess = NULL,
+                     trControl = trCtrl_down,
+                     tuneLength = 10)
+#show the random forest with cv 
+rf_Bin_fit
+plot(rf_Bin_fit, main = "Plot of CV Accuracy relative to Mtry parameter")
+```
+
+#### Predictions
+```{r}
+#make predictions
+rf_Tot_pred <- predict(rf_Tot_fit, newdata = test_bin_Tot)
+
+#confusion matrix 
+confusionMatrix(data = rf_Tot_pred, reference = test_bin_Tot$rating)
+```
+
+## 2.1 All variables (Nut + 293 ingredients)
+
+### Creating dataset
+```{r}
+analysis_all <- recipes %>% 
+  select(rating, all_of(c(nutritional_values, all_ingredients))) %>% 
+  mutate(rating_bin = as.factor(ifelse(rating<4, 0, 1)), across(all_of(all_ingredients), as.factor)) %>% 
+  select(-rating) %>% 
+  select(rating_bin, everything())
+
+#reversing rating_bin factor order
+analysis_all$rating_bin <- factor(analysis_all$rating_bin, levels=rev(levels(analysis_all$rating_bin)))
+
+#normalising newly created df
+analysis_all <- analysis_all %>% 
+  mutate(across(where(is.numeric), my_normalise))
+```
+
+```{r}
+#creating training and test sets
+set.seed(12)
+index_all <- createDataPartition(analysis_all$rating_bin, p=0.75, list = FALSE)
+```
+
+We create a training set with the new `rating_bin` variable with only 2 levels. 
+
+Below we can see the binary rating training set is still slightly unbalanced throughout the classes.
+```{r}
+#creating training and test set with multilevel rating variable
+train_all <- analysis_all[index_all, ]
+test_all <- analysis_all[-index_all, ]
+
+table(analysis_all$rating_bin)
+```
+
+### Random Forest - balanced - All Var
+
+**Hyperparameters**
+
+Best tune: mtry = 2
+
+**Accuracy metrics**
+
+- ACC 53.8
+
+#### Fitting
+```{r}
+test <- train_all[,1:100]
+set.seed(12)
+rf_all_fit <- train(rating_bin ~ .,
+                    data = test,
+                    method = "rf",
+                    trControl = trCtrl_down,
+                    tuneLength = 2)
+#show the random forest with cv 
+rf_all_fit
+plot(rf_all_fit, main = "Plot of CV Accuracy relative to Mtry parameter")
+```
+
+#### Predictions
+```{r}
+#make predictions
+rf_NuBi_pred <- predict(rf_down_fit, newdata = test_bin_NuTo)
+
+#confusion matrix 
+confusionMatrix(data = rf_down_pred, reference = test_bin_NuTo$rating)
+```
+
+### XGBoost
+```{r}
+numeric_tr <- train_all %>% 
+  mutate(across(everything(), as.character)) %>% 
+  mutate(across(everything(), as.numeric))
+
+numeric_te <- train_all %>% 
+  mutate(across(everything(), as.character)) %>% 
+  mutate(across(everything(), as.numeric))
+
+#creating datasets which don't include the labels, for inputs in the xgb Matrix
+explan_tr <- numeric_tr %>% 
+  select(-rating_bin)
+
+explan_te <- numeric_te %>% 
+  select(-rating_bin)
+
+#prepare data for XGBoost by creating xgb matrix
+xgb_tr <- xgb.DMatrix(data = as.matrix(explan_tr), label = numeric_tr$rating_bin)
+xgb_te <- xgb.DMatrix(data = as.matrix(explan_te), label = numeric_te$rating_bin)
+```
+
+#### Fitting
+```{r}
+#set hyperparameters
+param_list <- list(
+  objective = "binary:logistic",
+  eta = 0.1,
+  gamma = 0,
+  max_depth = 5,
+  min_child_weight = 1,
+  subsample = 0.6,
+  colsample_bytree = 0.6
+)
+
+#train the model
+set.seed(12)
+xgb_down_fit <- xgboost(data = xgb_tr,
+                     params = param_list,
+                     nrounds = 15,
+                     verbose = FALSE)
+#xgb.cv()
+```
+
+#### Predictions
+```{r}
+xgb_down_prob <- predict(xgb_down_fit, newdata = xgb_te)
+
+xgb_down_pred <- as.factor(ifelse(xgb_down_prob<0.5, 0, 1))
+
+confusionMatrix(reference = as.factor(numeric_te$rating_bin), data = xgb_down_pred, positive = "1")
+```
+
+Only marginally improves accuracy, but greatly improves balanced accuracy and Kappa.
+```{r}
+rocit_emp <- rocit(score = xgb_down_prob,class = numeric_te$rating_bin,method = "emp")
+plot(rocit_emp, col = c(1,"gray50"),legend = TRUE, YIndex = TRUE)
+
+#best value is 0.561
+
+xgb_down_pred <- as.factor(ifelse(xgb_down_prob<0.561, 0, 1))
+
+confusionMatrix(reference = as.factor(numeric_te$rating_bin), data = xgb_down_pred, positive = "1")
+```
+
+```{r}
+#XGBoost variable importance
+xgb_importance_matrix <- xgb.importance(model = xgb_down_fit)
+xgb_importance_matrix
+
+xgb.ggplot.importance(importance_matrix = xgb_importance_matrix) +
+  labs(title = "XGBoost Feature Importance")
+```
+## 3.1 PCA Variables

@@ -70,6 +70,7 @@ boxplot_calories <- df %>%
 
 boxplot_calories
 
+<<<<<<< HEAD
 # 1. Create the histogram plot
 phist <- gghistogram(
   df, x = "n_value", 
@@ -78,6 +79,16 @@ phist <- gghistogram(
   labs(title="Distribution of calories across all recipes", x="Calories", y="Count") +
   theme(plot.title = element_text(size=20)) +
   scale_x_continuous(breaks=seq(0,7000,500))
+=======
+# Calories histogram
+histogram_calories <- df %>% 
+  ggplot(aes(x=n_value)) +
+  geom_histogram(binwidth=50, fill="red3", color="red3", alpha=0.9) +
+  theme(plot.title = element_text(size=11)) +
+  scale_x_continuous(breaks=seq(0,10000,1000)) +
+  scale_y_continuous(breaks=seq(0,1750,250)) +
+  labs(x = "Calories", y = "Count", title = "Distribution of calories across all recipes")
+>>>>>>> bfdd308eb558d5e3e9f63494d3c96853bff0cbed
 
 # 2. Create the density plot with y-axis on the right
 # Remove x axis elements
@@ -184,7 +195,6 @@ From the boxplot, we observe that most recipes have less than 30 grams of protei
 #### Sodium - Boxplot and Histogram
 
 ```{r}
-
 recipes_plot %>%
   filter(nutrition == "sodium") %>% 
   ggplot(aes(x=nutrition, y=n_value, fill=nutrition)) +
@@ -578,7 +588,7 @@ Given this low correlation between the "binary" ingredients categories and the 7
 ingredients_df_bin %>% 
   mutate(rating_bin = ifelse(rating>4, 1, 0)) %>% 
   select(rating, rating_bin, contains("bin")) %>%
-  plot_correlation()
+  plot_correlation(title = 'Correlation of rating with the "binary" ingredients categories')
 ```
 
 ##### Barplots - binary rating variable
@@ -627,7 +637,7 @@ As we can observe, many recipes contain milk cream, onion, tomato, salad, egg an
 ingredients_df_total %>% 
   mutate(rating_bin = ifelse(rating>4, 1, 0)) %>% 
   select(rating, rating_bin, contains("total")) %>% 
-  plot_correlation()
+  plot_correlation(title = 'Correlation rating with the "total" ingredients categories')
 ```
 We notice a negative relationship between the number of fruits and number of vegetables which makes sense these two kinds of ingredients are rarely combined in a recipe. The same is true for the number of vegetables related to the number of desserts. The results are similar to the previous correlogram with the binary columns. In this case we do not notice any significant relationship between the multilevel rating rating and the other variables.
 

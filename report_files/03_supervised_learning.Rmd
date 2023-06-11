@@ -45,7 +45,7 @@ table(train_multi$rating)
 ```
 
 
-### Creating train and test sets for some variable combination
+### Train/test sets with variable combinations for multilevel rating
 ```{r}
 #for train multi
 tr_multi_all <- train_multi
@@ -82,12 +82,12 @@ trCtrl_down_twoClass <- trainControl(method = "cv",
                        )
 ```
 
-## 1.0 Testing performance on 7-level rating classification with RF
+## Testing performance on 7-level rating classification with RF models
 
 Given our correlation results in EDA, we anticipated that a classification with 7 levels will basically be equivalent to randomly classifying each observation in one of the 7 rating levels. However, to make sure this is the case, we try running a random forest on the nutritional values, as well as both the "total" and "bin" ingredients-related features we created during the EDA.
 We use a random forest for this testing phase because, being an ensemble method, it should give us reasonable results if such results are possible with the data we have. If the results are bad, we can assume that other models will not magically classify everything perfectly.
 
-### Fitting RF - multi_all
+### Fitting RF - Multilevel rating with 4 Nut + 28 engineered ingredients variables
 
 **Hyperparameters**
 
@@ -95,8 +95,9 @@ Best tune: mtry = 2
 
 **Accuracy metrics**
 
-- ACC 45.6
-- Kappa 0.002
+- Accuracy 45.5
+- Kappa 0.001
+
 ```{r rf_multi_all_fit}
 set.seed(12)
 rf_multi_all_fit <- caret::train(rating ~ .,
@@ -110,9 +111,10 @@ rf_multi_all_fit
 plot(rf_multi_all_fit, main = "Plot of CV Accuracy relative to Mtry parameter")
 ```
 
-### Predictions RF - multi_all
+### Predictions
 As can be seen by the predictions below, our assumptions were valid. The model does a really bad job at classifying the test set into the correct rating categories. It is equivalent to a random model with a very strong bias towards the majority class at 4.375 (due to the data imbalance present in the `rating` variable.)
 ```{r rf_multi_all_pred}
+set.seed(12)
 #make predictions
 rf_multi_all_pred <- predict(rf_multi_all_fit, newdata = test_multi)
 
@@ -120,7 +122,7 @@ rf_multi_all_pred <- predict(rf_multi_all_fit, newdata = test_multi)
 confusionMatrix(data = rf_multi_all_pred, reference = test_multi$rating)
 ```
 
-### Fitting - RF multi_Nut
+### Fitting - RF Multilevel rating and only Nutritional values
 We now try another RF but only with the nutritional values as explanatory variables to see if it changes something.
 
 **Hyperparameters**
@@ -129,8 +131,8 @@ Best tune: mtry = 2
 
 **Accuracy metrics**
 
-- ACC 41.6
-- Kappa 0.048
+- Accuracy 41.6
+- Kappa 0.047
 
 ```{r rf_multi_Nut_fit}
 set.seed(12)
@@ -145,10 +147,11 @@ rf_multi_Nut_fit
 plot(rf_multi_Nut_fit, main = "Plot of CV Accuracy relative to Mtry parameter")
 ```
 
-### Predictions - RF multi_Nut
+### Predictions
 
 As can be seen by the predictions below, our assumptions were valid. The model does a really bad job at classifying the test set into the correct rating categories. It is equivalent to a random model with a very strong bias towards the majority class at 4.375 (due to the data imbalance present in the `rating` variable.)
 ```{r rf_multi_Nut_pred}
+set.seed(12)
 #make predictions
 rf_multi_Nut_pred <- predict(rf_multi_Nut_fit, newdata = te_multi_all)
 
@@ -165,7 +168,7 @@ Since we see a huge bias towards the majority class in unbalanced data (which we
 
 After careful reflection, we believe that the 3rd options is our best bet. We therefore transform the 7-level rating variable into a binary rating variable, with the threshold at 4. This means that all ratings below 4 are now considered as "bad" and all ratings above 4 are considered as "good".
 
-## 1.1 33 Engineered variables - unbalanced
+## Combinations of 4 Nutritional + 28 Engineered ingredients variables - unbalanced
 
 ```{r summary_fun, cache=FALSE}
 #function to create the summary tables from the confusion matrices
@@ -253,7 +256,6 @@ test_bin_Bin <- test_bin %>%
 
 #### Fitting
 We now fit a logreg model on unbalanced data with only the nutritional variables.
-
 ```{r logr_Nut_unbal_fit}
 set.seed(12)
 logr_Nut_unbal_fit <- caret::train(rating_bin ~.,
@@ -362,8 +364,7 @@ summary_table_unbal <- cbind(summary_table_unbal, KNN_Nut = summary_table_fun(CM
 ### KNN - unbalanced - NuBi
 
 #### Fitting
-Best K if we look at both accuracy and Kappa is 135
-
+We fit a KNN model on unbalanced data with the NuBi variable combination. The best hyperparameter K if we look at both accuracy and Kappa is 135
 ```{r knn_NuBi_unbal_fit}
 set.seed(12)
 knn_NuBi_unbal_fit <- caret::train(rating_bin ~.,
@@ -377,7 +378,7 @@ knn_NuBi_unbal_fit
 
 #### Predictions
 
-Once again most obs are classified as good. Not better than NIR.
+Once again most obs are classified as good. Not better than NIR with an accuracy of 58.4 but balanced accuracy of 51.3.
 
 ```{r knn_NuBi_unbal_pred}
 knn_NuBi_unbal_pred <- predict(knn_NuBi_unbal_fit, newdata = test_bin_NuBi, type = "raw")
@@ -391,7 +392,8 @@ summary_table_unbal <- cbind(summary_table_unbal, KNN_NuBi = summary_table_fun(C
 ### KNN - unbalanced - NuTo
 
 #### Fitting
-Best K if we look at both accuracy and Kappa is 135
+We fit a KNN model on unbalanced data with the NuTo variable combination. The best hyperparameter K if we look at both accuracy and Kappa is 147.
+
 
 ```{r knn_NuTo_unbal_fit}
 set.seed(12)
@@ -399,14 +401,14 @@ knn_NuTo_unbal_fit <- caret::train(rating_bin ~.,
                 data = train_bin_NuTo,
                 method = "knn",
                 trControl = trCtrl,
-                tuneGrid= data.frame(k = seq(131, 141,by = 2))#initially checked on 1-151 range, best was 135
+                tuneGrid= data.frame(k = seq(141, 151,by = 2))#initially checked on 1-151 range, best was 147
                 )
 knn_NuTo_unbal_fit
 ```
 
 #### Predictions
 
-Once again most obs are classified as good. Not better than NIR.
+We see a balanced accuracy of 51.8 and still a strong bias towards the positive class.
 
 ```{r knn_NuTo_unbal_pred}
 knn_NuTo_unbal_pred <- predict(knn_NuTo_unbal_fit, newdata = test_bin_NuTo, type = "raw")
@@ -417,10 +419,10 @@ CM
 summary_table_unbal <- cbind(summary_table_unbal, KNN_NuTo = summary_table_fun(CM))
 ```
 
-
 ### CART - unbalanced -  Nut
 
 #### Fitting
+Fitting a CART model on only nutritinal variables.
 ```{r cart_nut_unbal_fit}
 #CART_grid <-  expand.grid(cp = c(0.001,0.005,0.01, 0.015, 0.02, 0.05, 0.1, 0.15, 0.2)) --> confirmed that highest kappa is at cp selected by caret
 set.seed(12)
@@ -432,7 +434,7 @@ cart_Nut_unbal_fit <- train(rating_bin ~ .,
 cart_Nut_unbal_fit
 ```
 
-
+The best CP is 0.00305 before reaching a plateau. with higher values of CP. It might seem like the CP chosen by caret is not optimal since the accuracy curve continues to go up, however, we confirmed by using a manual tuning grid that this CP was indeed the best when combining the accuracy with the Kappa metric.
 ```{r cart_nut_unbal_results}
 # Get the results for each CP step
 cart_Nut_unbal_results <- cart_Nut_unbal_fit$results
@@ -444,6 +446,7 @@ cart_Nut_unbal_results %>%
 ```
 
 #### Predictions
+Model predicts only positive class.
 ```{r cart_nut_unbal_pred}
 #Now using the cv to predict test set
 cart_Nut_unbal_pred <- predict(cart_Nut_unbal_fit, newdata = test_bin_Nut)
@@ -457,6 +460,7 @@ summary_table_unbal <- cbind(summary_table_unbal, CART_Nut = summary_table_fun(C
 ### CART - unbalanced - NuBi
 
 #### Fitting
+Fitting a CART model on the NuBi combination.
 ```{r cart_nubi_unbal_fit}
 #CART_grid <-  expand.grid(cp = c(0.001,0.005,0.01, 0.015, 0.02, 0.05, 0.1, 0.15, 0.2)) --> confirmed that highest kappa is at cp selected by caret
 set.seed(12)
@@ -468,7 +472,7 @@ cart_NuBi_unbal_fit <- train(rating_bin ~ .,
 cart_NuBi_unbal_fit
 ```
 
-It might seem like the CP chosen by caret is not optimal since the accuracy curve continues to go up, however, we confirmed by using a manual tuning grid that this CP was indeed the best when combining the accuracy with the Kappa metric.
+Best CP of 0.0055
 ```{r cart_nubi_unbal_results}
 # Get the results for each CP step
 cart_NuBi_unbal_results <- cart_NuBi_unbal_fit$results
@@ -480,6 +484,7 @@ cart_NuBi_unbal_results %>%
 ```
 
 #### Predictions
+Balanced accuracy is higher than with the CART model including only the Nutritional values.
 ```{r cart_nubi_unbal_pred}
 #Now using the cv to predict test set
 cart_NuBi_unbal_pred <- predict(cart_NuBi_unbal_fit, newdata = test_bin_NuBi)
@@ -493,6 +498,7 @@ summary_table_unbal <- cbind(summary_table_unbal, CART_NuBi = summary_table_fun(
 ### CART - unbalanced - NuTo
 
 #### Fitting
+We now fit a CART with the NuTo variable combination
 ```{r cart_NuTo_unbal_fit}
 #CART_grid <-  expand.grid(cp = c(0.001,0.005,0.01, 0.015, 0.02, 0.05, 0.1, 0.15, 0.2)) --> confirmed that highest kappa is at cp selected by caret
 set.seed(12)
@@ -504,7 +510,7 @@ cart_NuTo_unbal_fit <- train(rating_bin ~ .,
 cart_NuTo_unbal_fit
 ```
 
-It might seem like the CP chosen by caret is not optimal since the accuracy curve continues to go up, however, we confirmed by using a manual tuning grid that this CP was indeed the best when combining the accuracy with the Kappa metric.
+Again, it might seem like the CP chosen by caret is not optimal since the accuracy curve continues to go up, however, we confirmed by using a manual tuning grid that this CP was indeed the best when combining the accuracy with the Kappa metric.
 ```{r cart_NuTo_unbal_results}
 # Get the results for each CP step
 cart_NuTo_unbal_results <- cart_NuTo_unbal_fit$results
@@ -516,6 +522,7 @@ cart_NuTo_unbal_results %>%
 ```
 
 #### Predictions
+The model once again classifies everything as good due to the strong majority class bias.
 ```{r cart_NuTo_unbal_pred}
 #Now using the cv to predict test set
 cart_NuTo_unbal_pred <- predict(cart_NuTo_unbal_fit, newdata = test_bin_NuTo)
@@ -526,7 +533,7 @@ CM
 summary_table_unbal <- cbind(summary_table_unbal, CART_NuTo = summary_table_fun(CM))
 ```
 
-## 1.2. 33 Engineered variables - balanced
+## Combinations of 4 Nutritional + 28 Engineered ingredients variables - balanced
 
 ```{r summary_table_down_create, cache=FALSE}
 #creating empty summary table for balanced data
@@ -541,10 +548,9 @@ Best tune: mtry = 2
 
 **Accuracy metrics**
 
-- ACC 53.8
-- BACC 53.8
-- Kappa 7.40
-- Recall 53.9
+- Balanced Accuracy 53.7
+- Sensitivity 53.7
+- Kappa 7.2
 
 #### Fitting
 ```{r rf_nut_fit}
@@ -560,7 +566,8 @@ plot(rf_Nut_fit, main = "Plot of CV Accuracy relative to Mtry parameter")
 ```
 
 #### Predictions
-As can be seen by the predictions below, our assumptions were valid. The model does a really bad job at classifying the test set into the correct rating categories. It is equivalent to a random model with a very strong bias towards the majority class at 4.375 (due to the data imbalance present in the `rating` variable.)
+We see a balanced accuracy and sensitivity both equal to 53.7.
+
 ```{r rf_nut_pred}
 set.seed(12)
 #make predictions
@@ -581,12 +588,13 @@ Best tune: mtry = 3
 
 **Accuracy metrics**
 
-- ACC 54.8
-- BACC 54.2
+- Balanced accuracy 54.2
+- Sensitivity 57.7
 - Kappa 8.20
-- Recall 57.7
+
 
 #### Fitting
+The best mtry is 3.
 ```{r rf_nubi_fit}
 set.seed(12)
 rf_NuBi_fit <- caret::train(rating_bin ~ .,
@@ -600,6 +608,7 @@ plot(rf_NuBi_fit, main = "Plot of CV Accuracy relative to Mtry parameter")
 ```
 
 #### Predictions
+The balanced accuracy and sensitivity are higher than for the model with only nutritional data.
 ```{r rf_nubi_pred}
 set.seed(12)
 #make predictions
@@ -620,10 +629,10 @@ Best tune: mtry = 2
 
 **Accuracy metrics**
 
-- ACC 56.4
-- BACC 55.8
-- Kappa 11.3
-- Recall 59.3
+- Balanced accuracy 55.6
+- Sensitivity 59.1
+- Kappa 11.1
+
 
 #### Fitting
 ```{r rf_nuto_fit}
@@ -639,6 +648,7 @@ plot(rf_NuTo_fit, main = "Plot of CV Accuracy relative to Mtry parameter")
 ```
 
 #### Predictions
+The balanced accuracy has increased again compared to the NuBi model, now sitting at 55.6. We also reached the highest sensitivity of the 3 RF models tested so far at 59.1.
 ```{r rf_nuto_pred}
 set.seed(12)
 #make predictions
@@ -659,10 +669,10 @@ Best tune: mtry = 3
 
 **Accuracy metrics**
 
-- ACC 52.5
-- BACC 52.4
-- Kappa 4.6
-- Recall 52.9
+- Balanced Accuracy 52.4
+- Sensitivity 52.9
+- Kappa 4.7
+
 
 #### Fitting
 ```{r rf_tot_fit}
@@ -679,6 +689,7 @@ plot(rf_Tot_fit, main = "Plot of CV Accuracy relative to Mtry parameter")
 ```
 
 #### Predictions
+Both balanced accuracy and sensitivity are lower then for the NuTo model. No improvements here.
 ```{r rf_tot_pred}
 set.seed(12)
 #make predictions
@@ -699,10 +710,10 @@ Best tune: mtry = 2
 
 **Accuracy metrics**
 
-- ACC 52.9
-- BACC 52.4
-- Kappa 4.6
-- Sens 55.4
+- Balanced accuracy 52.6
+- Sensitivity 55.7
+- Kappa 5.1
+
 
 #### Fitting
 ```{r rf_bin_fit}
@@ -719,6 +730,7 @@ plot(rf_Bin_fit, main = "Plot of CV Accuracy relative to Mtry parameter")
 ```
 
 #### Predictions
+We have higher performance. than with the model using only Tot, but still not higher than NuTO
 ```{r rf_bin_pred}
 set.seed(12)
 #make predictions
@@ -736,8 +748,14 @@ We see that the 3 best performing models are: Nut, NuBi and NuTo. Which was expe
 
 ### Logistic Regression - balanced - Nut
 
-#### Fitting
+**Accuracy metrics**
 
+- Balanced accuracy 51.0
+- Sensitivity 34.0
+- Kappa 1.8
+
+#### Fitting
+Fitting a logreg model on balanced data with only nutritional variables.
 ```{r logr_Nut_blncd}
 set.seed(12)
 logr_Nut_blncd <- caret::train(rating_bin ~.,
@@ -747,10 +765,10 @@ logr_Nut_blncd <- caret::train(rating_bin ~.,
                 trControl = trCtrl_down)
 logr_Nut_blncd
 ```
-We observe that the accuracy of training set is 49.6%.
+We observe that the CV accuracy is 49.6%.
 
 #### Predictions
-
+We obtain a balanced accuracy of 51.0 and a very low sensitivity at 34.0. No overfitting when compared to the CV accuracy.
 ```{r logr_Nut_pred_blncd}
 logr_Nut_pred_blncd <- predict(logr_Nut_blncd, newdata = test_bin_Nut, type = "raw")
 
@@ -759,13 +777,17 @@ CM
 
 summary_table_down <- cbind(summary_table_down, LogReg_Nut = summary_table_fun(CM))
 ```
-Here we notice that the accuracy of the test set stands at 47.9%
-
 
 ### Logistic Regression - balanced - NuBi
 
-#### Fitting
+**Accuracy metrics**
 
+- Balanced accuracy 54.5
+- Sensitivity 55.3
+- Kappa 8.8
+
+#### Fitting
+Fitting a logreg model on balanced data with NuBi variable combination.
 ```{r logr_NuBi_blncd}
 
 set.seed(12)
@@ -776,10 +798,10 @@ logr_NuBi_blncd <- caret::train(rating_bin ~.,
                 trControl = trCtrl_down)
 logr_NuBi_blncd
 ```
-We observe that the accuracy of the training set stands at 53.9%.
+We observe that the CV accuracy stands at 53.9%.
 
 #### Predictions
-
+Both balanced accuracy at 54.5 and sensitivity are higher than for the model with only Nut variables. Again no overfitting when comparing CV and test accuracy.
 ```{r logr_NuBi_pred_blncd}
 logr_NuBi_pred_blncd <- predict(logr_NuBi_blncd, newdata = test_bin_NuBi, type = "raw")
 
@@ -788,13 +810,16 @@ CM
 #adding results to summary table
 summary_table_down <- cbind(summary_table_down, LogReg_NuBi = summary_table_fun(CM))
 ```
-We want to evaluate the quality of the model and we notice that the accuracy of the test set stands at 54.6%
-
-
 ### Logistic Regression - balanced - NuTo
 
-#### Fitting
+**Accuracy metrics**
 
+- Balanced accuracy 55.9
+- Sensitivity 57.2
+- Kappa 11.4
+
+#### Fitting
+Fitting a logreg model on balanced data with NuTo variable combination.
 ```{r logr_NuTo_blncd}
 
 set.seed(12)
@@ -805,10 +830,10 @@ logr_NuTo_blncd <- caret::train(rating_bin ~.,
                 trControl = trCtrl_down)
 logr_NuTo_blncd
 ```
-We observe that the accuracy of the training set stands at 54.1%.
+We observe that the CV accuracy set stands at 54.1%.
 
 #### Predictions
-
+We want to evaluate the quality of the model and we notice that the balanced accuracy of the test set stands at 55.9%, which is higher than for the NuBi model fitted above. Same for the sensitivity which is now up to 57.2. Once again no overfitting of the model.
 ```{r logr_NuTo_pred_blncd}
 logr_NuTo_pred_blncd <- predict(logr_NuTo_blncd, newdata = test_bin_NuTo, type = "raw")
 
@@ -817,8 +842,7 @@ CM
 #adding results to summary table
 summary_table_down <- cbind(summary_table_down, LogReg_NuTo = summary_table_fun(CM))
 ```
-We want to evaluate the quality of the model and we notice that the accuracy of the test set stands at 56.1%
-
+The best LogReg model on balanced data is the one with the NuTo combination of variables.
 
 ### SVM - balanced - Nut
 
@@ -1077,21 +1101,31 @@ The result indicates that with the tuned hyperparameters on the radial basis SVM
 
 ### KNN - balanced - Nut
 
-#### Fitting
+**Hyperparameters**
 
+Best K = 146
+
+**Accuracy metrics**
+
+- Balanced Accuracy 53.6
+- Sensitivity 56.1
+- Kappa 7.1
+
+#### Fitting
+We fit a KNN model on nutritional variables. Best tuned K parameter is at 146.
 ```{r knn_nut_fit}
 set.seed(12)
 knn_Nut <- caret::train(rating_bin ~.,
                 data = train_bin_Nut,
                 method = "knn",
                 trControl = trCtrl_down,
-                tuneGrid= data.frame(k = seq(1, 150,by = 5))#initially checked on 1-151 range, best was 111
+                tuneGrid= data.frame(k = seq(1, 150,by = 5))
                 )
 knn_Nut
 ```
 
 #### Predictions
-
+THe balanced accuracy is at 53.6 with a sensitivity of 56.1. No overfitting when looking at CV accuracy and test set accuracy.
 ```{r knn_nut_pred}
 knn_Nut_pred <- predict(knn_Nut, newdata = test_bin_Nut, type = "raw")
 
@@ -1103,21 +1137,31 @@ summary_table_down <- cbind(summary_table_down, KNN_Nut = summary_table_fun(CM))
 
 ### KNN - balanced - NuBi
 
-#### Fitting
+**Hyperparameters**
 
+Best K = 71
+
+**Accuracy metrics**
+
+- Balanced Accuracy 51.7
+- Sensitivity 51.3
+- Kappa 3.4
+
+#### Fitting
+We fit a KNN model on balanced data and NuBi variable combination. Best tuned K parameter is at 71
 ```{r knn_nubi_fit}
 set.seed(12)
 knn_NuBi <- caret::train(rating_bin ~.,
                 data = train_bin_NuBi,
                 method = "knn",
                 trControl = trCtrl_down,
-                tuneGrid= data.frame(k = seq(1, 150,by = 5))#initially checked on 1-151 range, best was 37
+                tuneGrid= data.frame(k = seq(1, 150,by = 5))
                 )
 knn_NuBi
 ```
 
 #### Predictions
-
+Performance of the NuBi KNN model is lower than for the model with only Nut variables. No overfitting detected though.
 ```{r knn_nubi_pred}
 knn_NuBi_pred <- predict(knn_NuBi, newdata = test_bin_NuBi, type = "raw")
 
@@ -1129,8 +1173,18 @@ summary_table_down <- cbind(summary_table_down, KNN_NuBi = summary_table_fun(CM)
 
 ### KNN - balanced - NuTo
 
-#### Fitting
+**Hyperparameters**
 
+Best K = 136
+
+**Accuracy metrics**
+
+- Balanced Accuracy 53.1
+- Sensitivity 47.1
+- Kappa 5.9
+
+#### Fitting
+We fit a KNN model on balanced data and NuTo variable combination. Best tuned K parameter is at 71
 ```{r knn_nuto_fit}
 set.seed(12)
 knn_NuTo <- caret::train(rating_bin ~.,
@@ -1143,7 +1197,7 @@ knn_NuTo
 ```
 
 #### Predictions
-
+The NuTo model exhibits better balanced accuracy and sensitivity than the NuBi model tested above. However, it still had a lower balanced accuracy than the Nut KNN model we tested first, and the sensitivity at 47.1 is rather low as well. No overfitting was detected however.
 ```{r knn_nuto_pred}
 knn_NuTo_pred <- predict(knn_NuTo, newdata = test_bin_NuTo, type = "raw")
 
@@ -1152,6 +1206,7 @@ CM
 
 summary_table_down <- cbind(summary_table_down, KNN_NuTo = summary_table_fun(CM))
 ```
+Overall, the best KNN model is the one fitted only on Nutritional variables.
 
 ### CART - balanced -  Nut
 
@@ -1159,11 +1214,14 @@ summary_table_down <- cbind(summary_table_down, KNN_NuTo = summary_table_fun(CM)
 
 Best parameter CP is 0.0035
 
-**Accuracy Metrics**
+**Accuracy metrics**
 
-- ACC 54.80
+- Balanced Accuracy 53.4
+- Sensitivity 60.9
+- Kappa 6.8
 
 #### Fitting
+Fitting a CART model with only nutritional variables on balanced data.
 ```{r cart_nut_fit}
 #CART_grid <-  expand.grid(cp = c(0.001,0.005,0.01, 0.015, 0.02, 0.05, 0.1, 0.15, 0.2)) --> confirmed that highest kappa is at cp selected by caret
 set.seed(12)
@@ -1187,6 +1245,7 @@ cart_Nut_results %>%
 ```
 
 #### Predictions
+
 ```{r cart_nut_pred}
 #Now using the cv to predict test set
 cart_Nut_pred <- predict(cart_Nut_fit, newdata = test_bin_Nut)
@@ -1201,13 +1260,16 @@ summary_table_down <- cbind(summary_table_down, CART_Nut = summary_table_fun(CM)
 
 **Hyperparameters**
 
-Best parameter CP is 0.00546
+Best parameter CP is 0.0055
 
-**Accuracy Metrics**
+**Accuracy metrics**
 
-- ACC 53.7
+- Balanced Accuracy 53.5
+- Sensitivity 54.5
+- Kappa 6.8
 
 #### Fitting
+Fitting a CART model with NuBi variable combination on balanced data.
 ```{r cart_nubi_fit}
 #CART_grid <-  expand.grid(cp = c(0.001,0.005,0.01, 0.015, 0.02, 0.05, 0.1, 0.15, 0.2)) --> confirmed that highest kappa is at cp selected by caret
 set.seed(12)
@@ -1219,7 +1281,7 @@ cart_NuBi_fit <- train(rating_bin ~ .,
 cart_NuBi_fit
 ```
 
-It might seem like the CP chosen by caret is not optimal since the accuracy curve continues to go up, however, we confirmed by using a manual tuning grid that this CP was indeed the best when combining the accuracy with the Kappa metric.
+Best cp of 0.0055 for this model.
 ```{r cart_nubi_results}
 # Get the results for each CP step
 cart_NuBi_results <- cart_NuBi_fit$results
@@ -1231,6 +1293,7 @@ cart_NuBi_results %>%
 ```
 
 #### Predictions
+Balanced accuracy at 53.5 is slightly higher than for the Nut model, despite a significantly lower sensitivity. No overfitting detected when comparing CV and test accuracy metrics.
 ```{r cart_nubi_pred}
 #Now using the cv to predict test set
 cart_NuBi_pred <- predict(cart_NuBi_fit, newdata = test_bin_NuBi)
@@ -1247,11 +1310,14 @@ summary_table_down <- cbind(summary_table_down, CART_NuBi = summary_table_fun(CM
 
 Best parameter CP is 0.00257
 
-**Accuracy Metrics**
+**Accuracy metrics**
 
-- ACC 53.7
+- Balanced Accuracy 54.0
+- Sensitivity 52.3
+- Kappa 7.7
 
 #### Fitting
+Fitting a CART model with NuTo variable combination on balanced data.
 ```{r cart_nuto_fit}
 #CART_grid <-  expand.grid(cp = c(0.001,0.005,0.01, 0.015, 0.02, 0.05, 0.1, 0.15, 0.2)) --> confirmed that highest kappa is at cp selected by caret
 set.seed(12)
@@ -1262,8 +1328,7 @@ cart_NuTo_fit <- train(rating_bin ~ .,
                   tuneLength = 10)
 cart_NuTo_fit
 ```
-
-It might seem like the CP chosen by caret is not optimal since the accuracy curve continues to go up, however, we confirmed by using a manual tuning grid that this CP was indeed the best when combining the accuracy with the Kappa metric.
+CP quickly reaches a plateau, with best parameter at 0.0026.
 ```{r cart_nuto_results}
 # Get the results for each CP step
 cart_NuTo_results <- cart_NuTo_fit$results
@@ -1275,6 +1340,7 @@ cart_NuTo_results %>%
 ```
 
 #### Predictions
+THe NuTo CART model reaches the highest balanced accuracy of the 3 CART models on balanced data, with a value of 54%. No overfitting detected.
 ```{r cart_nuto_pred}
 #Now using the cv to predict test set
 cart_NuTo_pred <- predict(cart_NuTo_fit, newdata = test_bin_NuTo)
@@ -1284,11 +1350,12 @@ CM
 
 summary_table_down <- cbind(summary_table_down, CART_NuTo = summary_table_fun(CM))
 ```
-### XGBoost - balanced - Nut
+The NuTo CART model is the best of the 3 CART models in terms of balanced accuracy, but has the lowest sensitivity of the 3.
 
-## 2.1 All variables (Nut + 293 ingredients)
+## All variables (Nut + 288 ingredients)
 
 ### Creating dataset
+We first create a new dataset containing the 4 nutritional variables and the 288 original binary ingredient variables (was 293 but we remove 5 below which were present in none of the recipes).
 ```{r}
 analysis_all <- recipes %>% 
   select(rating, all_of(c(nutritional_values, all_ingredients))) %>% 
@@ -1314,23 +1381,21 @@ analysis_all <- analysis_all %>%
   select(-all_of(ingredients_to_remove))
 ```
 
+We create a training set with the new `rating_bin` variable with only 2 levels, including the nutritional and all ingredients dummies, instead of the engineered variables used in the sub-section above.
+
 ```{r}
 #creating training and test sets
 set.seed(12)
 index_all <- createDataPartition(analysis_all$rating_bin, p=0.75, list = FALSE)
-```
 
-We create a training set with the new `rating_bin` variable with only 2 levels, including the nutritional and all ingredients dummies, instead of the engineered variables used in the sub-section above.
-
-```{r}
-#creating training and test set with multilevel rating variable
+#creating training and test set with binary rating variable on all variables
 train_all <- analysis_all[index_all, ]
 test_all <- analysis_all[-index_all, ]
 
 table(train_all$rating_bin)
 ```
 
-#### Balancing the binary training set through manual downsampling
+#### Balancing the binary training set with all variables through manual downsampling
 
 ```{r}
 #filtering by rating class
@@ -1346,36 +1411,21 @@ downsamp_tr_all <- tibble(rbind(tr_good[index_good,], tr_bad))
 table(downsamp_tr_all$rating_bin)
 ```
 
-```{r}
-#manual upsampling
-
-# #filtering by rating class
-# set.seed(12)
-# tr_good <- train_bin %>%  filter(rating_bin == "good")
-# tr_bad <- train_bin %>%  filter(rating_bin == "bad")
-# 
-# #indexing "bad" and creating new resampled training set
-# index_bad <- sample(x = 1:nrow(tr_bad), size = nrow(tr_good), replace = TRUE)
-# upsamp_tr_bin <- tibble(rbind(tr_good, tr_bad[index_bad,]))
-# 
-# #checking that we have the correct number of good and bad
-# table(upsamp_tr_bin$rating_bin)
-```
-
-### Random Forest - balanced - All Var
+### Random Forest - balanced - 4 Nut + 288 variables
 
 **Hyperparameters**
 
-Best tune: mtry = 292
+Best tune: mtry = 147
 
 **Accuracy metrics**
-With tunelength = 2
-- ACC 56.7
-- BACC 56.8
-- Kappa 13.1
-- Recall 56.2
+With tuneLength = 3
+
+- Balanced Accuracy 56.1
+- Sensitivity 55.5
+- Kappa 11.8
 
 #### Fitting
+We fit a RF model on the 292 variables using a tuneLength of 3 for the Mtry parameter to avoid significant computation time with higher tuning lengths.
 ```{r rf_all_fit}
 set.seed(12)
 rf_all_fit <- train(rating_bin ~ .,
@@ -1383,12 +1433,13 @@ rf_all_fit <- train(rating_bin ~ .,
                     method = "rf",
                     trControl = trCtrl_down,
                     tuneLength = 3)
-#show the random forest with cv 
+#show the random forest with cv
 rf_all_fit
 plot(rf_all_fit, main = "Plot of CV Accuracy relative to Mtry parameter")
 ```
 
 #### Predictions
+The model achieves a very high balanced accuracy relative to the other models tested so far, at 56.1%. The specificity is also relatively high at 55.5%, but we have seen better in models we have tuned so far. Overall the performance of the RF_all model is still more than decent. We also checked that there was not overfitting by comparing the CV accuracy at mtry 147 with the test accuracy, both being at around 56%.
 ```{r rf_all_pred}
 set.seed(12)
 #make predictions
@@ -1401,9 +1452,16 @@ CM
 summary_table_down <- cbind(summary_table_down, RF_all = summary_table_fun(CM))
 ```
 
-### Logistic Regression
+### Logistic Regression - balanced - 4 Nut + 288 variables
+**Accuracy metrics**
 
-```{r logreg_all_fit}
+- Balanced Accuracy 55.8
+- Sensitivity 55.4
+- Kappa 11.3
+
+#### Fitting
+We now fit a logreg model on the 4 nut variables and the 288 ingredients variables.
+```{r logreg_all_fit, warning=FALSE}
 #too long
 logreg_all_fit <- train(rating_bin~., 
                        data=downsamp_tr_all, 
@@ -1414,8 +1472,9 @@ logreg_all_fit <- train(rating_bin~.,
 logreg_all_fit
 ```
 
-### Predictions
-```{r logreg_all_pred}
+#### Predictions
+We find a balanced accuarcy which is slightly lower than the one with the RF_all model, but still relatively higiher. The accuarcy of the LogReg_all model is also very slightly than that the one of the RF_all. Again no overfitting detected for this model which is good.
+```{r logreg_all_pred, warning=FALSE}
 #predicting
 logreg_all_pred <- predict(logreg_all_fit, newdata = test_all)
 #creating confusion matrix
@@ -1425,15 +1484,18 @@ CM
 summary_table_down <- cbind(summary_table_down, LogReg_all = summary_table_fun(CM))
 ```
 
-### CART
+### CART - balanced - 4 Nut + 288 variables
 
 **Hyperparameters**
 
-Best parameter CP is 0.0035
+Best parameter CP is 0.0036
 
-**Accuracy Metrics**
+**Accuracy metrics**
 
-- ACC 54.80
+- Balanced Accuracy 53.5
+- Sensitivity 52.7
+- Kappa 6.8
+
 
 #### Fitting
 ```{r cart_all_fit}
@@ -1446,7 +1508,7 @@ cart_all_fit <- train(rating_bin ~ .,
                   tuneLength = 10)
 cart_all_fit
 ```
-
+Once again the CP parameter reaches a plateau, even though it might look like the accuracy will keep climbing, it is not the case.
 ```{r cart_all_results}
 # Get the results for each CP step
 cart_all_results <- cart_all_fit$results
@@ -1458,6 +1520,7 @@ cart_all_results %>%
 ```
 
 #### Predictions
+The results for the CART model with all variables are rather disappointing. It had a pretty low balanced accuracy and specificity, similar to the CART models trained on the engineered variables and nutritional values combinations. It can't compete with the LogReg_all or RF_all model tested above.
 ```{r cart_all_pred}
 #Now using the cv to predict test set
 cart_all_pred <- predict(cart_all_fit, newdata = test_all)
@@ -1468,8 +1531,9 @@ CM
 summary_table_down <- cbind(summary_table_down, CART_all = summary_table_fun(CM))
 ```
 
-### XGBoost
-Here we decided to try the XGBoost model for the first time to see if it would magically work better than the others we have tested so far with other variable combinations.
+### XGBoost - balanced - 4 Nut + 288 variables
+
+Here we decided to try the XGBoost model for the first time as a bonus test to see if it would magically work better than the others we have tested so far with other variable combinations.
 
 ```{r xgb_all datasets, cache=FALSE}
 #creating datasets for xgboost
@@ -1499,10 +1563,11 @@ xgb_te <- xgb.DMatrix(data = as.matrix(explan_te), label = numeric_te$rating_bin
 
 **Accuracy metrics**
 
-- ACC 59.4
-- BACC 55.7
-- Kappa 11.9
-- Recall 76.4
+- Balanced Accuracy 56.0
+- Sensitivity 59.5
+- Kappa 11.8
+
+We fit the XGBoost model after manual tuning of the hyperparameters.
 ```{r xgb_all_down_fit, cache=FALSE}
 #set hyperparameters
 param_list <- list(
@@ -1536,6 +1601,8 @@ CM
 
 #### Predictions
 We now check the actual balanced accuracy on the testing set. We see that the accuracy is at 56.0%. While this is slightly lower than what we found on the training set, it does not signal significant overfitting.
+
+In terms of other metrics, we achieve a relatively high balanced accuracy at 56.0 which is just slightly lower than the BACC found with the RF_all model. We also have a high sensitivity at 59.5. This model looks like a great candidate to be one of the best models overall.
 ```{r xgb_all_down_pred, cache=FALSE}
 xgb_down_prob <- predict(xgb_down_fit, newdata = xgb_te)
 
@@ -1547,31 +1614,13 @@ CM
 summary_table_down <- cbind(summary_table_down, XGB_all = summary_table_fun(CM))
 ```
 
-## 3.1 Model Selection
-We decide to select models only withing the models that we fitted with the binary rating variable. This leaves us with both the balanced and unbalanced sections.
-
-### Unbalanced data
-Here we can see the results for section 5.3 on the unbalanced data. We observe that the balanced accuracy is rarely too far from 50% which indicates a pretty bad classification. The sensitivity is also very high for most models due to the bias towards the majority class "good" due to the class imbalance. Given this poor performance, we decide to focus on the models with balanced data to perform our selection of the best model.
-```{r summary_table_unbal, cache=FALSE}
-summary_table_unbal %>% 
-  kbl() %>% 
-  kable_styling(position = "center")
-summary_table_unbal
-```
-
-### Balanced data
-Here we can see the results for section 5.4 on the downsampled data, with a total of 21 models that we fitted with various combinations of explanatory variables. We see that the balanced accuracy is already higher, and the sensitivity is more reasonable. Below, we investigate various aspects of these metrics and select the top-performing models. We decide to use balanced accuracy and sensitivity as the two core metrics to quantitatively rank the best models.
-```{r summary_table_down, cache=FALSE}
-summary_table_down %>% 
-  kbl() %>% 
-  kable_styling(position = "center")
-
-summary_table_down_store <- summary_table_down
-```
+## Model Selection
+We decide to select models only within the models that we fitted with the binary rating variable. This leaves us with both the balanced and unbalanced sections with the binary rating.
 
 ```{r}
-#creating new df for model selection analysis plots
+#creating new df formats for model selection analysis plots
 summary_down_long <- summary_table_down %>% 
+  filter(metric != "accuracy") %>% 
   pivot_longer(-metric, names_to = "model", values_to = "value") %>% 
   select(model, everything()) %>% 
   mutate(value = value*100) %>% 
@@ -1579,7 +1628,31 @@ summary_down_long <- summary_table_down %>%
 
 summary_down_wide <- summary_down_long %>% 
   pivot_wider(names_from = "metric", values_from = "value")
+```
 
+### Unbalanced data
+Here we can see the results for section 5.3 on the unbalanced data. We observe that the balanced accuracy is rarely too far from 50% which indicates a pretty bad classification. The sensitivity is also very high for most models due to the bias towards the majority class "good" due to the class imbalance. Given this poor performance, we decide to focus on the models with balanced data to perform our selection of the best model.
+```{r summary_table_unbal, cache=FALSE}
+#displaying table without accuracy metric since we do not use it in the model selection.
+summary_table_unbal %>%
+  filter(metric != "accuracy") %>% 
+  kbl() %>% 
+  kable_styling(position = "center")
+```
+
+### Balanced data
+Here we can see the results for section 5.4 on the downsampled data, with a total of 21 models that we fitted with various combinations of explanatory variables. We see that the balanced accuracy is already higher, and the sensitivity is more reasonable. Below, we investigate various aspects of these metrics and select the top-performing models. We decide to use balanced accuracy and sensitivity as the two core metrics to quantitatively rank the best models.
+```{r summary_table_down, cache=FALSE}
+#displaying table without accuracy metric since we do not use it in the model selection.
+summary_down_wide %>% 
+  kbl() %>% 
+  kable_styling(position = "center")
+
+summary_table_down_store <- summary_table_down
+```
+
+
+```{r}
 #selecting 3 models with highest balance accuracy
 bacc_select <- summary_down_wide %>% 
   arrange(desc(balanced_accuracy)) %>% 
@@ -1620,7 +1693,7 @@ summary_down_long %>%
   labs(y = "Sensitivity (in %)", x = "Model", title = "Top 5 models with highest sensitivity")
 ```
 
-
+We then create a ranking system with points based on the position of each model regarding the two core metrics, balanced accuracy and sensitivity.
 ```{r}
 summary_points <- summary_down_wide %>% 
   mutate(rank_bacc = 22-rank(balanced_accuracy), points_bacc = rank(balanced_accuracy), rank_sens = 22-rank(sensitivity), points_sens = rank(sensitivity), total_points = (points_bacc + points_sens))
@@ -1644,7 +1717,7 @@ summary_points %>%
 Here we can see that XGB_all has the highest number of points based on the weighted ranking system combining the balanced accuracy and sensitivity metrics with a total of 40 points. Followed by the RF_NuTo and LogReg_NuTo sharing the second place with 36 points.
 
 ### Showcasing the best model - XGBoost_all
-Here we show 4 metrics for the best model we select. We can see that the accuracy and the balanced accuracy are very close to each other around 56%. The sensitivity is the highest at around 59.5%. Kappa is at 11.85% which is pretty low but still in the top values compared to other models we compared.
+Here we show 4 metrics for the best model we select. We can see that the balanced accuracy is at 56%. The sensitivity is the highest at around 59.5%. Kappa is at 11.85% which is pretty low but still in the top values compared to other models we compared.
 ```{r}
 summary_down_long %>% 
   filter(model =="XGB_all") %>% 
@@ -1654,6 +1727,7 @@ summary_down_long %>%
   labs(y = "Value (in %)", x = "", title = "Showcasing 4 metrics for the XGB_all model")+
   scale_fill_viridis(discrete = TRUE)
 ```
+
 #### Prediction robustness and plotting ROC curve of XGBoost_all
 We can clearly see even the best model has a lot of trouble clearly classifying the results by attributing probabilities to each class. There is some severe overlap in probabilites around the threshold at 0.5. The median probability for each class is barely above and below the threshold for "good" and "bad" respectively. This indicates very low robustness of the model and confirms the poor classification performance.
 
@@ -1679,12 +1753,12 @@ Here we can see the ROC curve relating to the test set probabilities of the XGB_
 ```{r}
 rocit_emp <- rocit(score = xgb_down_prob, class = numeric_te$rating_bin, method = "emp")
 
-plot(rocit_emp, col = c(1,"gray50"), legend = TRUE, YIndex = FALSE)
+plot(rocit_emp, col = c(1,"gray50"), legend = TRUE, YIndex = TRUE)
 
 ```
-## 3.2 Variable Importance and PDP
 
-### VarImp
+## Variable Importance
+
 Below we show the first 50 most important variables from the top model we selected, XGB_all.
 ```{r VarImp XGBoost, fig.height=10, fig.width=8}
 #XGBoost variable importance
@@ -1694,16 +1768,3 @@ xgb_importance_matrix
 xgb.ggplot.importance(importance_matrix = xgb_importance_matrix) +
   labs(title = "XGBoost Feature Importance")
 ```
-
-### PDP
-Doesn't work for xgboost
-```{r eval = FALSE}
-partial(xgb_down_fit, pred.var = "sodium", plot = TRUE)
-```
-
-### LIME
-```{r eval=FALSE}
-lime_xgb_explainer <- lime((explan_downsamp_tr), xgb_down_fit, bin_continuous = TRUE, quantile_bins = FALSE)
-expl_xgb <- lime::explain(explan_te %>% select(sodium), lime_xgb_explainer, n_labels = 1, n_features = 1)
-```
-
