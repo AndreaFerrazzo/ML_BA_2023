@@ -24,10 +24,6 @@ recipes_d <- dist(recipes_clust[,-294], method = "manhattan") # matrix of Manhat
 recipes_melt <- melt(as.matrix(recipes_d)) # create a data frame of the distances in long format
 head(recipes_melt)
 
-
-ggplot(data = recipes_melt, aes(x=Var1, y=Var2, fill=value)) + 
-  geom_tile()
-
 ```
 It is impossible to extract any information from such a graph.
 
@@ -42,8 +38,6 @@ plot(recipes_hc, hang=-1)
 rect.hclust(recipes_hc, k=8) # we cut the tree to 8 clusters
 
 recipes_clust_cut <- cutree(recipes_hc, k=8)
-recipes_clust_cut
-
 
 ```
 We cut the tree to 8 clusters, and represent the result. We also extract the cluster assignment of each recipe.
@@ -59,7 +53,6 @@ head(recipes_clust_df)
 ggplot(recipes_clust_df, aes(y=value, group=Clust, fill=Clust)) +
   geom_boxplot() +
   facet_wrap(~variable)
-
 
 ```
 Again very hard to interpret such results. There are some clusters that show high presence of certain variables. For instance the 5th cluster indicates higher values of tapioca, granola, oat and pie compares to all the rest. The 7th cluster also shows higher values for meatball and turkey with respect to all the other variables.
@@ -105,10 +98,6 @@ recipes_d2 <- dist(recipes_clust2[,-1], method = "manhattan") # matrix of Manhat
 recipes_melt2 <- melt(as.matrix(recipes_d2)) # create a data frame of the distances in long format
 head(recipes_melt2)
 
-
-# ggplot(data = recipes_melt2, aes(x=Var1, y=Var2, fill=value)) + 
-#  geom_tile()
-
 ```
 It is impossible to extract any information from such a graph.
 
@@ -123,8 +112,6 @@ plot(recipes_hc2, hang=-1)
 rect.hclust(recipes_hc2, k=8) # we cut the tree to 8 clusters
 
 recipes_clust_cut2 <- cutree(recipes_hc2, k=8)
-recipes_clust_cut2
-
 
 ```
 We cut the tree to 8 clusters, and represent the result. We also extract the cluster assignment of each recipe.
@@ -162,7 +149,36 @@ fviz_nbclust(recipes_clust2[,-1],
              k.max = 25, verbose = FALSE)
 
 ```
-These methods are not easy to interpret. The silhouette method chooses 2 clusters while the sum-of-squares and gap method did not provide any clear information in this regard.
+These methods are not easy to interpret. The silhouette method chooses 2 clusters while the sum-of-squares method did not provide any clear information in this regard. There seems to be an elbow at the 5th, 10th and 16th cluster.
+
+
+### Dendrogram
+We build a dendrogram using the complete linkage
+```{r}
+
+plot(recipes_hc2, hang=-1)
+rect.hclust(recipes_hc2, k=10) # we cut the tree to 10 clusters
+
+recipes_clust_cut3 <- cutree(recipes_hc2, k=10)
+
+```
+Now we want to focus on 10 clusters.
+
+### Interpretation of the clusters
+Here we analyze the clusters by looking at the distribution of the features within each cluster
+```{r fig.height=7, fig.width=10}
+
+recipes_comp3 <- data.frame(recipes_clust2[,-1], Clust=factor(recipes_clust_cut3), Id=row.names(recipes_clust2))
+recipes_clust_df3 <- melt(recipes_comp3, id=c("Id", "Clust"))
+head(recipes_clust_df3)
+
+ggplot(recipes_clust_df3, aes(y=value, group=Clust, fill=Clust)) +
+  geom_boxplot() +
+  facet_wrap(~variable) +
+  ggtitle("Interpretation of 10 clusters according to 19 variables")
+
+```
+
 
 ## K-Means NuTo
 
@@ -179,10 +195,8 @@ fviz_nbclust(recipes_clust2[,-1],
              k.max = 25, verbose = FALSE)
 
 
-recipes_km2 <- kmeans(recipes_clust2[,-1], centers=5)
+recipes_km2 <- kmeans(recipes_clust2[,-1], centers=10)
 recipes_km2$cluster
 
 ```
-Sum-of-squares indicated 18 clusters as the optimal number since an improvement in terms of total within sum of square is not visible after this threshold. Silhouette on the other hand indicated 2 clusters. 
-
-
+There seems to be an elbow at the 16th cluster. Silhouette on the other hand indicates 2 clusters. 
