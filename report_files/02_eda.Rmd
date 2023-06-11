@@ -1021,6 +1021,7 @@ fviz_eig(recipes_pca, addlabels = TRUE, ncp=11)
 
 
 ```
+
 ## Exploratory PCA Analysis
 - All the variables unless "useless" ones such as us_cities or chef
 ```{r}
@@ -1028,11 +1029,11 @@ fviz_eig(recipes_pca, addlabels = TRUE, ncp=11)
 ingredients_df_pca <- ingredients_df %>% 
   select(-title, -ID)
 
-recipes_pca2 <- PCA(ingredients_df_pca, ncp = 33, graph = FALSE)
+recipes_pca2 <- PCA(ingredients_df_pca, ncp = 294, graph = FALSE)
 fviz_eig(recipes_pca2, addlabels = TRUE, ncp=11)
 
 ```
-
+The results do not substantially differ from the analysis with 680 variables.
 
 ### Exploratory PCA Analysis
 - Only with nutritional variables, total and bin variables
@@ -1054,7 +1055,7 @@ recipes_pca3
 
 fviz_pca_var(recipes_pca3)
 ```
-
+Here we can observe that calories and fat are positively correlated with the first dimension, whereas fruits_bin and total_fruits are negatively correlated with the second dimension.
 
 ```{r}
 
@@ -1063,17 +1064,22 @@ fviz_contrib(recipes_pca3, choice = "var", axes = 2)
 
 ```
 
+We notice that nutritional values, meats_bin, vegetables_bin, total_dessert, total_meat and a few other engineered variables make a significant contribution to the first dimension. 
+
 ```{r}
 
 fviz_pca_biplot(recipes_pca3) ## biplot
 
 ```
+Here we see that most points are distributed on the positive side of dimension 1 and equally spread on dimension 2. We notice extreme values on the top right, where dimension 1 and dimension 2 are highly positive.
 
 ```{r}
 
 fviz_eig(recipes_pca3, addlabels = TRUE, ncp=11)
 
 ```
+Here the first 10 dimensions account for 70.9% of total explained variance.
+
 
 ```{r}
 
@@ -1086,16 +1092,5 @@ p5 <- fviz_pca_biplot(recipes_pca3, axes = 9:10)
 grid.arrange(p1, p2, p3, p4, p5, nrow = 3, ncol=2)
 
 ```
-
-
-```{r eval=FALSE}
-
-recipe_hc2 <- hclust(dist(recipes_analysis, method = "manhattan"))
-
-recipe_clust2 <- cutree(recipe_hc2, k = 10)
-
-fviz_pca_biplot(recipes_pca3,
-             col.ind = factor(recipe_clust2))
-
-```
+This is an overview of the 10 selected dimensions. However, it is hard to detect clear patterns.
 
