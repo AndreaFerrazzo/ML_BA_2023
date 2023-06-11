@@ -1,6 +1,6 @@
 # Unsupervised Learning
 
-## Clustering - ALL
+## Clustering - All variables
 
 Let us try to apply the clustering techniques to the data set with all 680 variables.
 First we have to scale all the numerical features except the variable rating.
@@ -72,7 +72,7 @@ fviz_nbclust(recipes_clust[,-294],
 These methods are not easy to interpret. The silhouette method chooses 2 clusters while the sum-of-squares and gap method did not provide any clear information in this regard.
 
 
-## Clustering - NuTo
+## Clustering - NuTo variables
 
 Let us try to apply unsupervised learning to the data set with only numerical variables. We want to avoid making the clustering on binary variables.
 As already did before we have to scale all the numerical features except the variable rating.
