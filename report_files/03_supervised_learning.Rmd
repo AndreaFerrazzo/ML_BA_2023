@@ -1,6 +1,6 @@
 # Supervised Learning
 
-## 0. Data Normalisation, splitting and balancing
+## Data Normalisation, splitting and balancing
 Creating a new dataframe for analysis purposes, which includes all nutrition-related features, as well as all ingredient-related features. We name it `recipes_analysis`.
 
 ```{r}
@@ -48,13 +48,20 @@ table(train_multi$rating)
 ### Train/test sets with variable combinations for multilevel rating
 ```{r}
 #for train multi
-tr_multi_all <- train_multi
-te_multi_all <- test_multi
-
 tr_multi_Nut <- train_multi %>% 
   select(rating, all_of(nutritional_values))
 te_multi_Nut <- test_multi %>% 
   select(rating, all_of(nutritional_values))
+
+tr_multi_NuBi <- train_multi %>% 
+  select(rating, all_of(nutritional_values), all_of(contains("bin")))
+te_multi_NuBi <- test_multi %>% 
+  select(rating, all_of(nutritional_values), all_of(contains("bin")))
+
+tr_multi_NuTo <- train_multi %>% 
+  select(rating, all_of(nutritional_values), all_of(contains("total")))
+te_multi_NuTo <- test_multi %>% 
+  select(rating, all_of(nutritional_values), all_of(contains("total")))
 ```
 
 ### TrainControl Functions
@@ -87,43 +94,7 @@ trCtrl_down_twoClass <- trainControl(method = "cv",
 Given our correlation results in EDA, we anticipated that a classification with 7 levels will basically be equivalent to randomly classifying each observation in one of the 7 rating levels. However, to make sure this is the case, we try running a random forest on the nutritional values, as well as both the "total" and "bin" ingredients-related features we created during the EDA.
 We use a random forest for this testing phase because, being an ensemble method, it should give us reasonable results if such results are possible with the data we have. If the results are bad, we can assume that other models will not magically classify everything perfectly.
 
-### Fitting RF - Multilevel rating with 4 Nut + 28 engineered ingredients variables
-
-**Hyperparameters**
-
-Best tune: mtry = 2
-
-**Accuracy metrics**
-
-- Accuracy 45.5
-- Kappa 0.001
-
-```{r rf_multi_all_fit}
-set.seed(12)
-rf_multi_all_fit <- caret::train(rating ~ .,
-                     data = tr_multi_all,
-                     method = "rf",
-                     preProcess = NULL,
-                     trControl = trCtrl,
-                     tuneLength = 3)
-#show the random forest with cv 
-rf_multi_all_fit
-plot(rf_multi_all_fit, main = "Plot of CV Accuracy relative to Mtry parameter")
-```
-
-### Predictions
-As can be seen by the predictions below, our assumptions were valid. The model does a really bad job at classifying the test set into the correct rating categories. It is equivalent to a random model with a very strong bias towards the majority class at 4.375 (due to the data imbalance present in the `rating` variable.)
-```{r rf_multi_all_pred}
-set.seed(12)
-#make predictions
-rf_multi_all_pred <- predict(rf_multi_all_fit, newdata = test_multi)
-
-#confusion matrix 
-confusionMatrix(data = rf_multi_all_pred, reference = test_multi$rating)
-```
-
-### Fitting - RF Multilevel rating and only Nutritional values
-We now try another RF but only with the nutritional values as explanatory variables to see if it changes something.
+### RF Multilevel Nut
 
 **Hyperparameters**
 
@@ -134,6 +105,8 @@ Best tune: mtry = 2
 - Accuracy 41.6
 - Kappa 0.047
 
+#### Fitting
+We first fit an RF model with multilevel rating on on the nutritional values.
 ```{r rf_multi_Nut_fit}
 set.seed(12)
 rf_multi_Nut_fit <- train(rating ~ .,
@@ -148,15 +121,87 @@ plot(rf_multi_Nut_fit, main = "Plot of CV Accuracy relative to Mtry parameter")
 ```
 
 ### Predictions
-
 As can be seen by the predictions below, our assumptions were valid. The model does a really bad job at classifying the test set into the correct rating categories. It is equivalent to a random model with a very strong bias towards the majority class at 4.375 (due to the data imbalance present in the `rating` variable.)
 ```{r rf_multi_Nut_pred}
 set.seed(12)
 #make predictions
-rf_multi_Nut_pred <- predict(rf_multi_Nut_fit, newdata = te_multi_all)
+rf_multi_Nut_pred <- predict(rf_multi_Nut_fit, newdata = te_multi_Nut)
 
 #confusion matrix 
 confusionMatrix(data = rf_multi_Nut_pred, reference = te_multi_Nut$rating)
+```
+
+### RF - Multilevel NuBi
+
+#### Fitting
+
+**Hyperparameters**
+
+Best tune: mtry = 2
+
+**Accuracy metrics**
+
+- Accuracy 45.5
+- Kappa 0.001
+
+```{r rf_multi_NuBi_fit}
+set.seed(12)
+rf_multi_NuBi_fit <- caret::train(rating ~ .,
+                     data = tr_multi_NuBi,
+                     method = "rf",
+                     preProcess = NULL,
+                     trControl = trCtrl,
+                     tuneLength = 3)
+#show the random forest with cv 
+rf_multi_NuBi_fit
+plot(rf_multi_NuBi_fit, main = "Plot of CV Accuracy relative to Mtry parameter")
+```
+
+#### Predictions
+As can be seen by the predictions below, our assumptions were valid. The model does a really bad job at classifying the test set into the correct rating categories. It is equivalent to a random model with a very strong bias towards the majority class at 4.375 (due to the data imbalance present in the `rating` variable.)
+```{r rf_multi_NuBi_pred}
+set.seed(12)
+#make predictions
+rf_multi_NuBi_pred <- predict(rf_multi_NuBi_fit, newdata = te_multi_NuBi)
+
+#confusion matrix 
+confusionMatrix(data = rf_multi_NuBi_pred, reference = te_multi_NuBi$rating)
+```
+
+### RF - Multilevel NuTo
+
+#### Fitting 
+**Hyperparameters**
+
+Best tune: mtry = 2
+
+**Accuracy metrics**
+
+- Accuracy 45.5
+- Kappa 0.001
+
+```{r rf_multi_NuTo_fit}
+set.seed(12)
+rf_multi_NuTo_fit <- caret::train(rating ~ .,
+                     data = tr_multi_NuTo,
+                     method = "rf",
+                     preProcess = NULL,
+                     trControl = trCtrl,
+                     tuneLength = 3)
+#show the random forest with cv 
+rf_multi_NuTo_fit
+plot(rf_multi_NuTo_fit, main = "Plot of CV Accuracy relative to Mtry parameter")
+```
+
+#### Predictions
+As can be seen by the predictions below, our assumptions were valid. The model does a really bad job at classifying the test set into the correct rating categories. It is equivalent to a random model with a very strong bias towards the majority class at 4.375 (due to the data imbalance present in the `rating` variable.)
+```{r rf_multi_NuTo_pred}
+set.seed(12)
+#make predictions
+rf_multi_NuTo_pred <- predict(rf_multi_NuTo_fit, newdata = te_multi_NuTo)
+
+#confusion matrix 
+confusionMatrix(data = rf_multi_NuTo_pred, reference = te_multi_NuTo$rating)
 ```
 
 ### Evaluation and decision for rest of analysis
@@ -535,7 +580,7 @@ summary_table_unbal <- cbind(summary_table_unbal, CART_NuTo = summary_table_fun(
 
 ## Combinations of 4 Nutritional + 28 Engineered ingredients variables - balanced
 
-```{r summary_table_down_create, cache=FALSE}
+```{r summary_table_down_create}
 #creating empty summary table for balanced data
 summary_table_down <- tibble(metric = c("accuracy", "balanced_accuracy", "sensitivity", "kappa"))
 ```
@@ -1358,8 +1403,8 @@ The NuTo CART model is the best of the 3 CART models in terms of balanced accura
 We first create a new dataset containing the 4 nutritional variables and the 288 original binary ingredient variables (was 293 but we remove 5 below which were present in none of the recipes).
 ```{r}
 analysis_all <- recipes %>% 
-  select(rating, all_of(c(nutritional_values, all_ingredients))) %>% 
-  mutate(rating_bin = as.factor(ifelse(rating<4, "bad", "good")), across(all_of(all_ingredients), as.factor)) %>% 
+  select(rating, all_of(c(nutritional_values, all_ingredients_new))) %>% 
+  mutate(rating_bin = as.factor(ifelse(rating<4, "bad", "good")), across(all_of(all_ingredients_new), as.factor)) %>% 
   select(-rating) %>% 
   select(rating_bin, everything())
 
@@ -1622,7 +1667,7 @@ summary_down_wide <- summary_down_long %>%
 
 ### Unbalanced data
 Here we can see the results for section 5.3 on the unbalanced data. We observe that the balanced accuracy is rarely too far from 50% which indicates a pretty bad classification. The sensitivity is also very high for most models due to the bias towards the majority class "good" due to the class imbalance. Given this poor performance, we decide to focus on the models with balanced data to perform our selection of the best model.
-```{r summary_table_unbal, cache=FALSE}
+```{r summary_table_unbal}
 #displaying table without accuracy metric since we do not use it in the model selection.
 summary_table_unbal %>%
   filter(metric != "accuracy") %>% 
@@ -1632,7 +1677,7 @@ summary_table_unbal %>%
 
 ### Balanced data
 Here we can see the results for section 5.4 on the downsampled data, with a total of 21 models that we fitted with various combinations of explanatory variables. We see that the balanced accuracy is already higher, and the sensitivity is more reasonable. Below, we investigate various aspects of these metrics and select the top-performing models. We decide to use balanced accuracy and sensitivity as the two core metrics to quantitatively rank the best models.
-```{r summary_table_down, cache=FALSE}
+```{r summary_table_down}
 #displaying table without accuracy metric since we do not use it in the model selection.
 summary_down_wide %>% 
   kbl() %>% 

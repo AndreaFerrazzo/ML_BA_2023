@@ -45,22 +45,8 @@ h1, h2, h3, h4, h5, h6, legend {
 }
 ```
 
-```{r child = c('setup.Rmd', '01_data.Rmd', '02_eda.Rmd','03_supervised_learning.Rmd', '04_unsupervised_learning.Rmd')}
+```{r child = c('setup.Rmd', '01_data.Rmd', '02_eda.Rmd','03_supervised_learning.Rmd')}
 
-``` 
-
-```{r}
-#,'03_supervised_learning.Rmd', '04_unsupervised_learning.Rmd'
 ```
-
-
-
-Questions
-- should we convert the binary columns to factor or can we leave them as integer for modelling?
-- should we balance the data, in the rating_bin case and in the rating normal with 7 classes
-- should we normalise the numerical data
-- it's mentionned in the slides that the validation set should not be balanced, but how do we do that using train() with caret?
-- should we really used balanced data for training? Because at least for KNN it always makes K=1 better, whereas K is was larger when we trained with unbalanced data
-  Apparently for KNN, it's not required to balance data
 
 

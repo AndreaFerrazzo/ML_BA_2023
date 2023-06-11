@@ -1,13 +1,14 @@
 ```{r include=FALSE}
 packages <- c(
   "knitr", "here", "tidyverse", "summarytools", "janitor", "viridis", "corrplot", "DataExplorer", "naniar",
-  "kableExtra", "gridExtra",
+  "kableExtra", "gridExtra", "ggpubr", "cowplot", "DT",
   "FactoMineR","factoextra",
   "caret", "ROCit",#for modelling
   "kernlab", "e1071",#for SVM
   "rpart", "rpart.plot", "adabag",#for CART
   "xgboost",
-  "pdp", "lime"#model interpretation
+  "pdp", "lime",#model interpretation
+  "reshape2"#clustering
 )
 purrr::walk(packages, library, character.only = TRUE)
 ```

@@ -709,6 +709,8 @@ ingredients_to_remove <- recipes %>%
 #removing those 5 ingredients
 recipes <- recipes %>% 
   select(-all_of(ingredients_to_remove))
+
+all_ingredients <- all_ingredients[!all_ingredients %in% ingredients_to_remove]
 ```
 
 
@@ -1016,7 +1018,7 @@ countries_df %>%
 ## Exploratory PCA Analysis - ALL
 - With all variables 680
 
-```{r}
+```{r PCA 1}
 
 recipes_pca <- recipes %>% 
   select(-ID, -title) %>% 
@@ -1028,7 +1030,7 @@ fviz_pca_var(recipes_pca)
 ```
 Hard to interpret this PCA output. The two dimensions explain together only 2.1% of the variability in the data.
 
-```{r}
+```{r PCA 2}
 
 fviz_contrib(recipes_pca, choice = "var", axes = 1)
 fviz_contrib(recipes_pca, choice = "var", axes = 2)
@@ -1037,13 +1039,13 @@ fviz_contrib(recipes_pca, choice = "var", axes = 2)
 Also in this case it difficult to understand which are contributing to each dimension since the dimension itself accounts for a little percentage of variability.
 
 
-```{r}
+```{r PCA 3}
 
 fviz_pca_biplot(recipes_pca) ## biplot
 
 ```
 
-```{r}
+```{r PCA 4}
 
 fviz_eig(recipes_pca, addlabels = TRUE, ncp=11)
 
@@ -1052,7 +1054,7 @@ fviz_eig(recipes_pca, addlabels = TRUE, ncp=11)
 
 ## Exploratory PCA Analysis - Selected
 - All the variables unless "useless" ones such as us_cities or chef
-```{r}
+```{r PCA 5}
 
 ingredients_df_pca <- ingredients_df %>% 
   select(-title, -ID)
@@ -1065,7 +1067,7 @@ The results do not substantially differ from the analysis with 680 variables.
 
 ## Exploratory PCA Analysis - Nut + Total + Bin
 - Only with nutritional variables, total and bin variables
-```{r}
+```{r PCA 6}
 nutritional_df <- recipes %>% 
   select(ID, all_of(nutritional_values))
 
@@ -1075,7 +1077,7 @@ recipes_analysis <- ingredients_df_full %>%
   select(rating, all_of(nutritional_values), contains("bin"), contains("total"))
 ```
 
-```{r}
+```{r PCA 7}
 
 recipes_pca3 <- PCA(recipes_analysis, ncp = 33, graph = FALSE)
 
@@ -1085,7 +1087,7 @@ fviz_pca_var(recipes_pca3)
 ```
 Here we can observe that calories and fat are positively correlated with the first dimension, whereas fruits_bin and total_fruits are negatively correlated with the second dimension.
 
-```{r}
+```{r PCA 8}
 
 fviz_contrib(recipes_pca3, choice = "var", axes = 1)
 fviz_contrib(recipes_pca3, choice = "var", axes = 2)
@@ -1094,14 +1096,14 @@ fviz_contrib(recipes_pca3, choice = "var", axes = 2)
 
 We notice that nutritional values, meats_bin, vegetables_bin, total_dessert, total_meat and a few other engineered variables make a significant contribution to the first dimension. 
 
-```{r}
+```{r PCA 9}
 
 fviz_pca_biplot(recipes_pca3) ## biplot
 
 ```
 Here we see that most points are distributed on the positive side of dimension 1 and equally spread on dimension 2. We notice extreme values on the top right, where dimension 1 and dimension 2 are highly positive.
 
-```{r}
+```{r PCA 10}
 
 fviz_eig(recipes_pca3, addlabels = TRUE, ncp=11)
 
@@ -1109,7 +1111,7 @@ fviz_eig(recipes_pca3, addlabels = TRUE, ncp=11)
 Here the first 10 dimensions account for 70.9% of total explained variance.
 
 
-```{r}
+```{r PCA 11}
 
 p1 <- fviz_pca_biplot(recipes_pca3, axes = 1:2) 
 p2 <- fviz_pca_biplot(recipes_pca3, axes = 3:4) 
@@ -1126,7 +1128,7 @@ This is an overview of the 10 selected dimensions. However, it is hard to detect
 
 Let us try to apply the clustering techniques to the data set with all 680 variables.
 First we have to scale all the numerical features except the variable rating.
-```{r}
+```{r Clustering 1}
 
 recipes_clust <- ingredients_df %>% 
   select(-ID, -title) %>%
@@ -1139,7 +1141,7 @@ Due to high number of values in our dataset, R was unable to run the hierarchica
 
 ### Hierarchical Clustering
 We apply agglomerative hierarchical clustering
-```{r}
+```{r Clustering 2}
 
 recipes_d <- dist(recipes_clust[,-294], method = "manhattan") # matrix of Manhattan distances 
 
@@ -1151,7 +1153,7 @@ It is impossible to extract any information from such a graph.
 
 ### Dendrogram
 We build a dendrogram using the complete linkage
-```{r}
+```{r Clustering 3}
 
 recipes_hc <- hclust(recipes_d, method = "complete")
 plot(recipes_hc, hang=-1)
@@ -1166,7 +1168,7 @@ We cut the tree to 8 clusters, and represent the result. We also extract the clu
 
 ### Interpretation of the clusters
 Here we analyze the clusters by looking at the distribution of the features within each cluster
-```{r fig.height=10, fig.width=10}
+```{r Clustering 4, fig.height=10, fig.width=10}
 
 recipes_comp <- data.frame(recipes_clust[,-294], Clust=factor(recipes_clust_cut), Id=row.names(recipes_clust))
 recipes_clust_df <- melt(recipes_comp, id=c("Id", "Clust"))
@@ -1182,7 +1184,7 @@ Again very hard to interpret such results. There are some clusters that show hig
 
 ### Choice of the number of clusters
 To choose the number of clusters we can inspect the dendrogram or rely on statistics such as sum-of-squares, the GAP statistics, and the silhouette. In our case we choose the silhouette method.
-```{r}
+```{r Clustering 5}
 
 fviz_nbclust(recipes_clust[,-294],
              hcut, hc_method="complete",
@@ -1198,7 +1200,7 @@ These methods are not easy to interpret. The silhouette method chooses 2 cluster
 
 Let us try to apply unsupervised learning to the data set with only numerical variables. We want to avoid making the clustering on binary variables.
 As already did before we have to scale all the numerical features except the variable rating.
-```{r}
+```{r Clustering 6}
 
 recipes_clust2 <- ingredients_df_full %>% 
   left_join(nutritional_df, by="ID") %>% 
@@ -1213,7 +1215,7 @@ recipes_clust2[,-1] <- scale(recipes_clust2[,-1])
 
 ### Hierarchical Clustering
 We apply agglomerative hierarchical clustering
-```{r}
+```{r Clustering 7}
 
 recipes_d2 <- dist(recipes_clust2[,-1], method = "manhattan") # matrix of Manhattan distances 
 
@@ -1225,7 +1227,7 @@ It is impossible to extract any information from such a graph.
 
 ### Dendrogram
 We build a dendrogram using the complete linkage
-```{r}
+```{r Clustering 8}
 
 recipes_hc2 <- hclust(recipes_d2, method = "complete")
 plot(recipes_hc2, hang=-1)
@@ -1240,7 +1242,7 @@ We cut the tree to 8 clusters, and represent the result. We also extract the clu
 
 ### Interpretation of the clusters
 Here we analyze the clusters by looking at the distribution of the features within each cluster
-```{r fig.height=10, fig.width=10}
+```{r Clustering 9, fig.height=10, fig.width=10}
 
 recipes_comp2 <- data.frame(recipes_clust2[,-1], Clust=factor(recipes_clust_cut2), Id=row.names(recipes_clust2))
 recipes_clust_df2 <- melt(recipes_comp2, id=c("Id", "Clust"))
@@ -1256,7 +1258,7 @@ Again very hard to interpret such results. There are some clusters that show hig
 
 ### Choice of the number of clusters
 To choose the number of clusters we can inspect the dendrogram or rely on statistics such as sum-of-squares, the GAP statistics, and the silhouette.
-```{r}
+```{r Clustering 10}
 
 fviz_nbclust(recipes_clust2[,-1],
              hcut, hc_method="complete",
@@ -1276,7 +1278,7 @@ These methods are not easy to interpret. The silhouette method chooses 2 cluster
 
 ### Dendrogram
 We build a dendrogram using the complete linkage
-```{r}
+```{r Clustering 11}
 
 plot(recipes_hc2, hang=-1)
 rect.hclust(recipes_hc2, k=10) # we cut the tree to 10 clusters
@@ -1288,7 +1290,7 @@ Now we want to focus on 10 clusters.
 
 ### Interpretation of the clusters
 Here we analyze the clusters by looking at the distribution of the features within each cluster
-```{r fig.height=7, fig.width=10}
+```{r Clustering 12, fig.height=7, fig.width=10}
 
 recipes_comp3 <- data.frame(recipes_clust2[,-1], Clust=factor(recipes_clust_cut3), Id=row.names(recipes_clust2))
 recipes_clust_df3 <- melt(recipes_comp3, id=c("Id", "Clust"))
@@ -1304,7 +1306,7 @@ ggplot(recipes_clust_df3, aes(y=value, group=Clust, fill=Clust)) +
 
 ## K-Means NuTo
 
-```{r}
+```{r Clustering 13}
 
 fviz_nbclust(recipes_clust2[,-1],
              kmeans,

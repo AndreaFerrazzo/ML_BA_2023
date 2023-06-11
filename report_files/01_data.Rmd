@@ -14,46 +14,22 @@ recipes <- recipes_raw%>%
 
 ## Data Description
 ```{r}
-tibble(Variables = c("**ID**", "**title**", "**rating**", "**calories**", "**protein**", "**fat**", "**sodium**", "**674 other binary variables**"), Meaning = c("Unique ID", "Recipe name", "Rating of the recipe", "Calories contained in the recipe", "Protein contained in the recipe (grams)","Fat contained in the recipe (grams)", "Sodium contained in the recipe (milligrams)", "The rest of the data is made of many binary variables, incl. ingredients, types of recipes, US States, diet preferences, etc."), Variable_Type = c("Character", "Character", "Categorical", "Numerical", "Numerical", "Numerical", "Numerical", "Binary"))%>%
+tibble(Variables = c("**ID**", "**title**", "**rating**", "**calories**", "**protein**", "**fat**", "**sodium**", "**674 binary variables**"), Meaning = c("Unique ID", "Recipe name", "Rating of the recipe", "Calories contained in the recipe", "Protein contained in the recipe (grams)","Fat contained in the recipe (grams)", "Sodium contained in the recipe (milligrams)", "Binary variables, incl. ingredients, types of recipes, US States, diet preferences, etc."), Variable_Type = c("Character", "Character", "Categorical", "Numerical", "Numerical", "Numerical", "Numerical", "Binary"))%>%
   kbl()%>%
   kable_styling(position = "center")
 ```
 
 ## Example of the data
+The interactive data table below shows the first 100 recipes from our dataset and can be used to explore the dataset a get a feel of how it is constructed. We have the ID, the recipe title, the 4 nutritional values and then the binary variables relating to various things such as ingredients, diet preferences, or countrie names to cite a few.
 ```{r}
-
-selected_columns <- names(recipes)[recipes[1, ] == 1]
-additional_variables <- c("title", "rating", "calories", "protein", "fat", "sodium")
-selected_columns <- unique(c(additional_variables, selected_columns))
-
-recipes[, selected_columns] %>% 
-  filter(ID==1)
-  
-
+datatable(recipes %>% head(100), options = list(pageLength = 10))
 ```
-Let us focus on the first recipe as an example and take a look at the different variables of interest. We can observe the title as well as the numerical variables such as rating, calories, protein, fat and sodium. We will then see among the many categorical variables, those that are related to our recipe such as apple, bean, cookie, fruit, kid_friendly and so on.
 
 ## Classifying variables into categories
 
 Given the high amount of variables that we had (680), we decided that we needed to somewhat create categories to aggregate them and be able to use them more easily.
 
-Specifically, here are the things we had to solve when creating categories:
-
-- Merge "father_s_day" and "fathers_day" same for mother's day and for new year's and st patrick and valentines day, vermout and vermouth
-- Check what leafy_green is and how many obs there is of it
-- Same for "legume"
-- Decide if we group beans together or leave them in vegetables
-- What do we do with "meat", meatball and meatloaf. What about rabbit and for sausage or steak and venison
-- Put nutmeg in spices or nuts?
-- do we create a seeds category --> for example for "poppy" (put in spices for now) and for "seed" and sesame
-- We should probably create a sauce category, and a "full_meal"
-- where do we put tapioca and yuca
-- do we put buttermilk in drinks or dairy?
-- check if dorie_greenspa column exist or if it was just a typo without the N
-- check how many observations with phyllo_puff_pastry_dough
-- do we separate fish and seafood?
-
-We have now solved all these issues and manually classified every variable of our dataset in specific categories shown below.
+We have decided to classify variables into the correct categories manually instead of wasting time trying to automate the process, and having to check manually afterwards anyway to make sure that the classification was done correctly.
 
 ```{r Creating Variable Categories}
 us_states <- c("alabama", "alaska", "arizona", "california", "colorado", "connecticut", "florida", "georgia", "hawaii", "idaho", "illinois", "indiana", "iowa", "kansas", "kentucky", "louisiana", "maine", "maryland", "massachusetts", "michigan", "minnesota", "mississippi", "missouri", "nebraska", "new_hampshire", "new_jersey", "new_mexico", "new_york", "north_carolina", "ohio", "oklahoma", "oregon", "pennsylvania", "rhode_island", "south_carolina", "tennessee", "texas", "utah", "vermont", "virginia", "washington", "west_virginia", "wisconsin")
@@ -137,35 +113,6 @@ all_ingredients <- c(vegetables_vec, all_meats, all_fish_seafood, herbs_vec, nut
 
 #stuff which isn't ingredients and that we need to sort
 meals <- c("backyard_bbq", "bread", "breadcrumbs", "brine", "burrito", "casserole_gratin", "coffee", "flat_bread", "hummus", "iced_coffee", "lasagna", "macaroni_and_cheese", "mayonnaise", "mustard", "noodle", "oatmeal", "omelet",  "peanut_butter", "pizza", "pot_pie", "potato_salad", "quiche", "rose", "salad_dressing", "salsa", "sandwich", "sauce", "seed", "soup_stew", "stew", "stock", "stuffing_dressing", "taco", "tart", "tofu", "tortillas", "vinegar", "frittata", "molasses", "sourdough", "fritter", "phyllo_puff_pastry_dough", "dip")
-```
-
-
-```{r TEMPORARY TO MAKE VARIABLE SELECTION EASIER, eval = FALSE}
-#whole list of stuff to remove for now to be able to sort 
-to_remove_temp <- c(us_states, us_cities, countries, alcohol, wtf, chef, interesting, season, celebrations, tools, cooking_techniques, nutritional_values, repice_type, diet_preferences, all_ingredients, to_sort)
-
-#tried this with select but didn't work because some columns in the vector don't exist in the dataset
-recipes_to_filter <- recipes[, !(colnames(recipes) %in% to_remove_temp)]
-
-#creates a tibble with one column with all the colnames to be able to sort ingredients
-names <- recipes_to_filter %>% colnames() %>% as_tibble()
-
-# recipes %>% 
-#   select(iceland)
-  # filter(x_cakeweek==1)
-
-#checked if some values in our categories weren't columns in recipes --> 19 of them weren't so I deleted them from the vectors
-checking <- tibble(to_remove_temp[!to_remove_temp %in% colnames(recipes)])
-checking
-
-
-#checking only for ingredients because I feel like there is one in the ingredient vector which is not a column name
-checking_ing <- tibble(all_ingredients[!all_ingredients %in% colnames(recipes)])
-checking_ing
-
-#no name comes out so the only logical conclusion is that there is a duplicated ingrediant name --> it was arugula
-all_ingredients[duplicated(all_ingredients)]
-
 ```
 
 # Data Understanding
