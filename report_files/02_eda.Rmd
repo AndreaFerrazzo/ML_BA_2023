@@ -80,15 +80,6 @@ phist <- gghistogram(
   theme(plot.title = element_text(size=20)) +
   scale_x_continuous(breaks=seq(0,7000,500))
 
-# Calories histogram
-histogram_calories <- df %>% 
-  ggplot(aes(x=n_value)) +
-  geom_histogram(binwidth=50, fill="red3", color="red3", alpha=0.9) +
-  theme(plot.title = element_text(size=11)) +
-  scale_x_continuous(breaks=seq(0,10000,1000)) +
-  scale_y_continuous(breaks=seq(0,1750,250)) +
-  labs(x = "Calories", y = "Count", title = "Distribution of calories across all recipes")
-
 
 # 2. Create the density plot with y-axis on the right
 # Remove x axis elements
@@ -165,7 +156,7 @@ phist <- gghistogram(
 ) +
   labs(title="Distribution of proteins across all recipes", x="Proteins", y="Count") +
   theme(plot.title = element_text(size=20)) +
-  scale_x_continuous(breaks=seq(0,1000,25))
+  scale_x_continuous(breaks=seq(0,1000,100))
 
 # 2. Create the density plot with y-axis on the right
 # Remove x axis elements
@@ -240,7 +231,7 @@ phist <- gghistogram(
 ) +
   labs(title="Distribution of sodium across all recipes", x="Sodium", y="Count") +
   theme(plot.title = element_text(size=20)) +
-  scale_x_continuous(breaks=seq(0,30000,1000))
+  scale_x_continuous(breaks=seq(0,30000,3000))
 
 # 2. Create the density plot with y-axis on the right
 # Remove x axis elements
@@ -315,7 +306,7 @@ phist <- gghistogram(
 ) +
   labs(title="Distribution of fat across all recipes", x="Fat", y="Count") +
   theme(plot.title = element_text(size=20)) +
-  scale_x_continuous(breaks=seq(0,3000,100))
+  scale_x_continuous(breaks=seq(0,3000,300))
 
 # 2. Create the density plot with y-axis on the right
 # Remove x axis elements
@@ -799,9 +790,10 @@ meat_average01 <- recipes_full %>%
 barplot1 <- recipes_full %>% 
   ggplot(aes(x = factor(meats_bin), y = protein)) +
   stat_summary(fun = mean, geom = "bar") +
-  ggtitle("Average amount of proteins per recipe with and without meat") +
+  ggtitle("Average amount of proteins per recipe\nwith and without meat") +
   xlab("Presence of Meat or not") +
-  ylab("Protein Content in grams")
+  ylab("Protein Content in grams")+
+  theme(plot.title = element_text(size=9))
 
 # Boxplots per different kinds of meat
 recipes_general <- recipes_full %>% 
@@ -823,10 +815,10 @@ multi_boxplot1 <- recipes_meat %>%
   ggplot(aes(x=meats, y=protein, fill=meats)) +
   geom_boxplot(alpha=0.3) +
   theme(legend.position="none",
-          plot.title = element_text(size=11)) +
+          plot.title = element_text(size=9)) +
   scale_y_continuous(breaks=seq(0,7000,25)) +
   coord_flip() +
-  ggtitle("Distribution of proteins per recipe according to different kinds of meat") +
+  ggtitle("Distribution of proteins per recipe according\nto different kinds of meat") +
   xlab("Meats") +
   ylab("Protein Content in grams") +
   theme(legend.position="none") 
@@ -848,9 +840,10 @@ seafood_average01 <- recipes_full %>%
 barplot2 <- recipes_full %>% 
   ggplot(aes(x = factor(seafood_bin), y = sodium)) +
   stat_summary(fun = mean, geom = "bar") +
-  ggtitle("Average amount of sodium per recipe with and without seafood")  +
+  ggtitle("Average amount of sodium per recipe\nwith and without seafood")  +
   xlab("Presence of Seafood or not") +
-  ylab("Sodium Content in milligrams")
+  ylab("Sodium Content in milligrams")+
+  theme(plot.title = element_text(size=9))
 
 
 # Boxplots per different kinds of seafood
@@ -869,10 +862,10 @@ multi_boxplot2 <- recipes_seafood %>%
   ggplot(aes(x=seafoods, y=sodium, fill=seafoods)) +
   geom_boxplot(alpha=0.3) +
   theme(legend.position="none",
-          plot.title = element_text(size=11)) +
+          plot.title = element_text(size=9)) +
   scale_y_continuous(breaks=seq(0,30000,500)) +
   coord_flip() +
-  ggtitle("Distribution of sodium per recipe according to different kinds of seafood") +
+  ggtitle("Distribution of sodium per recipe according\nto different kinds of seafood") +
   xlab("Seafood") +
   ylab("Sodium Content in milligrams") +
   theme(legend.position="none") 
@@ -894,9 +887,10 @@ carbs_average01 <- recipes_full %>%
 barplot3 <- recipes_full %>% 
   ggplot(aes(x = factor(carbs_bin), y = calories)) +
   stat_summary(fun = mean, geom = "bar") +
-  ggtitle("Average amount of calories per recipe with and without carbohydrates") +
+  ggtitle("Average amount of calories per recipe\nwith and without carbohydrates") +
   xlab("Presence of carbohydrates or not") +
-  ylab("Calories content")
+  ylab("Calories content")+
+  theme(plot.title = element_text(size=9))
 
 # Afterwards we would also want to show which kinds of carbs specifically have a high number of calories
 
@@ -916,10 +910,10 @@ multi_boxplot3 <- recipes_carbs %>%
   ggplot(aes(x=carbs, y=calories, fill=carbs)) +
   geom_boxplot(alpha=0.3) +
   theme(legend.position="none",
-          plot.title = element_text(size=11)) +
+          plot.title = element_text(size=9)) +
   scale_y_continuous(breaks=seq(0,7000,500)) +
   coord_flip() +
-  ggtitle("Distribution of calories per recipe according to different kinds of food high in carbohydrates") +
+  ggtitle("Distribution of calories per recipe according\nto different kinds of food high in carbohydrates") +
   xlab("Carbs") +
   ylab("Calories Content") +
   theme(legend.position="none") 
@@ -941,7 +935,8 @@ seasons_df <- recipes %>%
 
 seasons_df %>%
 ggplot(aes(x=sum_season)) +
-  geom_bar()
+  geom_bar() + 
+  labs(x = "Number of Seasons", y = "Count", title = "Number of different seasons per recipe")
 
 # seasons_df %>% 
 #   filter(sum_season==3)
@@ -966,8 +961,9 @@ As we can see, there is again no correlation between seasons and recipe ratings,
 ```{r}
 seasons_df %>% 
   select(-sum_season, -ID) %>% 
-  plot_correlation()
+  plot_correlation(title = "Corrplot of seasons with rating")
 ```
+
 ### Recipe Type
 
 ```{r Recipe Type EDA}
@@ -982,7 +978,8 @@ type_df <- recipes %>%
 
 type_df %>% 
   ggplot(aes(x=sum_type)) +
-  geom_bar()
+  geom_bar()+
+  labs(x = "Number of recipe types", y = "Count", title = "Number of different recipe types variables per recipe")
 
 # type_df %>% 
 #   filter(sum_type == 2)
@@ -996,7 +993,7 @@ Once again very low correlation for recipe types relative to either rating varia
 ```{r}
 type_df %>% 
   select(-c(ID, sum_type)) %>% 
-  plot_correlation()
+  plot_correlation(title = "Corrplot of recipe types relative to rating")
 ```
 
 ### Countries
@@ -1009,13 +1006,14 @@ countries_df <- recipes %>%
 
 countries_df %>% 
   ggplot(aes(x=sum_type)) +
-  geom_bar()
+  geom_bar()+
+    labs(x = "Number of Countries per recipe", y = "Count", title = "Number of different countries variables per recipe")
 ```
 
 
-# Unsupervised Learning
+# Unsupervised Learning EDA
 
-## Exploratory PCA Analysis - ALL
+## Exploratory PCA Analysis - ALL 680 variables
 - With all variables 680
 
 ```{r PCA 1}

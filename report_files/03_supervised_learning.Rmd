@@ -158,7 +158,7 @@ plot(rf_multi_NuBi_fit, main = "Plot of CV Accuracy relative to Mtry parameter")
 ```
 
 #### Predictions
-As can be seen by the predictions below, our assumptions were valid. The model does a really bad job at classifying the test set into the correct rating categories. It is equivalent to a random model with a very strong bias towards the majority class at 4.375 (due to the data imbalance present in the `rating` variable.)
+The RF model with the NuBi combination (nutritional values and binary ingredient categories) also classified almost everything in the 4.375 rating class, leading to an accuracy of 45.6% and a Kappa of 1% which indicates that the model is not better than a NIR model. This bias towards the majority class was confirmed by a sensitivity in that class of 98.27%, while all other classes had a sensitivity of 0 or very close to 0.
 ```{r rf_multi_NuBi_pred}
 set.seed(12)
 #make predictions
@@ -177,8 +177,8 @@ Best tune: mtry = 2
 
 **Accuracy metrics**
 
-- Accuracy 45.5
-- Kappa 0.001
+- Accuracy 44.8
+- Kappa 0.006
 
 ```{r rf_multi_NuTo_fit}
 set.seed(12)
@@ -194,7 +194,7 @@ plot(rf_multi_NuTo_fit, main = "Plot of CV Accuracy relative to Mtry parameter")
 ```
 
 #### Predictions
-As can be seen by the predictions below, our assumptions were valid. The model does a really bad job at classifying the test set into the correct rating categories. It is equivalent to a random model with a very strong bias towards the majority class at 4.375 (due to the data imbalance present in the `rating` variable.)
+The final RF model for multilevel rating trained on the NuTo combination (nutritional values and total ingredient categories) did not perform much differently. It has a slightly lower accuracy than the NuBi model at 44.8% with an even worse Kappa at 0.6%. Once again, most observations are classified in the 4.375 rating class.
 ```{r rf_multi_NuTo_pred}
 set.seed(12)
 #make predictions
@@ -230,7 +230,7 @@ summary_table_fun <- function(x){
 summary_table_unbal <- tibble(metric = c("accuracy", "balanced_accuracy", "sensitivity", "kappa"))
 ```
 
-### Data preparation for analysis
+### Data preparation for binary rating analysis
 
 #### Creating new rating_bin variable
 We transform the original 7-level rating variable into a binary `rating_bin` variable, "bad" or "good" (i.e., with a threshold at 4 to decide if the rating is bad or good).
@@ -1794,7 +1794,7 @@ plot(rocit_emp, col = c(1,"gray50"), legend = TRUE, YIndex = TRUE)
 
 ## Variable Importance
 
-Below we show the first 50 most important variables from the top model we selected, XGB_all.
+Below we show all the variables from most to least important from the top model we selected, XGB_all.
 ```{r VarImp XGBoost, fig.height=10, fig.width=8}
 #XGBoost variable importance
 xgb_importance_matrix <- xgb.importance(model = xgb_down_fit)

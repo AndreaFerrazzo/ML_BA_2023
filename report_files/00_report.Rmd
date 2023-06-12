@@ -1,5 +1,5 @@
 ---
-title: "Recipe Rating Analysis: Nutritional Values and Ingredients"
+title: "Recipe Rating Analysis: Nutritional Values and Ingredients - Full Analysis"
 author: "Andrea Ferrazzo, Jordan Vazquez"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output:
