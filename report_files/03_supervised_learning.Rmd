@@ -1403,8 +1403,8 @@ The NuTo CART model is the best of the 3 CART models in terms of balanced accura
 We first create a new dataset containing the 4 nutritional variables and the 288 original binary ingredient variables (was 293 but we remove 5 below which were present in none of the recipes).
 ```{r}
 analysis_all <- recipes %>% 
-  select(rating, all_of(c(nutritional_values, all_ingredients_new))) %>% 
-  mutate(rating_bin = as.factor(ifelse(rating<4, "bad", "good")), across(all_of(all_ingredients_new), as.factor)) %>% 
+  select(rating, all_of(c(nutritional_values, all_ingredients))) %>% 
+  mutate(rating_bin = as.factor(ifelse(rating<4, "bad", "good")), across(all_of(all_ingredients), as.factor)) %>% 
   select(-rating) %>% 
   select(rating_bin, everything())
 
